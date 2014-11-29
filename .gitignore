@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *.class
 siteswap.py
+*.swp
 
 # C extensions
 *.so
