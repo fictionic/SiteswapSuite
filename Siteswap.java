@@ -4,12 +4,17 @@ import java.util.List;
 public class Siteswap {
 	protected int numHands;
 	protected String type;
-
 	private List<Beat> beats;
 
 	public Siteswap(int numHands, String type) {
 		this.numHands = numHands;
-		beats = new ArrayList<Beat>();
+		this.beats = new ArrayList<Beat>();
+		this.type = type;
+	}
+
+	private Siteswap(List<Beat> beats, int numHands, String type) {
+		this.beats = beats;
+		this.numHands = numHands;
 		this.type = type;
 	}
 
@@ -44,27 +49,34 @@ public class Siteswap {
 	}
 
 	public Siteswap getSubPattern(int startBeat, int endBeat) {
-		//later...
-		return null;
+		//get deep copy of each beat within specified indices
+		List<Beat> newBeats = new ArrayList<Beat>();
+		for(int b=startBeat; b<=endBeat; b++) {
+			newBeats.add(beats.get(b).deepCopy());	
+		}
+		return new Siteswap(newBeats, numHands, type);
 	}
 
 	public void annexPattern(Siteswap toAnnex) {
-		//later...
+		for(int b=0; b<toAnnex.period(); b++) {
+			addBeat(toAnnex.getBeat(b));
+		}
 	}
 
 	public void removeLastBeat() {
 		beats.remove(beats.size() - 1);
 	}
 
-	public void addStar() {
+	public void addStar(int fromBeatIndex) {
 		//this operation only makes sense on two-handed siteswaps
 		if(numHands != 2) {
 			return;
 		}
-		int oldNumBeats = beats.size();
+		Siteswap toAddStarTo = getSubPattern(fromBeatIndex, period() - 1);
+		int oldPeriod = toAddStarTo.period();
 		//add flipped versions of old beats to end of pattern
-		for(int b=0; b<oldNumBeats; b++) {
-			addBeat(beats.get(b).starBeat());
+		for(int b=0; b<oldPeriod; b++) {
+			addBeat(toAddStarTo.getBeat(b).starBeat());
 		}
 	}
 
@@ -122,6 +134,15 @@ public class Siteswap {
 			return new Beat(newHandList);
 		}
 
+		private Beat deepCopy() {
+			//get deep copy of each hand in hands
+			List<Hand> newHands = new ArrayList<Hand>();
+			for(int h=0; h<hands.size(); h++) {
+				newHands.add(hands.get(h).deepCopy());
+			}
+			return new Beat(newHands);
+		}
+
 		public String toString() {
 			return hands.toString();
 		}
@@ -135,6 +156,12 @@ public class Siteswap {
 				this.tosses = new ArrayList<Toss>();
 				this.handIndex = handIndex;
 				this.isEmpty = true;
+			}
+
+			private Hand(List<Toss> newTosses, int newHandIndex, boolean newIsEmpty) {
+				this.tosses = newTosses;
+				this.handIndex = newHandIndex;
+				this.isEmpty = newIsEmpty;
 			}
 
 			public int totalHandValue() {
@@ -189,6 +216,15 @@ public class Siteswap {
 				return tosses.get(tosses.size() - 1);
 			}
 
+			private Hand deepCopy() {
+				//get deep copy of each toss in tosses
+				List<Toss> newTosses = new ArrayList<Toss>();
+				for(int t=0; t<tosses.size(); t++) {
+					newTosses.add(tosses.get(t).deepCopy());
+				}
+				return new Hand(newTosses, handIndex, isEmpty);
+			}
+
 			public String toString() {
 				return tosses.toString();
 			}
@@ -222,11 +258,15 @@ public class Siteswap {
 					return new Toss(newHandIndex, height, (destHand + 1) % 2);
 				}
 
+				private Toss deepCopy() {
+					return new Toss(startHand, height, destHand);
+				}
+
 				public String toString() {
-					List<Integer> tossList = new ArrayList<Integer>();
-					tossList.add(height);
-					tossList.add(destHand);
-					return tossList.toString();
+					List<Integer> listToss = new ArrayList<Integer>();
+					listToss.add(height);
+					listToss.add(destHand);
+					return listToss.toString();
 				}
 			}
 		}

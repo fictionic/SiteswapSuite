@@ -2,25 +2,19 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class Parser {
-	private static String validAsyncSiteswapString = "((\\d|[a-w]|X|[yz])x?)+";
-	private static String validSynchronousSiteswapString = "(\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\))+\\*?";
-	private static String validMixedNotationTwoHandedSiteswapString = "((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)|\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)!?)+";
-
-	public static boolean checkSyntax(String s) {
-		if(Pattern.matches(validMixedNotationTwoHandedSiteswapString, s)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
+	private static final String validAsyncSiteswapString = "((\\d|[a-w]|X|[yz])x?)+";
+	private static final String validSynchronousSiteswapString = "(\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)\\*?)+";
+	private static final String validMixedNotationTwoHandedSiteswapString = "((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)|\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)!?)+";
 
 	public static String getNotationType(String s) {
 		if(Pattern.matches(validAsyncSiteswapString, s)) {
 			return "async";
 		} else if(Pattern.matches(validSynchronousSiteswapString, s)) {
 			return "sync";
-		} else {
+		} else if(Pattern.matches(validMixedNotationTwoHandedSiteswapString, s)) {
 			return "mixed";
+		} else {
+			return "invalid";
 		}
 	}
 
@@ -30,9 +24,12 @@ public class Parser {
 				return parseAsync(s);
 			case "sync":
 				return parseSync(s);
-			default:
-				//case "mixed":
+			case "mixed":
 				return parseMixed(s);
+			default:
+				System.err.println("syntax error");
+				System.exit(1);
+				return null;
 		}	
 	}
 	
@@ -99,6 +96,7 @@ public class Parser {
 		int i = 0; //index in index string
 		int b = 0; //index of beat within output siteswap
 		int curHand = 0;
+		int lastStarredBeat = 0;
 		String curToken;
 
 		while(i < s.length()) {
@@ -133,11 +131,10 @@ public class Parser {
 					b--;
 					break;
 				case "*":
-					//need to make this only star-ify the last non-starified portion of the pattern!!!
-					//(e.g. to prevent the first part of (4,2)*(6,2)* from getting star-ified twice)
 					/*IDEA: keep track of last beat at which addStar was called, call it on a sub-pattern
 					of the siteswap, and annex it to out with Siteswap.annexPattern()*/
-					out.addStar();
+					out.addStar(lastStarredBeat);
+					lastStarredBeat = b;
 					break;
 				default: //curToken is a throw height
 					int height = throwHeight(curToken);
@@ -154,6 +151,8 @@ public class Parser {
 
 	private static Siteswap parseMixed(String s) {
 		//later...
+		System.out.println("Parsing of mixed notation not yet implemented...");
+		System.exit(1);
 		return null;
 	}
 
