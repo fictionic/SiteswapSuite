@@ -53,7 +53,7 @@ public class Parser {
 				//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
 				case "[":
 					multi = true;
-					out.addBeat();
+					out.addEmptyBeat();
 					break;
 					//if curToken is "]", we're no longer in a multiplex throw, so add an empty toss to the non-current hand
 				case "]":
@@ -71,7 +71,7 @@ public class Parser {
 					int destHand = (curHand + height) % 2; //0=left, 1=right
 					if(!multi) {
 						//create new beat
-						Siteswap.Beat newBeat = out.addBeat();
+						Siteswap.Beat newBeat = out.addEmptyBeat();
 						//add toss of correct height and destination to current hand
 						newBeat.getHand(curHand).addToss(height, destHand);
 						//add empty toss to other hand
@@ -104,14 +104,16 @@ public class Parser {
 			switch(curToken) {
 				case "(":
 					//create new beat
-					out.addBeat();
+					out.addEmptyBeat();
 					curHand = 0;
 					break;
 				case ",":
 					curHand = 1;
 					break;
 				case ")":
-					//increase beat index by 2, since every (a,b) counts as two beats
+					//add empty beat, cuz that's how sync works
+					out.addZeroBeat();
+					//increase beat index by 2
 					b += 2;
 					break;
 				case "[":
@@ -179,8 +181,6 @@ public class Parser {
 	}
 
 	//IDEA: make parse() treat async siteswaps as one-handed, and have a method in Siteswap that turns a one-handed ss into a two-handed one
-
-
 	public static String deParse(Siteswap ss) {
 		if(ss.numHands == 2) {
 			switch(ss.type) {

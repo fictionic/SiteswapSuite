@@ -5,27 +5,82 @@ public class Siteswap {
 	protected int numHands;
 	protected String type;
 	private List<Beat> beats;
+	private boolean hasInDegree;
 
 	public Siteswap(int numHands, String type) {
 		this.numHands = numHands;
 		this.beats = new ArrayList<Beat>();
 		this.type = type;
+		this.hasInDegree = false;
 	}
 
 	private Siteswap(List<Beat> beats, int numHands, String type) {
 		this.beats = beats;
 		this.numHands = numHands;
 		this.type = type;
+		this.hasInDegree = false;
 	}
 
-	public Beat addBeat() {
-		Beat toReturn = new Beat();
-		beats.add(toReturn);
-		return toReturn;
+	private void calculateInDegree() {
+		//calculate the indegree of each node (beat.hand)
+		//(better than calculating it as the siteswap is created, because
+		//a given node might not exist when adding a node that throws to it)
+
+		//reset all indegrees, since we don't want to increment them if they don't start at zero
+		for(int b=0; b<period(); b++) {
+			for(int h=0; h<getBeat(b).numHands(); h++) {
+				getBeat(b).getHand(h).inDegree = 0;
+			}
+		}
+
+		int height;
+		int destHand;
+		int toBeat;
+		for(int b=0; b<period(); b++) {
+			for(int h=0; h<getBeat(b).numHands(); h++) {
+				for(int t=0; t<getBeat(b).getHand(h).numTosses(); t++) {
+					height = getBeat(b).getHand(h).getToss(t).height;
+					destHand = getBeat(b).getHand(h).getToss(t).destHand;
+					toBeat = (b + height) % period();
+					getBeat(toBeat).getHand(destHand).inDegree++;
+				}
+			}
+		}
+		hasInDegree = true;
+	}
+
+	public boolean isValid() {
+		if(!hasInDegree) {
+			calculateInDegree();
+		}
+		//see if each node's indegree equals its outdegree 
+		for(int b=0; b<period(); b++) {
+			for(int h=0; h<getBeat(b).numHands(); h++) {
+				if(getBeat(b).getHand(h).inDegree != getBeat(b).getHand(h).numTosses()) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	private void addBeat(Beat newBeat) {
 		beats.add(newBeat);
+		hasInDegree = false;
+	}
+
+	public Beat addEmptyBeat() {
+		Beat emptyBeat = new Beat();
+		beats.add(emptyBeat);
+		return emptyBeat;
+	}
+
+	public void addZeroBeat() {
+		Beat zeroBeat = new Beat();
+		for(int h=0; h<zeroBeat.numHands(); h++) {
+			zeroBeat.getHand(h).addToss();
+		}
+		addBeat(zeroBeat);
 	}
 
 	public double numBalls() {
@@ -151,17 +206,20 @@ public class Siteswap {
 			protected List<Toss> tosses;
 			protected int handIndex;
 			private boolean isEmpty;
+			private int inDegree;
 
 			public Hand(int handIndex) {
 				this.tosses = new ArrayList<Toss>();
 				this.handIndex = handIndex;
 				this.isEmpty = true;
+				this.inDegree = 0;
 			}
 
 			private Hand(List<Toss> newTosses, int newHandIndex, boolean newIsEmpty) {
 				this.tosses = newTosses;
 				this.handIndex = newHandIndex;
 				this.isEmpty = newIsEmpty;
+				this.inDegree = 0;
 			}
 
 			public int totalHandValue() {
@@ -176,10 +234,12 @@ public class Siteswap {
 				if(height != 0) {
 					isEmpty = false;
 				}
+				hasInDegree = false;
 			}
 
 			public void addToss() {
 				tosses.add(new Toss(handIndex));
+				hasInDegree = false;
 			}
 
 			private void addToss(Toss newToss) {
@@ -187,6 +247,7 @@ public class Siteswap {
 				if(newToss.height != 0) {
 					isEmpty = false;
 				}
+				hasInDegree = false;
 			}
 
 			private Hand starHand() {
@@ -243,15 +304,17 @@ public class Siteswap {
 				public Toss(int startHand) {
 					this.height = 0;
 					this.startHand = startHand;
-					this.destHand = 0;
+					this.destHand = startHand;
 				}
 
 				public void setDestHand(int newDestHand) {
 					this.destHand = newDestHand;
+					hasInDegree = false;
 				}
 
 				public void flipDestHand() {
 					this.destHand = (this.destHand + 1) % 2;
+					hasInDegree = false;
 				}
 
 				private Toss starToss(int newHandIndex) {
