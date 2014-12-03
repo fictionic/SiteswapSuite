@@ -2,10 +2,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Siteswap {
-	protected int numHands;
-	protected String type;
+	private int numHands;
+	private String type;
 	private List<Beat> beats;
 	private boolean hasInDegree;
+	private Integer largestTossHeight;
 
 	public Siteswap(int numHands, String type) {
 		this.numHands = numHands;
@@ -19,6 +20,30 @@ public class Siteswap {
 		this.numHands = numHands;
 		this.type = type;
 		this.hasInDegree = false;
+	}
+
+	public int numHands() {
+		return numHands;
+	}
+
+	public String type() {
+		return type;
+	}
+
+	public boolean hasInDegree() {
+		return hasInDegree;
+	}
+
+	public double numBalls() {
+		int total = 0;
+		for(Beat b : beats) {
+			total += b.totalBeatValue();
+		}
+		return (double)total/(double)beats.size();
+	}
+
+	public int period() {
+		return beats.size();
 	}
 
 	private void calculateInDegree() {
@@ -49,6 +74,20 @@ public class Siteswap {
 		hasInDegree = true;
 	}
 
+	public int getLargestTossHeight() {
+		//at some point change this so it automatically updates whenever you add a toss (or a beat, or just alter the pattern in any way)
+		for(Beat b : beats) {
+			for(Beat.Hand h : b.hands) {
+				for(Beat.Hand.Toss t : h.tosses) {
+					if(largestTossHeight == null || t.height > largestTossHeight) {
+						largestTossHeight = t.height;
+					}
+				}
+			}
+		}
+		return largestTossHeight;
+	}
+
 	public boolean isValid() {
 		if(!hasInDegree) {
 			calculateInDegree();
@@ -58,6 +97,7 @@ public class Siteswap {
 			for(int h=0; h<getBeat(b).numHands(); h++) {
 				if(getBeat(b).getHand(h).inDegree != getBeat(b).getHand(h).numTosses()) {
 					return false;
+					//inDegree calculation factors in throws of height zero, so we can count them in numTosses as well
 				}
 			}
 		}
@@ -80,19 +120,7 @@ public class Siteswap {
 		for(int h=0; h<zeroBeat.numHands(); h++) {
 			zeroBeat.getHand(h).addToss();
 		}
-		addBeat(zeroBeat);
-	}
-
-	public double numBalls() {
-		int total = 0;
-		for(Beat b : beats) {
-			total += b.totalBeatValue();
-		}
-		return (double)total/(double)beats.size();
-	}
-
-	public int period() {
-		return beats.size();
+		beats.add(zeroBeat);
 	}
 
 	public Beat getBeat(int index) {
@@ -100,7 +128,11 @@ public class Siteswap {
 	}
 
 	public Beat getLastBeat() {
-		return beats.get(beats.size() - 1);
+		if(beats.size() < 1) {
+			return null;
+		} else {
+			return beats.get(beats.size() - 1);
+		}
 	}
 
 	public Siteswap getSubPattern(int startBeat, int endBeat) {
@@ -145,10 +177,9 @@ public class Siteswap {
 	}
 
 	protected class Beat {
-		protected List<Hand> hands;
-		//protected int beatIndex; //not sure if I need this...
+		private List<Hand> hands;
 
-		public Beat() {
+		private Beat() {
 			hands = new ArrayList<Hand>();
 			for(int i=0; i<numHands; i++) {
 				hands.add(new Hand(i));
@@ -265,6 +296,17 @@ public class Siteswap {
 				return tosses.size();
 			}
 
+			public int numNonZeroTosses() {
+				//EVENTUALLY FIX THIS SO IT UPDATES WHENEVER YOU ADD A TOSS
+				int out = 0;
+				for(Toss t : tosses) {
+					if(t.height() != 0) {
+						out++;
+					}
+				}
+				return out;
+			}
+
 			public boolean isEmpty() {
 				return isEmpty;
 			}
@@ -291,9 +333,9 @@ public class Siteswap {
 			}
 
 			protected class Toss {
-				protected int startHand;
-				protected int height;
-				protected int destHand;
+				private int startHand;
+				private int height;
+				private int destHand;
 
 				public Toss(int startHand, int height, int destHand) {
 					this.startHand = startHand;
@@ -305,6 +347,18 @@ public class Siteswap {
 					this.height = 0;
 					this.startHand = startHand;
 					this.destHand = startHand;
+				}
+
+				public int height() {
+					return height;
+				}
+
+				public int startHand() {
+					return startHand;
+				}
+
+				public int destHand() {
+					return destHand;
 				}
 
 				public void setDestHand(int newDestHand) {

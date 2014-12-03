@@ -2,7 +2,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class Parser {
-	private static final String validAsyncSiteswapString = "((\\d|[a-w]|X|[yz])x?)+";
+	private static final String validAsyncSiteswapString = "(((\\d|[a-w]|X|[yz])x?)|\\[((\\d|[a-w]|X|[yz])x?)+\\])+";
 	private static final String validSynchronousSiteswapString = "(\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)\\*?)+";
 	private static final String validMixedNotationTwoHandedSiteswapString = "((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)|\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)!?)+";
 
@@ -48,7 +48,9 @@ public class Parser {
 		while(i < s.length()) {
 			curToken = ((Character)s.charAt(i)).toString();
 			//update current hand
-			curHand = i % 2;
+			curHand = b % 2;
+			//System.out.println(curToken);
+			System.out.println(out.getLastBeat());
 			switch(curToken) {
 				//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
 				case "[":
@@ -58,12 +60,12 @@ public class Parser {
 					//if curToken is "]", we're no longer in a multiplex throw, so add an empty toss to the non-current hand
 				case "]":
 					multi = false;
-					out.getBeat(out.period() - 1).getHand((curHand + 1) % 2).addToss();
+					out.getLastBeat().getHand((curHand + 1) % 2).addToss();
 					b++;
 					break;
 					//if curToken is "x", flip the destination hand of the most recently added toss
 				case "x":
-					out.getBeat(out.period() - 1).getHand((curHand + 1) % 2).getLastToss().flipDestHand();
+					out.getLastBeat().getHand((curHand + 1) % 2).getLastToss().flipDestHand();
 					break;
 					//if curToken is anything else, it has to be a throw height (since it matched the regex for async pattern)
 				default:
@@ -71,11 +73,11 @@ public class Parser {
 					int destHand = (curHand + height) % 2; //0=left, 1=right
 					if(!multi) {
 						//create new beat
-						Siteswap.Beat newBeat = out.addEmptyBeat();
+						out.addEmptyBeat();
 						//add toss of correct height and destination to current hand
-						newBeat.getHand(curHand).addToss(height, destHand);
+						out.getLastBeat().getHand(curHand).addToss(height, destHand);
 						//add empty toss to other hand
-						newBeat.getHand((curHand + 1) % 2).addToss();
+						out.getLastBeat().getHand((curHand + 1) % 2).addToss();
 						//increment beat index
 						b++;
 					} else {
@@ -182,8 +184,8 @@ public class Parser {
 
 	//IDEA: make parse() treat async siteswaps as one-handed, and have a method in Siteswap that turns a one-handed ss into a two-handed one
 	public static String deParse(Siteswap ss) {
-		if(ss.numHands == 2) {
-			switch(ss.type) {
+		if(ss.numHands() == 2) {
+			switch(ss.type()) {
 				case "async":
 					return reduceSiteswapString(deParseAsync(ss));
 				case "sync":
@@ -220,18 +222,18 @@ public class Parser {
 				//loop through tosses of current hand
 				for(int t=0; t<curHand.numTosses(); t++) {
 					curToss = curHand.getToss(t);
-					out += reverseThrowHeight(curToss.height);
+					out += reverseThrowHeight(curToss.height());
 					//see if the throw goes where it normally does; add a "x" if not
-					if(curToss.destHand != (curToss.startHand + curToss.height) % 2) {
+					if(curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
 						out += "x";
 					}
 				}
 				out += "]";
 			} else {
 				curToss = curHand.getLastToss();
-				out += reverseThrowHeight(curToss.height);
+				out += reverseThrowHeight(curToss.height());
 				//see if the throw goes where it normally does; add a "x" if not
-				if(curToss.destHand != (curToss.startHand + curToss.height) % 2) {
+				if(curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
 					out += "x";
 				}
 			}
@@ -244,7 +246,7 @@ public class Parser {
 	private static String deParseSync(Siteswap ss) {
 		String out = "";
 		//loop through beats of siteswap
-		for(int b=0; b<ss.period(); b++) {
+		for(int b=0; b<ss.period(); b += 2) {
 			out += "(";
 			Siteswap.Beat curBeat = ss.getBeat(b);
 			//loop through hands within each beat
@@ -256,8 +258,8 @@ public class Parser {
 					//loop through tosses within hand
 					for(int t=0; t<curHand.numTosses(); t++) {
 						Siteswap.Beat.Hand.Toss curToss = curHand.getToss(t);
-						out += reverseThrowHeight(curToss.height);
-						if(curToss.destHand != (curToss.startHand + curToss.height) % 2) {
+						out += reverseThrowHeight(curToss.height());
+						if(curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
 							out += "x";
 						}
 					}
@@ -265,8 +267,8 @@ public class Parser {
 				} else {
 					//account for only toss in hand
 					Siteswap.Beat.Hand.Toss curToss = curHand.getLastToss();
-					out += reverseThrowHeight(curToss.height);
-					if(curToss.destHand != (curToss.startHand + curToss.height) % 2) {
+					out += reverseThrowHeight(curToss.height());
+					if(curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
 						out += "x";
 					}
 				}
