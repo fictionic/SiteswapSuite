@@ -3,6 +3,13 @@ import java.util.LinkedList;
 
 public class TransitionFinder {
 
+	//FOR DEBUGGING
+	public static boolean debug = false;
+	public static void printf(String input) {
+		if(debug) {
+			System.out.println(input);
+		}
+	}
 	public static Siteswap getTransition(Siteswap ss1, Siteswap ss2) {
 		return null;
 	}
@@ -29,39 +36,42 @@ public class TransitionFinder {
 			}
 			//emulate juggling the pattern, adding balls to hands at beats when needed
 			int ballsAccountedFor = 0;
+			int totalBeats = 0;
 			int b = 0;
-			while(b < ss.period()) {
-				System.out.println("ballsAccountedFor: " + ballsAccountedFor);
-				System.out.println("\tcurBeat: " + b);
+			do {
+				printf("ballsAccountedFor: " + ballsAccountedFor);
+				printf("\tcurBeat: " + b);
 				//loop through hands
 				for(int h=0; h<ss.numHands(); h++) {
-					System.out.println("\t\tcurHand: " + h);
+					printf("\t\tcurHand: " + h);
 					//see if there are more (nonzero) throws in this beat in this hand than we currently have balls for; add balls if so
 					while(hands.get(h).curValue() < ss.getBeat(b).getHand(h).numNonZeroTosses()) {
 						hands.get(h).incrementCurValue();
 						ballsAccountedFor++;
-						System.out.println("\t\t\taccounted for ball");
-						System.out.println("\t\t\tstate: " + hands);
+						printf("\t\t\taccounted for ball");
+						printf("\t\t\tstate: " + hands);
 					}
 					//now throw all the balls in the hand!
 					for(int t=0; t<ss.getBeat(b).getHand(h).numNonZeroTosses(); t++) {
 						//eventually change Siteswap so we don't need to make instances of those inner classes outside Siteswap.java
+						//or actually maybe not... it is pretty convenient this way
 						Siteswap.Beat.Hand.Toss curToss = ss.getBeat(b).getHand(h).getToss(t);
 						throwBall(h, curToss.destHand(), curToss.height());
-						System.out.println("\t\t\tthrew ball ");
-						System.out.println("\t\t\tstate: " + hands);
+						printf("\t\t\tthrew ball ");
+						printf("\t\t\tstate: " + hands);
 					}
 				}
 				//advance time
 				advanceTime();
-				System.out.println("\t\tadvanced time");
-				System.out.println("\t\tstate: " + hands);
-				b++;
-			}
+				printf("\t\tadvanced time");
+				printf("\t\tstate: " + hands);
+				totalBeats++;
+				b = totalBeats % ss.period();
+			} while(b != 0 || ballsAccountedFor < ss.numBalls());
 		}
 
 		private void throwBall(int fromHand, int toHand, int toBeat) {
-			System.out.println("\t\t\tfromHand: " + fromHand + ", toHand: " + toHand + ", toBeat: " + toBeat);
+			printf("\t\t\tfromHand: " + fromHand + ", toHand: " + toHand + ", toBeat: " + toBeat);
 			hands.get(fromHand).resetCurValue();
 			hands.get(toHand).incrementValue(toBeat);
 		}
@@ -82,8 +92,8 @@ public class TransitionFinder {
 			private int length;
 
 			/*KEY:
-			  <---         later    ---        sooner    ---    	  now]
-			  lastNode lastNode.nextNode   ...   curNode.prevNode curNode
+			  <---         later    ---        sooner   	 ---      	  now]
+			  lastNode  ...  curNode.prevNode.prevNode  curNode.prevNode  curNode
 
 			 */
 
@@ -121,7 +131,6 @@ public class TransitionFinder {
 
 			private void advanceTime() {
 				curNode = curNode.getPrevNode();
-				//curNode.nextNode = null;
 			}
 
 			public String toString() {
@@ -140,13 +149,11 @@ public class TransitionFinder {
 
 			private class HandStateNode {
 				private int value; //number of balls at this beat, in this hand
-				//private HandStateNode nextNode;
 				private HandStateNode prevNode;
 
 				private HandStateNode(HandStateNode prevNode, HandStateNode nextNode) {
 					this.value = 0;
 					this.prevNode = prevNode;
-					//this.nextNode = nextNode;
 				}
 
 				private void incrementValue() {
@@ -164,10 +171,6 @@ public class TransitionFinder {
 					return prevNode;
 				}
 
-				/*private HandStateNode nextNode() {
-					return nextNode;
-				}*/
-
 				private void resetValue() {
 					value = 0;
 				}
@@ -178,6 +181,14 @@ public class TransitionFinder {
 			}
 		}
 	}
+
+	/*
+	   IDEAS
+
+	   -have commandline arguments for forcing it to parse a string as a ss w/ a particular number of hands
+	   -and for starting with a particular hand
+
+	   */
 
 	public static void main(String[] args) {
 		if(args.length == 1) {

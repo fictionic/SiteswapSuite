@@ -32,8 +32,51 @@ public class Parser {
 				return null;
 		}	
 	}
-	
+
 	public static Siteswap parseAsync(String s) {
+		//see if s can be parsed as a one-handed siteswap (it will make things much simpler)
+		if(Pattern.matches("(((\\d|[a-w]|X|[yz]))|\\[((\\d|[a-w]|X|[yz]))+\\])+", s)) {
+			return parseAsyncAsOneHanded(s);
+		} else {
+			return parseAsyncAsTwoHanded(s);
+		}
+	}
+	
+	public static Siteswap parseAsyncAsOneHanded(String s) {
+		Siteswap out = new Siteswap(1, "async");
+		String curToken;
+		int i=0; //index in input string	
+		int b=0; //index (beat) in output siteswap
+		boolean multi = false; //whether or not we're currently in a multiplex throw
+		while(i < s.length()) {
+			curToken = ((Character)s.charAt(i)).toString(); //get string of i-ith character of the input string
+			switch(curToken) {
+				//comment
+				case "[":
+					multi = true;
+					out.addEmptyBeat();
+					break;
+				case "]":
+					multi = false;
+					b++;
+					break;
+				default:
+					int height = throwHeight(curToken);
+					if(!multi) {
+						out.addEmptyBeat();
+						out.getLastBeat().getHand(0).addToss(height, 0);
+						b++;
+					} else {
+						out.getLastBeat().getHand(0).addToss(height, 0);
+					}
+					break;
+			}
+			i++;
+		}
+		return out;
+	}
+
+	public static Siteswap parseAsyncAsTwoHanded(String s) {
 		//double string length if it's odd (so e.g. "3" will become (3,0)!(0,3)!) 
 		if(s.length() % 2 == 1) {
 			s += s;
@@ -184,20 +227,41 @@ public class Parser {
 
 	//IDEA: make parse() treat async siteswaps as one-handed, and have a method in Siteswap that turns a one-handed ss into a two-handed one
 	public static String deParse(Siteswap ss) {
-		if(ss.numHands() == 2) {
-			switch(ss.type()) {
-				case "async":
-					return reduceSiteswapString(deParseAsync(ss));
-				case "sync":
-					return reduceSiteswapString(deParseSync(ss));
-				default:
-					//case "mixed":
-					return reduceSiteswapString(deParseMixed(ss));
-			}
-		} else {
-			//later...
-			return "not yet implemented";
+		switch(ss.numHands()) {
+			case 1:
+				return reduceSiteswapString(deParseOneHanded(ss));
+			case 2:
+				switch(ss.type()) {
+					case "async":
+						return reduceSiteswapString(deParseAsync(ss));
+					case "sync":
+						return reduceSiteswapString(deParseSync(ss));
+					default:
+						//case "mixed":
+						return reduceSiteswapString(deParseMixed(ss));
+				}
+			default:
+				return "not yet implemented";
 		}
+	}
+
+	private static String deParseOneHanded(Siteswap ss) {
+		String out = "";
+		Siteswap.Beat.Hand curHand;
+		Siteswap.Beat.Hand.Toss curToss;
+		for(int b=0; b<ss.period(); b++) {
+			curHand = ss.getBeat(b).getHand(0);
+			if(curHand.numTosses() > 1) {
+				out += "[";
+				for(int t=0; t<curHand.numTosses(); t++) {
+					out += reverseThrowHeight(curHand.getToss(t).height());
+				}
+				out += "]";
+			} else {
+				out += reverseThrowHeight(curHand.getToss(0).height());
+			}
+		}
+		return out;
 	}
 
 	private static String deParseAsync(Siteswap ss) {
