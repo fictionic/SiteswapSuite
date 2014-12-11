@@ -233,12 +233,12 @@ public class Parser {
 			case 2:
 				switch(ss.type()) {
 					case "async":
-						return reduceSiteswapString(deParseAsync(ss));
+						return deParseAsync(ss);
 					case "sync":
-						return reduceSiteswapString(deParseSync(ss));
+						return deParseSync(ss);
 					default:
 						//case "mixed":
-						return reduceSiteswapString(deParseMixed(ss));
+						return deParseMixed(ss);
 				}
 			default:
 				return "not yet implemented";
@@ -347,7 +347,7 @@ public class Parser {
 	}
 
 	private static String deParseMixed(Siteswap ss) {
-		return "";
+		return "not yet implemented";
 	}
 
 	private static String reduceSiteswapString(String s) {

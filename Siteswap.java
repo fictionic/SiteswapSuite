@@ -104,7 +104,7 @@ public class Siteswap {
 		return true;
 	}
 
-	private void addBeat(Beat newBeat) {
+	public void addBeat(Beat newBeat) {
 		beats.add(newBeat);
 		hasInDegree = false;
 	}
@@ -121,6 +121,16 @@ public class Siteswap {
 			zeroBeat.getHand(h).addToss();
 		}
 		beats.add(zeroBeat);
+	}
+
+	//adds a new toss from the given hand at the given beat to the given desthand with the given height
+	public boolean addToss(int atBeat, int atHand, int tossHeight, int destHand) {
+		if(atBeat >= period() || atHand > numHands || destHand > numHands) {
+			return false;
+		} else {
+			getBeat(atBeat).getHand(atHand).addToss(tossHeight, destHand);
+			return true;
+		}
 	}
 
 	public Beat getBeat(int index) {
