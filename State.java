@@ -1,20 +1,24 @@
 import java.util.List;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 public class State {
 	private List<HandState> hands;
 
 	//FOR DEBUGGING
-	public static final boolean debug = false;
-	public static void printf(String input) {
+	public static boolean debug = false;
+	public static void printf(Object input) {
 		if(debug) {
-			System.out.println(input);
+			try {
+				System.out.println(input.toString());
+			} catch(NullPointerException e) {
+				System.out.println("null");
+			}
 		}
 	}
 
 	public State(Siteswap ss) {
 		//initialize instance variable
-		hands = new LinkedList<HandState>();
+		hands = new ArrayList<HandState>();
 		//create an empty HandState for each hand in the pattern
 		for(int h=0; h<ss.numHands(); h++) {
 			hands.add(new HandState());
@@ -30,8 +34,8 @@ public class State {
 			for(int h=0; h<ss.numHands(); h++) {
 				printf("\t\tcurHand: " + h);
 				//see if there are more (nonzero) throws in this beat in this hand than we currently have balls for; add balls if so
-				while(hands.get(h).curValue() < ss.getBeat(b).getHand(h).numNonZeroTosses()) {
-					hands.get(h).incrementCurValue();
+				while(hands.get(h).valueAt(0) < ss.getBeat(b).getHand(h).numNonZeroTosses()) {
+					incrementValue(h, 0);
 					ballsAccountedFor++;
 					printf("\t\t\taccounted for ball");
 					printf("\t\t\tstate: " + hands);
@@ -41,9 +45,9 @@ public class State {
 					//eventually change Siteswap so we don't need to make instances of those inner classes outside Siteswap.java
 					//or actually maybe not... it is pretty convenient this way
 					Siteswap.Beat.Hand.Toss curToss = ss.getBeat(b).getHand(h).getToss(t);
-					throwBall(h, curToss.destHand(), curToss.height());
+					throwBall(h, curToss.height(), curToss.destHand());
 					printf("\t\t\tthrew ball ");
-					printf("\t\t\tstate: " + hands.toString());
+					printf("\t\t\tstate: " + hands);
 				}
 			}
 			//advance time
@@ -55,324 +59,250 @@ public class State {
 		} while(b != 0 || ballsAccountedFor < ss.numBalls());
 	}
 
-	public int numHands() {
-		return hands.size();
-	}
-
-	public void throwBall(int fromHand, int toHand, int toBeat) {
-		printf("\t\t\tfromHand: " + fromHand + ", toHand: " + toHand + ", toBeat: " + toBeat);
-		getHandState(fromHand).resetCurValue();
-		getHandState(toHand).incrementValue(toBeat);
-		hands.toString();
-	}
-
-	public void advanceTime() {
-		for(HandState hs : hands) {
-			hs.advanceTime();
+	//constructor only for testing
+	private State(int numHands) {
+		this.hands = new ArrayList<HandState>();
+		for(int i=0; i<numHands; i++) {
+			hands.add(new HandState());	
 		}
 	}
 
-	public int length() {
-		int maxLength = 0;
-		for(HandState h : hands) {
-			if(h.length > maxLength) {
-				maxLength = h.length;
-			}
-		}
-		return maxLength;
-	}
-
-	public Integer getCurValueAtHand(int handIndex) {
-		return hands.get(handIndex).curValue();
-	}
-
-	public Integer getValueAtHandAtBeat(int handIndex, int beatIndex) {
-		return hands.get(handIndex).valueAt(beatIndex);
-	}
-
-	public void shiftForward() {
-		for(HandState hs : hands) {
-			hs.shiftForward();
+	private void incrementValue(int handIndex, int beatsFromNow) {
+		try {
+			hands.get(handIndex).incrementValue(beatsFromNow);
+		} catch(ArrayIndexOutOfBoundsException e) {
+			System.out.println("handIndex cannot be greater than numHands");
 		}
 	}
 
-	public HandState getHandState(int handIndex) {
-		return hands.get(handIndex);
-	}
-
-	public boolean isAlignedWith(State state) {
-		for(int h=0; h<numHands(); h++) {
-			if(!getHandState(h).isAlignedWith(state.getHandState(h))) {
-				return false;
-			}
+	private void decrementValue(int handIndex, int beatsFromNow) {
+		try {
+			hands.get(handIndex).decrementValue(beatsFromNow);
+		} catch(ArrayIndexOutOfBoundsException e) {
+			System.out.println("handIndex cannot be greater than numHands");
 		}
-		return true;
 	}
 
 	private void matchHandStateLengths() {
-		//find the longest hand state
-		int longest = 0;
-		for(HandState h : hands) {
-			if(h.length() > longest) {
-				longest = h.length();
+		//determine which handstate is the longest
+		int longestLength = hands.get(0).length;
+		int i;
+		for(i=1; i<hands.size(); i++) {
+			if(hands.get(i).length > longestLength) {
+				longestLength = hands.get(i).length;
 			}
 		}
-
-		//make all handstates that length
-		for(HandState h : hands) {
-			for(int i=h.length(); i<longest; i++) {
-				h.padWithOneZero();
+		//pad all handstates with the appropriate number of zeroes
+		for(i=0; i<hands.size(); i++) {
+			for(int j=hands.get(i).length; j<longestLength; j++) {
+				hands.get(i).padWithOneZero();
 			}
 		}
 	}
 
-	public void incrementValue(int handIndex, int beatsFromNow, boolean dontDecrement) {
-		hands.get(handIndex).incrementValue(beatsFromNow, dontDecrement);
+	private void throwBall(int fromHand, int height, int toHand) {
+		/*if(fromHand >= hands.size() || toHand >= hands.size()) {
+			System.out.println("hand index out of bounds in throwBall");
+			System.exit(1);
+		}*/
+		hands.get(fromHand).throwBall(height, toHand);
 	}
 
-	public static void matchLengths(State st1, State st2) {
-		st1.matchHandStateLengths();
-		st2.matchHandStateLengths();
-
-		//see if we need to change anything
-		if(st1.length() == st2.length()) {
-			System.out.println("samelengths: " + st1.length());
-			return;
-		}
-		//find which of the two is shorter
-		State shorter = st1;
-		State longer = st2;
-		if(st1.length() > st2.length()) {
-			shorter = st2;
-			longer = st1;
-		}
-		while(shorter.length() < longer.length()) {
-			shorter.padWithOneZero();
-		}
-	}
-
-	protected void padWithOneZero() {
+	private void advanceTime() {
 		for(HandState h : hands) {
-			h.padWithOneZero();
+			h.advanceTime();
+		}
+	}
+
+	private void clipOffExtraNodes() {
+		for(HandState h : hands) {
+			h.clipOffExtraNodes();
 		}
 	}
 
 	public String toString() {
+		clipOffExtraNodes();
 		matchHandStateLengths();
 		return hands.toString();
 	}
 
-	public boolean equals(State otherState) {
-		for(int h=0; h<hands.size(); h++) {
-			if(!getHandState(h).equals(otherState.getHandState(h))) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	private class HandState {
-		private HandStateNode curNode;
+		private HandStateNode nowNode;
 		private HandStateNode lastNode;
 		private int length;
 
-		/*KEY:
-		  <---         later    ---        sooner   	 ---      	  now]
-		  lastNode  ...  curNode.prevNode.prevNode  curNode.prevNode  curNode
-
-		 */
-
 		private HandState() {
-			this.curNode = new HandStateNode(null);
-			this.lastNode = curNode;
+			this.nowNode = new HandStateNode(0, null);
+			this.lastNode = nowNode;
 			this.length = 1;
 		}
 
-		private Integer curValue() {
-			return curNode.value();
-		}
-
-		public int length() {
-			return length;
-		}
-
-		private Integer valueAt(int beatIndex) {
-			int index=0;
-			HandStateNode nodeAt = curNode;
-			for(; index<beatIndex; index++) {
-				nodeAt = nodeAt.prevNode();
-			}
-			return nodeAt.value();
-		}
-		
-		private HandStateNode getNode(int beatIndex) {
-			int index = 0;
-			HandStateNode nodeAt = curNode;
-			for(; index<beatIndex; index++) {
-				nodeAt = nodeAt.prevNode();
-			}
-			return nodeAt;
-		}
-
-		private void incrementCurValue() {
-			curNode.incrementValue();
-		}
-
-		private void resetCurValue() {
-			curNode.resetValue();
-		}
-
-		private void incrementValue(int beatsFromNow, boolean dontDecrement) {
-			//get node at which the value is to be inserted, making new empty filler nodes in between if necessary
-			HandStateNode node = curNode;
-			for(int i=0; i<beatsFromNow; i++) {
-				node = node.getPrevNode();
-
-			}
-			//increment value of that node
-			node.incrementValue(dontDecrement);
-		}
-
 		private void incrementValue(int beatsFromNow) {
-			incrementValue(beatsFromNow, true);
+			alterValueByOne(beatsFromNow, true);
 		}
 
-		private void shiftForward() {
-			HandStateNode blank = new HandStateNode();
-			curNode = blank;
-			length++;
+		private void decrementValue(int beatsFromNow) {
+			alterValueByOne(beatsFromNow, false);
 		}
 
-		private void advanceTime() {
-			curNode = curNode.prevNode();
-			if(length>1) {
-				length--;
+		private Integer valueAt(int beatsFromNow) {
+			if(beatsFromNow >= length) {
+				return 0;
 			}
+			HandStateNode node = nowNode;
+			for(int i=0; i<beatsFromNow; i++) {
+				node = node.prevNode;
+			}
+			return node.value;
 		}
 
-		private boolean isAlignedWith(HandState otherState) {
-			for(int b=0; b<length; b++) {
-				if(otherState.valueAt(b) == null) {
-					continue;
-				} else if(valueAt(b) > otherState.valueAt(b)) {
-					return false;
+		private void alterValueByOne(int beatsFromNow, boolean increment) {
+			int b=0;
+			HandStateNode node = nowNode;
+			while(b < beatsFromNow) {
+				if(node != null) {
+					if(node.prevNode != null) {
+						node = node.prevNode;
+					} else {
+						padWithOneZero();
+						node = node.prevNode;
+					}
+				} else {
+					padWithOneZero();
+					node = lastNode;
 				}
+				b++;
 			}
-			return true;
+			node.alterValueByOne(increment);
 		}
 
 		private void padWithOneZero() {
-			lastNode = lastNode.getPrevNode();
+			HandStateNode newLastNode = new HandStateNode(0, null);
+			lastNode.prevNode = newLastNode;
+			lastNode = newLastNode;
+			length++;
+		}
+
+		private void throwBall(int height, int destHand) {
+			//decrement the current value (since the ball leaves the current hand)
+			decrementValue(0);
+			//increment the value where the ball gets thrown to
+			hands.get(destHand).incrementValue(height);
+		}
+
+		private void advanceTime() {
+			if(nowNode.prevNode != null) {
+				nowNode = nowNode.prevNode;
+				length--;
+			} else {
+				nowNode.value = 0;
+				//don't need to decrement length since it shouldn't go below 1
+			}
+		}
+
+		private void clipOffExtraNodes() {
+			//find last nonzero node
+			HandStateNode node = nowNode;
+			HandStateNode lastNonZeroNode = nowNode;
+			int numNodesToClip = 0;
+			while(node != null) {
+				if(node.value == null || node.value > 0) {
+					lastNonZeroNode = node;
+					numNodesToClip = 0;
+				}
+				node = node.prevNode;
+				numNodesToClip++;
+			}
+
+			//clip off nodes previous to previously found node
+			lastNode = lastNonZeroNode;
+			lastNode.prevNode = null;
+			length -= numNodesToClip - 1; //minus one because we aren't clipping nowNode
 		}
 
 		public String toString() {
 			String out = "";
-			HandStateNode n = curNode;
-			while(n != null) {
-				if(n.value() != null) {
-					out = n.value().toString() + out;
-				} else {
-					out = "_" + out;
-				}
-				n = n.prevNode(); //not getPrevNode() b/c we don't want this to go forever!!
+			HandStateNode node = nowNode;
+			while(node != null) {
+				out = node.toString() + out;
+				node = node.prevNode;
 			}
 			return out;
 		}
 
-		public boolean equals(HandState otherHandState) {
-			HandStateNode curNodeThis = curNode;
-			HandStateNode curNodeOther = otherHandState.getNode(0);
-			int i=0;
-			while(curNodeThis != null) {
-				//check to see that the values are the same
-				if(curNodeThis.value() != curNodeOther.value()) {
-					return false;
-				}
-				curNodeThis = curNodeThis.prevNode();
-				curNodeOther = curNodeOther.prevNode();
-			}
-			//now make sure curNodeOther is also null
-			if(curNodeOther != null) {
-				return false;
-			}
-			return true;
-		}
-
 		private class HandStateNode {
-			private Integer value; //number of balls at this beat, in this hand
 			private HandStateNode prevNode;
+			private Integer value;
 
-			private HandStateNode(HandStateNode prevNode) {
-				this.value = 0;
+			private HandStateNode(Integer value, HandStateNode prevNode) {
+				this.value = value;
 				this.prevNode = prevNode;
 			}
-			
-			//this is only used for shifting states when finding transitions
-			//(it doesn't make sense in a normal context for value to be null)
-			private HandStateNode() {
-				this.value = null;
-				this.prevNode = curNode;
-			}
 
-			private void incrementValue(boolean dontDecrement) {
-				value++;
-				if(!dontDecrement) {
-					value -= 2;
+			private void alterValueByOne(boolean increment) {
+				if(value == null) {
+					System.out.println("value attempted to be altered when null...");
+					System.exit(1);
+				}
+				if(increment) {
+					value++;
+				} else {
+					value--;
+					if(value < 0) {
+						System.out.println("value was decremented below 0 somehow...");
+						System.exit(1);
+					}
 				}
 			}
 
-			private void incrementValue() {
-				incrementValue(true);
-			}
-
-			//adds an empty node if this.prevNode is null
-			private HandStateNode getPrevNode() {
-				if(prevNode == null) {
-					HandStateNode newNode = new HandStateNode(null);
-					prevNode = newNode;
-					length++;
+			public String toString() {
+				if(value == null) {
+					return "_";
+				} else {
+					return value.toString();
 				}
-				return prevNode;
-			}
-
-			private HandStateNode prevNode() {
-				return prevNode;
-			}
-
-			private void setPrevNode(HandStateNode node) {
-				this.prevNode = node;
-			}
-
-			private void resetValue() {
-				value = 0;
-			}
-
-			private Integer value() {
-				return value;
 			}
 		}
 	}
 
 	public static void main(String[] args) {
-		//testing stuff for getTransition
-		State st1 = new State(Parser.parse("3"));
-		State st2 = new State(Parser.parse("51"));
-		
-		System.out.println("raw states:");
-		System.out.println(st1);
-		System.out.println(st2);
-
-		System.out.println("lengths matched:");
-		matchLengths(st1, st2);
-		System.out.println(st1);
-		System.out.println(st2);
-
-		System.out.println("aligned:");
-		while(!st1.isAlignedWith(st2)) {
-			st2.shiftForward();
-			st1.padWithOneZero();
+		//testing
+		if(args.length == 1) {
+			State state;
+			state = new State(Parser.parse(args[0]));
+			System.out.println(state);
 		}
-		System.out.println(st1);
-		System.out.println(st2);
+
+		/*
+		//incrementing values
+		state = new State(2);
+		printf("created blank state w/ 2 hands:");
+		printf(state);
+		state.incrementValue(0, 0);
+		printf("incremented first value in hand 0:");
+		printf(state);
+		state.incrementValue(1, 3);
+		printf("incremented fourth value in hand 1:");
+		printf(state);
+		state.incrementValue(0, 2);
+		printf("incremented eighth value in hand 0:");
+		printf(state);
+
+		//making tosses
+		state.throwBall(0, 1, 1);
+		printf("threw ball from hand 0 to hand 1 with height 1");
+		printf(state);
+		state.throwBall(1, 1, 1);
+		printf("threw ball from hand 1 to hand 1 with height 1");
+		printf(state);
+		state.throwBall(1, 5, 0);
+		printf("threw ball from hand 1 to hand 0 with height 5");
+		printf(state);
+
+		//clipping off zero-valued nodes
+		state.decrementValue(0, 4);
+		printf("decremented value in hand 0 at beat 4");
+		printf(state);
+		 */
 	}
 }
