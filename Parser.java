@@ -3,7 +3,7 @@ import java.util.regex.Pattern;
 
 public class Parser {
 	private static final String validAsyncSiteswapString = "(((\\d|[a-w]|X|[yz])x?)|\\[((\\d|[a-w]|X|[yz])x?)+\\])+";
-	private static final String validSynchronousSiteswapString = "(\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)\\*?)+";
+	private static final String validSynchronousSiteswapString = "((\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)!?)+\\*?)";
 	private static final String validMixedNotationTwoHandedSiteswapString = "((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)|\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)!?)+";
 
 	public static String getNotationType(String s) {
@@ -178,10 +178,7 @@ public class Parser {
 					b--;
 					break;
 				case "*":
-					/*IDEA: keep track of last beat at which addStar was called, call it on a sub-pattern
-					of the siteswap, and annex it to out with Siteswap.annexPattern()*/
-					out.addStar(lastStarredBeat);
-					lastStarredBeat = b;
+					out.addStar();
 					break;
 				default: //curToken is a throw height
 					int height = throwHeight(curToken);
@@ -309,11 +306,12 @@ public class Parser {
 
 	private static String deParseSync(Siteswap ss) {
 		String out = "";
+		boolean skippedLastBeat = false;
 		//loop through beats of siteswap
-		for(int b=0; b<ss.period(); b += 2) {
+		for(int b=0; b<ss.period(); b++) {
 			out += "(";
 			Siteswap.Beat curBeat = ss.getBeat(b);
-			//loop through hands within each beat
+			//loop through hands within each beat (we know numHands = 2 since we screened for that in parse())
 			for(int h=0; h<2; h++) {
 				Siteswap.Beat.Hand curHand = curBeat.getHand(h);
 				//see if we need to add multiplex notation
@@ -342,7 +340,17 @@ public class Parser {
 				}
 			}
 			out += ")";
+			//check to see if we should add a "!"
+			//first check that we didn't just skip the previous beat, then check that the next beat is a zero beat (i.e. "(0,0)!")
+			if(b + 1 < ss.period() && ss.getBeat(b+1).isZeroBeat()) {
+				//skip this beat
+				b++;
+			} else {
+				//don't skip this beat
+				out += "!";
+			}
 		}
+		//TO DO: MAKE THIS USE STAR NOTATION TO FULLY SIMPLIFY?
 		return out;
 	}
 
