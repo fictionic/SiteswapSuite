@@ -109,6 +109,7 @@ public class Siteswap {
 		hasInDegree = false;
 	}
 
+	//EVENTUALLY GET RID OF THIS METHOD, MAKE NEW BEATS ALWAYS BE ZERO BEATS, AND REMOVE THE ZERO TOSSES WHEN ADDING NONZERO TOSSES
 	public Beat addEmptyBeat() {
 		Beat emptyBeat = new Beat();
 		beats.add(emptyBeat);
@@ -164,16 +165,16 @@ public class Siteswap {
 		beats.remove(beats.size() - 1);
 	}
 
-	public void addStar(int fromBeatIndex) {
+	public void addStar() {
 		//this operation only makes sense on two-handed siteswaps
 		if(numHands != 2) {
 			return;
 		}
-		Siteswap toAddStarTo = getSubPattern(fromBeatIndex, period() - 1);
-		int oldPeriod = toAddStarTo.period();
+		//save old period
+		int oldPeriod = period();
 		//add flipped versions of old beats to end of pattern
 		for(int b=0; b<oldPeriod; b++) {
-			addBeat(toAddStarTo.getBeat(b).starBeat());
+			addBeat(getBeat(b).starBeat());
 		}
 	}
 
@@ -210,6 +211,15 @@ public class Siteswap {
 
 		public int numHands() {
 			return hands.size();
+		}
+
+		public boolean isZeroBeat() {
+			for(Hand h : hands) {
+				if(!h.isZeroHand()) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		public Hand getHand(int index) {
@@ -306,11 +316,20 @@ public class Siteswap {
 				return tosses.size();
 			}
 
+			private boolean isZeroHand() {
+				if(tosses.size() > 1) {
+					return false;
+				}
+				if(!tosses.get(0).isZeroToss()) {
+					return false;
+				}
+				return true;
+			}
+
 			public int numNonZeroTosses() {
-				//EVENTUALLY FIX THIS SO IT UPDATES WHENEVER YOU ADD A TOSS
 				int out = 0;
 				for(Toss t : tosses) {
-					if(t.height() != 0) {
+					if(!t.isZeroToss()) {
 						out++;
 					}
 				}
@@ -365,6 +384,10 @@ public class Siteswap {
 
 				public int startHand() {
 					return startHand;
+				}
+
+				private boolean isZeroToss() {
+					return (startHand == destHand && height == 0);
 				}
 
 				public int destHand() {
