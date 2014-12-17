@@ -33,6 +33,12 @@ public class TransitionFinder {
 	public static Siteswap getTransition(State st1, State st2, int numHands, String type) {
 		Siteswap out = new Siteswap(numHands, type);
 
+		//check to see if the states are already equal
+		if(st1.equals(st2)) {
+			//then we're done; return the empty siteswap
+			return out;
+		}
+
 		printf("input states:");
 		printf("st1: " + st1 + "\nst2: " + st2);
 		//make sure the two states have the same length (pad the shorter one with zeroes)
