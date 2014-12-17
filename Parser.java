@@ -33,6 +33,17 @@ public class Parser {
 		}	
 	}
 
+	public static Siteswap parseAs(String s, int numHands) {
+		if(numHands == 1) {
+			return parseAsyncAsOneHanded(s);
+		} else if(numHands == 2) {
+			return parseAsyncAsTwoHanded(s);
+		} else {
+			System.err.println("parseAs() doesn't know what to do here...");
+			System.exit(1);
+		}
+	}
+
 	public static Siteswap parseAsync(String s) {
 		//see if s can be parsed as a one-handed siteswap (it will make things much simpler)
 		if(Pattern.matches("(((\\d|[a-w]|X|[yz]))|\\[((\\d|[a-w]|X|[yz]))+\\])+", s)) {
@@ -41,7 +52,7 @@ public class Parser {
 			return parseAsyncAsTwoHanded(s);
 		}
 	}
-	
+
 	public static Siteswap parseAsyncAsOneHanded(String s) {
 		Siteswap out = new Siteswap(1, "async");
 		String curToken;
@@ -67,7 +78,10 @@ public class Parser {
 						out.getLastBeat().getHand(0).addToss(height, 0);
 						b++;
 					} else {
-						out.getLastBeat().getHand(0).addToss(height, 0);
+						//ensure we don't add redundant zero-tosses (i.e. only add if there are no tosses or if the height is nonzero)
+						if(height != 0 || out.getLastBeat().getHand(0).isEmpty()) {
+							out.getLastBeat().getHand(0).addToss(height, 0);
+						}
 					}
 					break;
 			}
@@ -125,7 +139,10 @@ public class Parser {
 						b++;
 					} else {
 						//add toss of correct height and destination to current hand
-						out.getLastBeat().getHand(curHand).addToss(height, destHand);
+						//(only if it isn't a redundant zero-toss
+						if(height != 0 || out.getLastBeat().getHand(curHand).isEmpty()) {
+							out.getLastBeat().getHand(curHand).addToss(height, destHand);
+						}
 					}
 					break;
 			}
@@ -184,7 +201,10 @@ public class Parser {
 					int height = throwHeight(curToken);
 					int destHand = (curHand + height) % 2;
 					Siteswap.Beat curBeat = out.getLastBeat();
-					curBeat.getHand(curHand).addToss(height, destHand);
+					//add toss, only if it's not a redundant zero-toss
+					if(height != 0 || curBeat.getHand(curHand).isEmpty()) {
+						curBeat.getHand(curHand).addToss(height, destHand);
+					}
 					break;
 			}
 			i++;
