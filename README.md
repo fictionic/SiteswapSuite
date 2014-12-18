@@ -18,6 +18,6 @@ As such, it can also do the following tasks:
 `java TransitionFinder '<siteswap1>' '<siteswap2>'` - prints a transition pattern between the two given patterns, assuming they are valid
 
 **TO DO**  
-- make the parser ignore zero-valued tosses within multiplex notation, unless it is the only toss in that hand at that beat (i.e. [40] should parse to the same thing as 4, but [0] should parse to the same thing as 0)
-- investigate the issue with the state of '[503]' being different than that of '[53]'
-- have getTransition convert one-handed siteswaps to two-handed ones if the other pattern is two-handed (and check if the result is valid) (so you don't have to do (3,0)!(0,3)! instead of just 3 when transitioning to sync patterns)
+- give user option to choose which hand to start async patterns with when transitioning to/from sync patterns
+- implement getTransition for siteswaps with different numbers of balls, using infinity- and negative-infinity-valued tosses (also choose symbols for such throw heights... options: @, #, $, %, &, ~, <, >, ?, +, =, _ ... I think & for +infinity, % for -infinity)
+	- implement infinity- and negative-infinity-valued toss heights in Siteswap.java... don't want to just switch everything to doubles, since that would be a pretty big waste most of the time
