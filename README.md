@@ -16,8 +16,3 @@ As such, it can also do the following tasks:
 `java TransitionFinder '<siteswap>'` - displays information about the given siteswap (validity, number of balls, juggling state, unabridged notation)
 
 `java TransitionFinder '<siteswap1>' '<siteswap2>'` - prints a transition pattern between the two given patterns, assuming they are valid
-
-**TO DO**  
-- give user option to choose which hand to start async patterns with when transitioning to/from sync patterns
-- implement getTransition for siteswaps with different numbers of balls, using infinity- and negative-infinity-valued tosses (also choose symbols for such throw heights... options: @, #, $, %, &, ~, <, >, ?, +, =, _ ... I think & for +infinity, % for -infinity)
-	- implement infinity- and negative-infinity-valued toss heights in Siteswap.java... don't want to just switch everything to doubles, since that would be a pretty big waste most of the time
