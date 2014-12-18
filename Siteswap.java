@@ -282,9 +282,7 @@ public class Siteswap {
 			}
 			public void addToss(int height, int destHand) {
 				tosses.add(new Toss(handIndex, height, destHand));	
-				if(height != 0) {
-					isEmpty = false;
-				}
+				isEmpty = false;
 				hasInDegree = false;
 			}
 
@@ -364,22 +362,36 @@ public class Siteswap {
 			protected class Toss {
 				private int startHand;
 				private int height;
+				private boolean isInfinity;
 				private int destHand;
 
 				public Toss(int startHand, int height, int destHand) {
 					this.startHand = startHand;
 					this.height = height;
+					this.isInfinity = false;
+					this.destHand = destHand;
+				}
+
+				public Toss(int startHand, int height, boolean isInfinity, int destHand) {
+					this.startHand = startHand;
+					this.height = height;
+					this.isInfinity = isInfinity;
 					this.destHand = destHand;
 				}
 
 				public Toss(int startHand) {
 					this.height = 0;
+					this.isInfinity = false;
 					this.startHand = startHand;
 					this.destHand = startHand;
 				}
 
 				public int height() {
 					return height;
+				}
+
+				public boolean isInfinity() {
+					return isInfinity;
 				}
 
 				public int startHand() {
@@ -405,16 +417,29 @@ public class Siteswap {
 				}
 
 				private Toss starToss(int newHandIndex) {
-					return new Toss(newHandIndex, height, (destHand + 1) % 2);
+					return new Toss(newHandIndex, height, isInfinity, (destHand + 1) % 2);
 				}
 
 				private Toss deepCopy() {
-					return new Toss(startHand, height, destHand);
+					return new Toss(startHand, height, isInfinity, destHand);
 				}
 
 				public String toString() {
 					List<Integer> listToss = new ArrayList<Integer>();
-					listToss.add(height);
+					if(!isInfinity) {
+						listToss.add(height);
+					} else {
+						if(height < 0) {
+							//negative infinity
+							listToss.add("-&");
+						} else if(height > 0) {
+							//positive infinity
+							listToss.add("&");
+						} else {
+							//don't know how this would happen
+							listToss.add("0");
+						}
+					}
 					listToss.add(destHand);
 					return listToss.toString();
 				}
