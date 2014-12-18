@@ -2,7 +2,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class Parser {
-	private static final String validAsyncSiteswapString = "(((\\d|[a-w]|X|[yz])x?)|\\[((\\d|[a-w]|X|[yz])x?)+\\])+";
+	private static final String validAsyncSiteswapString = "(((\\d|[a-w]|X|[yz]))|\\[((\\d|[a-w]|X|[yz]))+\\])+";
 	private static final String validSynchronousSiteswapString = "((\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)!?)+\\*?)";
 	private static final String validMixedNotationTwoHandedSiteswapString = "((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)|\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)!?)+";
 
@@ -18,10 +18,13 @@ public class Parser {
 		}
 	}
 
-	public static Siteswap parse(String s) {
+	public static Siteswap parse(String s, boolean asSimpleAsPossible) {
 		switch(getNotationType(s)) {
 			case "async":
-				return parseAsync(s);
+				if(asSimpleAsPossible) {
+					return parseAsyncAsOneHanded(s);
+				}
+				return parseAsyncAsTwoHanded(s);
 			case "sync":
 				return parseSync(s);
 			case "mixed":
@@ -31,26 +34,6 @@ public class Parser {
 				System.exit(1);
 				return null;
 		}	
-	}
-
-	public static Siteswap parseAs(String s, int numHands) {
-		if(numHands == 1) {
-			return parseAsyncAsOneHanded(s);
-		} else if(numHands == 2) {
-			return parseAsyncAsTwoHanded(s);
-		} else {
-			System.err.println("parseAs() doesn't know what to do here...");
-			System.exit(1);
-		}
-	}
-
-	public static Siteswap parseAsync(String s) {
-		//see if s can be parsed as a one-handed siteswap (it will make things much simpler)
-		if(Pattern.matches("(((\\d|[a-w]|X|[yz]))|\\[((\\d|[a-w]|X|[yz]))+\\])+", s)) {
-			return parseAsyncAsOneHanded(s);
-		} else {
-			return parseAsyncAsTwoHanded(s);
-		}
 	}
 
 	public static Siteswap parseAsyncAsOneHanded(String s) {
@@ -92,6 +75,7 @@ public class Parser {
 
 	public static Siteswap parseAsyncAsTwoHanded(String s) {
 		//double string length if it's odd (so e.g. "3" will become (3,0)!(0,3)!) 
+			state: [100, 10100]
 		if(s.length() % 2 == 1) {
 			s += s;
 		}
@@ -107,7 +91,6 @@ public class Parser {
 			//update current hand
 			curHand = b % 2;
 			//System.out.println(curToken);
-			System.out.println(out.getLastBeat());
 			switch(curToken) {
 				//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
 				case "[":
@@ -209,7 +192,6 @@ public class Parser {
 			}
 			i++;
 		}
-
 		return out;
 	}
 
@@ -386,7 +368,7 @@ public class Parser {
 
 	public static void main(String[] args) {
 		if(args.length == 1) {
-			Siteswap ss = parse(args[0]);
+			Siteswap ss = parse(args[0], true);
 			System.out.println(ss);
 			String s = deParse(ss);
 			System.out.println(s);

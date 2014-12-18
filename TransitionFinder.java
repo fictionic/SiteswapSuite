@@ -93,7 +93,7 @@ public class TransitionFinder {
 										out.addToss(b, h, height, destHand);
 										st1.throwBall(h, height, destHand);
 										printf("\t\t\t\tfound destination!");
-										printf("add toss: from hand " + h + ", beat " + b + "; to hand " + destHand + ", beat " + height);
+										printf("add toss: from hand " + h + "; to hand " + destHand + ", beat " + height);
 										printf("st1: " + st1);
 										printf("st2: " + st2);
 										printf("ss: " + out);
@@ -137,6 +137,7 @@ public class TransitionFinder {
 	}
 
 	private static List<Siteswap> getOrbits(Siteswap ss) {
+		//to do eventually...
 		return null;
 	}
 
@@ -154,20 +155,40 @@ public class TransitionFinder {
 
 	public static void main(String[] args) {
 		if(args.length == 1) {
-			Siteswap ss = Parser.parse(args[0]);
+			Siteswap ss = Parser.parse(args[0], true);
 			System.out.println("parsed: " + ss);
 			System.out.println("de-parsed: " + Parser.deParse(ss));
 			System.out.println("number of balls: " + ss.numBalls());
 			System.out.println("valid: " + ss.isValid());
 			if(ss.isValid()) {
+				System.out.println("period: " + ss.period());
 				System.out.println("state: " + getState(ss));
 			}
 		} else if(args.length == 2) {
-			Siteswap ss1 = Parser.parse(args[0]);
-			Siteswap ss2 = Parser.parse(args[1]);
+			String type1 = Parser.getNotationType(args[0]);
+			String type2 = Parser.getNotationType(args[1]);
+			Siteswap ss1;
+			Siteswap ss2;
+			//TO DO: HAVE OPTION FOR WHICH HAND TO START ASYNC PATTERN WITH
+			if(type1.equals("async") && type2.equals("async")) {
+				//then treat them both as one-handed siteswaps
+				ss1 = Parser.parse(args[0], true);
+				ss2 = Parser.parse(args[1], true);
+			} else {
+				//then treat them both as two-handed siteswaps, starting by default with the left hand
+				//(TO DO: 3+-handed patterns??)
+				ss1 = Parser.parse(args[0], false);
+				ss2 = Parser.parse(args[1], false);
+			}
+			//NEED TO FIGURE OUT A WAY TO DETERMINE HOW MANY HANDS A PATTERN CAN HAVE BASED ON ITS STRING
 			if(ss1.numBalls() == ss2.numBalls()) {
 				System.out.println("transition from " + args[0] + " to " + args[1] + ":");
-				System.out.println(Parser.deParse(getTransition(ss1, ss2)));
+				String transition = Parser.deParse(getTransition(ss1, ss2));
+				if(transition.equals("")) {
+					System.out.println("(no transition necessary)");
+				} else {
+					System.out.println(transition);
+				}
 			} else {
 				System.out.println("need to have same number of balls (for now)...");
 				System.exit(1);

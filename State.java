@@ -325,9 +325,15 @@ public class State {
 			HandStateNode node2 = otherHandState.nowNode;
 			//check to make sure all nodes up to this.length are equal to corresponding other nodes
 			while(node1 != null) {
+				//make sure node2 is also not null
+				if(node2 == null) {
+					return false;
+				}
+				//make sure their values are the same
 				if(!node1.value.equals(node2.value)) {
 					return false;
 				}
+				//check the next pair of nodes
 				node1 = node1.prevNode;
 				node2 = node2.prevNode;
 			}
@@ -380,13 +386,11 @@ public class State {
 		//testing
 		State state;
 		if(args.length == 1) {
-			state = new State(Parser.parse(args[0]));
-			System.out.println(state);
-			state.padWithOneZero();
+			state = new State(Parser.parse(args[0], true));
 			System.out.println(state);
 		}
 		
-
+		/*
 		State state1 = new State(Parser.parse("3"));
 		State state2 = new State(Parser.parse("441"));
 		debug = true;
@@ -441,5 +445,6 @@ public class State {
 		state.decrementValue(0, 4);
 		printf("decremented value in hand 0 at beat 4");
 		printf(state);
+		*/
 	}
 }
