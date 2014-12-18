@@ -2,9 +2,20 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class Parser {
-	private static final String validAsyncSiteswapString = "(((\\d|[a-w]|X|[yz]))|\\[((\\d|[a-w]|X|[yz]))+\\])+";
-	private static final String validSynchronousSiteswapString = "((\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)!?)+\\*?)";
-	private static final String validMixedNotationTwoHandedSiteswapString = "((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)|\\((\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?),(\\[((\\d|[a-w]|X|[yz])x?)+\\]|(\\d|[a-w]|X|[yz])x?)\\)!?)+";
+	/*
+	   siteswap regex patterns:
+	   toss = "(-?(\\d|[a-w]|X|[yz]|&)x?)"
+	   hand = "(toss|\[toss+\])+"
+	   asyncSiteswap = "hand+"
+	   syncBeat = "\(hand,hand\)!?"
+	   syncSiteswap = "(beat+)\\*?"
+	   mixedSiteswap = "(toss|beat)+"
+	   */
+	private static final String validAsyncSiteswapString = "((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\])+";
+	private static final String validSynchronousSiteswapString = "(\\(((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\]),((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\])\\)!?)+\\*?";
+	private static final String validMixedNotationTwoHandedSiteswapString = "(((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\])|(\\(((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\]),((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\])\\)!?))+";
+	//no star notation on mixed, because it would be ambiguous as to whether the whole pattern is starred or just the most recent sync part
+	private static final String validMultipleJugglerSiteswapString = ""; //later...
 
 	public static String getNotationType(String s) {
 		if(Pattern.matches(validAsyncSiteswapString, s)) {
@@ -75,7 +86,6 @@ public class Parser {
 
 	public static Siteswap parseAsyncAsTwoHanded(String s) {
 		//double string length if it's odd (so e.g. "3" will become (3,0)!(0,3)!) 
-			state: [100, 10100]
 		if(s.length() % 2 == 1) {
 			s += s;
 		}
