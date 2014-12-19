@@ -6,7 +6,7 @@ public class State {
 	private int numBalls;
 
 	//FOR DEBUGGING
-	public static boolean debug = true;
+	public static boolean debug = false;
 	public static void printf(Object input) {
 		if(debug) {
 			try {
@@ -29,6 +29,7 @@ public class State {
 		//emulate juggling the pattern, adding balls to hands at beats when needed
 		//turn all of ss's negative tosses into antitosses
 		ss.antiTossify();
+		int debugCounter = 0;
 		do {
 			for(int b=0; b<ss.period(); b++) {
 				printf("state: " + hands);
@@ -36,7 +37,6 @@ public class State {
 				//loop through hands
 				for(int h=0; h<ss.numHands(); h++) {
 					printf("\tcurHand: " + h);
-					boolean isAntiToss = false;
 					//account for + throw each ball in this hand at this beat
 					for(Siteswap.Beat.Hand.Toss curToss : ss.getBeat(b).getHand(h).tosses) {
 						printf("\t\tcurToss: " + curToss);
@@ -49,16 +49,15 @@ public class State {
 									numBalls--;
 									printf("\t\t\taccounted for antiball");
 									printf("\t\t\tstate: " + hands);
-									isAntiToss = true;
 								} else {
 									incrementValue(h);
 									numBalls++;
 									printf("\t\t\taccounted for ball");
 									printf("\t\t\tstate: " + hands);
-									isAntiToss = false;
 								}
 							} else {
-								//see if state was opposite sign of curToss (don't know if this is possible for valid siteswaps)
+								//see if state was opposite sign of curToss
+								//(don't know if this is possible for valid siteswaps)
 								if(curToss.isAntiToss()) {
 									if(getValueAtHand(h) > 0) {
 										System.out.println("state has opposite sign as curToss...");
@@ -71,11 +70,31 @@ public class State {
 									}
 								}
 							}
-							throwBall(h, curToss.height(), curToss.destHand(), curToss.isAntiToss());
+							throwBall(h, curToss.height(), curToss.isInfinite(), curToss.destHand(), curToss.isAntiToss());
+							//adjust changes to numBalls as a result of infinite-valued tosses
+							printf("old numBalls: " + numBalls);
+							if(curToss.isInfinite()) {
+								if(curToss.isAntiToss()) {
+									numBalls++;
+
+								} else {
+									numBalls--;
+								}
+							}
+							printf("new numBalls: " + numBalls);
+							//print helpful stuff
 							if(curToss.isAntiToss()) {
-								printf("\t\t\tthrew antiball");
+								if(curToss.isInfinite()) {
+									printf("\t\t\tthrew antiball with height infinity");
+								} else {
+									printf("\t\t\tthrew antiball with height " + curToss.height());
+								}
 							} else {
-								printf("\t\t\tthrew ball ");
+								if(curToss.isInfinite()) {
+									printf("\t\t\tthrew ball with height infinity");
+								} else {
+									printf("\t\t\tthrew ball with height " + curToss.height());
+								}
 							}
 							printf("\t\t\tstate: " + hands);
 						} else {
@@ -96,7 +115,11 @@ public class State {
 				printf("\tstate: " + hands);
 			}
 			printf("balls accounted for: " + numBalls);
-			//FIX WEIRD ENDLESS LOOP PROBLEM
+			printf("ss.numBalls(): " + goalNumBalls);
+			debugCounter++;
+			if(debugCounter > 2) {
+				System.exit(1);
+			}
 		} while(numBalls != goalNumBalls);
 	}
 
@@ -220,8 +243,8 @@ public class State {
 		}
 	}
 
-	public void throwBall(int fromHand, int height, int destHand, boolean isAntiToss) {
-		hands.get(fromHand).throwBall(height, destHand, isAntiToss);
+	public void throwBall(int fromHand, int height, boolean isInfinite, int destHand, boolean isAntiToss) {
+		hands.get(fromHand).throwBall(height, isInfinite, destHand, isAntiToss);
 	}
 
 	//protected cuz it's used by TransitionFinder.java
@@ -322,13 +345,17 @@ public class State {
 			length++;
 		}
 
-		private void throwBall(int height, int destHand, boolean isAntiToss) {
-			//if it's a regular toss, decrement the current value (since the ball leaves the current hand)
+		private void throwBall(int height, boolean isInfinite, int destHand, boolean isAntiToss) {
+			//if it's a regular (non-anti) toss, decrement the current value (since the ball leaves the current hand)
 			//otherwise, increment the current value (since the antiball leaves the current hand)
+			//(this goes for finite and infinite tosses)
 			alterValueByOne(0, isAntiToss);
-			//alter the value where the ball gets thrown to by one, again depending on whether or not it's a ball or an antiball
-			//(ball --> increment; antiball --> decrement)
-			hands.get(destHand).alterValueByOne(height, !isAntiToss);
+			//then put the ball/antiball at its destination height, but only if it isn't infinite
+			if(!isInfinite) {
+				//alter the value where the ball gets thrown to by one, again depending on whether or not it's a ball or an antiball
+				//(ball --> increment; antiball --> decrement)
+				hands.get(destHand).alterValueByOne(height, !isAntiToss);
+			}
 		}
 
 		private void advanceTime() {

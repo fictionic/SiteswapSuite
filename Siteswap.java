@@ -1,5 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Siteswap {
 	private int numHands;
@@ -36,10 +38,18 @@ public class Siteswap {
 
 	public double numBalls() {
 		int total = 0;
+		int numInfinities = 0;
 		for(Beat b : beats) {
-			total += b.totalBeatValue();
+			total += b.totalFiniteBeatValue();
+			numInfinities += b.numInfiniteTosses();
 		}
-		return (double)total/(double)beats.size();
+		if(numInfinities > 0) {
+			return Double.POSITIVE_INFINITY;
+		} else if(numInfinities < 0) {
+			return Double.NEGATIVE_INFINITY;
+		} else {
+			return (double)total/(double)beats.size();
+		}
 	}
 
 	public int period() {
@@ -114,13 +124,13 @@ public class Siteswap {
 
 	//EVENTUALLY GET RID OF THIS METHOD, MAKE NEW BEATS ALWAYS BE ZERO BEATS, AND REMOVE THE ZERO TOSSES WHEN ADDING NONZERO TOSSES
 	public Beat addEmptyBeat() {
-		Beat emptyBeat = new Beat();
+		Beat emptyBeat = new Beat(period());
 		beats.add(emptyBeat);
 		return emptyBeat;
 	}
 
 	public void addZeroBeat() {
-		Beat zeroBeat = new Beat();
+		Beat zeroBeat = new Beat(period());
 		for(int h=0; h<zeroBeat.numHands(); h++) {
 			zeroBeat.getHand(h).addToss();
 		}
@@ -174,18 +184,25 @@ public class Siteswap {
 				curHand = getBeat(b).getHand(h);
 				for(int t=0; t<curHand.numTosses(); t++) {
 					curToss = curHand.getToss(t);
+					//check if its height is negative
 					if(curToss.height() < 0) {
-						//shift curtoss back in time by its height value
-						//first remove it from where it was
-						curHand.removeToss(t);
-						//then make it an antitoss (make its height positive, set antitoss flag)
+						//first make it an antitoss (make its height positive, set antitoss flag)
 						curToss.makeAntiToss();
-						//then add it where it needs to go
-						int destBeat = (b - curToss.height()) % period();
-						if(destBeat < 0) {
-							destBeat += period();
+						//then shift the toss back in time through the siteswap according to its height
+						//...as long as it isn't infinite
+						//(if it is, then we certainly can't shift it back)
+						//(we just leave it where it is, it works out with getState in the end, don't worry)
+						if(!curToss.isInfinite()) {
+							//shift curtoss back in time by its height value
+							//first remove it from where it was
+							curHand.removeToss(t);
+							//then add it where it needs to go
+							int destBeat = (b - curToss.height()) % period();
+							if(destBeat < 0) {
+								destBeat += period();
+							}
+							getBeat(destBeat).getHand(h).addToss(curToss);
 						}
-						getBeat(destBeat).getHand(h).addToss(curToss);
 					}
 				}
 			}
@@ -212,7 +229,7 @@ public class Siteswap {
 		int oldPeriod = period();
 		//add flipped versions of old beats to end of pattern
 		for(int b=0; b<oldPeriod; b++) {
-			addBeat(getBeat(b).starBeat());
+			addBeat(getBeat(b).starBeat(b+oldPeriod));
 		}
 	}
 
@@ -227,24 +244,35 @@ public class Siteswap {
 
 	protected class Beat {
 		private List<Hand> hands;
+		private int beatIndex;
 
-		private Beat() {
+		private Beat(int beatIndex) {
 			hands = new ArrayList<Hand>();
+			this.beatIndex = beatIndex;
 			for(int i=0; i<numHands; i++) {
-				hands.add(new Hand(i));
+				hands.add(new Hand(i, beatIndex));
 			}
 		}
 
-		private Beat(List<Hand> handList) {
+		private Beat(List<Hand> handList, int beatIndex) {
 			hands = handList;
+			this.beatIndex = beatIndex;
 		}
 
-		public int totalBeatValue() {
+		public int totalFiniteBeatValue() {
 			int total = 0;
 			for(Hand s : hands) {
-				total += s.totalHandValue();
+				total += s.totalFiniteHandValue();
 			}
 			return total;
+		}
+
+		public int numInfiniteTosses() {
+			int num = 0;
+			for(Hand s : hands) {
+				num += s.numInfiniteTosses();
+			}
+			return num;
 		}
 
 		public int numHands() {
@@ -264,18 +292,18 @@ public class Siteswap {
 			return hands.get(index);
 		}
 
-		private Beat starBeat() {
+		private Beat starBeat(int newBeatIndex) {
 			if(numHands != 2) {
 				//this should never happen, b/c the parent method checks for it...
 				return this;
 			}
 			//since there is no addHand() method (because that wouldn't make sense in any situation where you aren't just creating a new beat)
-			Beat newBeat = new Beat();
+			Beat newBeat = new Beat(newBeatIndex);
 			List<Hand> newHandList = new ArrayList<Hand>();
 			//add old right hand as new left hand, and vice-versa
-			newHandList.add(hands.get(1).starHand());
-			newHandList.add(hands.get(0).starHand());
-			return new Beat(newHandList);
+			newHandList.add(hands.get(1).starHand(newBeatIndex));
+			newHandList.add(hands.get(0).starHand(newBeatIndex));
+			return new Beat(newHandList, newBeatIndex);
 		}
 
 		private Beat deepCopy() {
@@ -284,7 +312,7 @@ public class Siteswap {
 			for(int h=0; h<hands.size(); h++) {
 				newHands.add(hands.get(h).deepCopy());
 			}
-			return new Beat(newHands);
+			return new Beat(newHands, beatIndex);
 		}
 
 		public String toString() {
@@ -294,29 +322,92 @@ public class Siteswap {
 		protected class Hand {
 			protected List<Toss> tosses;
 			protected int handIndex;
+			private int beatIndex;
 			private boolean isEmpty;
 			private int inDegree;
 
-			public Hand(int handIndex) {
+			public Hand(int handIndex, int beatIndex) {
 				this.tosses = new ArrayList<Toss>();
 				this.handIndex = handIndex;
+				this.beatIndex = beatIndex;
 				this.isEmpty = true;
 				this.inDegree = 0;
 			}
 
-			private Hand(List<Toss> newTosses, int newHandIndex, boolean newIsEmpty) {
+			private Hand(List<Toss> newTosses, int newHandIndex, int newBeatIndex, boolean newIsEmpty) {
 				this.tosses = newTosses;
 				this.handIndex = newHandIndex;
+				this.beatIndex = newBeatIndex;
 				this.isEmpty = newIsEmpty;
 				this.inDegree = 0;
 			}
 
-			public int totalHandValue() {
+			public int totalFiniteHandValue() {
 				int total = 0;
+				Set<Toss> doneTosses = new HashSet<Toss>(); //this is for a weird thing described below
 				for(Toss t : tosses) {
-					total += t.height;
+					if(!t.isInfinite()) {
+						total += t.height;
+					} else {
+						/*this is a weird thing I realized.
+						  in order to get the correct answer for numBalls,
+						  you have to convert each positive-/negative-infinite-valued
+						  toss pair to a finite-valued toss.
+						  e.g. 1 & 0 [-& 1] becomes
+						         \____/^    >> height = 2
+						       1 2 0 1
+						       so its numballs can be correctly calculated as
+						       (1+2+0+1)/(1+1+1+1) = 4/4 = 1
+						       (the number of balls needed at the beginning of the pattern)
+						 */
+						//so for this toss (t), whose value is &, we need to find
+						//a toss whose value is -&
+						//and we need to keep track of which infinite-valued tosses
+						//we've already taken care of (so that's what doneTosses is for)
+						//first we need to check that we haven't already taken care of this toss
+						if(doneTosses.contains(t)) {
+							continue;
+						}
+						//if not, then loop through beats to find a sister-toss
+						for(int b=beatIndex; b<beatIndex + period(); b++) {
+							int curBeatIndex = b % period();
+							//check if current beat has a toss of value -&
+							//so loop through hands
+							for(int h=0; h<numHands(); h++) {
+								//and loop through tosses
+								for(int tossIndex=0; tossIndex<getBeat(curBeatIndex).getHand(h).numTosses(); tossIndex++) {
+									//check if current toss has value -&
+									Toss curToss = getBeat(curBeatIndex).getHand(h).getToss(tossIndex);
+									if(curToss.isInfinite() && curToss.height < 0) {
+										//then treat this as the &-throw we started with
+										//being caught in this beat
+										//thus it has height = b - beatIndex
+										total += b - beatIndex;
+										//and we can add both it and the original &-toss
+										//to the done set
+										doneTosses.add(curToss);
+										doneTosses.add(t);
+									}
+								}
+							}
+						}
+					}
 				}
 				return total;
+			}
+
+			public int numInfiniteTosses() {
+				int num = 0;
+				for(Toss t : tosses) {
+					if(t.isInfinite()) {
+						if(t.height() < 0) {
+							num--;
+						} else if(t.height() > 0) {
+							num++;
+						}
+					}
+				}
+				return num;
 			}
 
 			public int normalizedNumTosses() {
@@ -379,10 +470,10 @@ public class Siteswap {
 				hasInDegree = false;
 			}
 
-			private Hand starHand() {
+			private Hand starHand(int newBeatIndex) {
 				//flip hand index
 				int newHandIndex = (handIndex + 1) % 2;
-				Hand newHand = new Hand(newHandIndex);
+				Hand newHand = new Hand(newHandIndex, newBeatIndex);
 				//add a copy of all tosses within this hand with altered startHand and destHand values
 				for(Toss t : tosses) {
 					newHand.addToss(t.starToss(newHandIndex));
@@ -422,7 +513,7 @@ public class Siteswap {
 				for(int t=0; t<tosses.size(); t++) {
 					newTosses.add(tosses.get(t).deepCopy());
 				}
-				return new Hand(newTosses, handIndex, isEmpty);
+				return new Hand(newTosses, handIndex, beatIndex, isEmpty);
 			}
 
 			public String toString() {
