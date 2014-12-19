@@ -67,6 +67,9 @@ public class Siteswap {
 					height = getBeat(b).getHand(h).getToss(t).height;
 					destHand = getBeat(b).getHand(h).getToss(t).destHand;
 					toBeat = (b + height) % period();
+					if(toBeat < 0) {
+						toBeat += period();
+					}
 					getBeat(toBeat).getHand(destHand).inDegree++;
 				}
 			}
@@ -125,13 +128,17 @@ public class Siteswap {
 	}
 
 	//adds a new toss from the given hand at the given beat to the given desthand with the given height
-	public boolean addToss(int atBeat, int atHand, int tossHeight, int destHand) {
+	public boolean addToss(int atBeat, int atHand, int tossHeight, boolean isInfinite, int destHand) {
 		if(atBeat >= period() || atHand > numHands || destHand > numHands) {
 			return false;
 		} else {
-			getBeat(atBeat).getHand(atHand).addToss(tossHeight, destHand);
+			getBeat(atBeat).getHand(atHand).addToss(tossHeight, isInfinite, destHand);
 			return true;
 		}
+	}
+
+	public boolean addToss(int atBeat, int atHand, int tossHeight, int destHand) {
+		return addToss(atBeat, atHand, tossHeight, false, destHand);
 	}
 
 	public Beat getBeat(int index) {
@@ -146,13 +153,43 @@ public class Siteswap {
 		}
 	}
 
-	public Siteswap getSubPattern(int startBeat, int endBeat) {
+	public Siteswap deepCopy() {
+		return getCopyOfSubPattern(0, period());
+	}
+
+	public Siteswap getCopyOfSubPattern(int startBeat, int endBeat) {
 		//get deep copy of each beat within specified indices
 		List<Beat> newBeats = new ArrayList<Beat>();
 		for(int b=startBeat; b<=endBeat; b++) {
 			newBeats.add(beats.get(b).deepCopy());	
 		}
 		return new Siteswap(newBeats, numHands, type);
+	}
+
+	public void antiTossify() {
+		Beat.Hand curHand;
+		Beat.Hand.Toss curToss;
+		for(int b=0; b<period(); b++) {
+			for(int h=0; h<numHands(); h++) {
+				curHand = getBeat(b).getHand(h);
+				for(int t=0; t<curHand.numTosses(); t++) {
+					curToss = curHand.getToss(t);
+					if(curToss.height() < 0) {
+						//shift curtoss back in time by its height value
+						//first remove it from where it was
+						curHand.removeToss(t);
+						//then make it an antitoss (make its height positive, set antitoss flag)
+						curToss.makeAntiToss();
+						//then add it where it needs to go
+						int destBeat = (b - curToss.height()) % period();
+						if(destBeat < 0) {
+							destBeat += period();
+						}
+						getBeat(destBeat).getHand(h).addToss(curToss);
+					}
+				}
+			}
+		}
 	}
 
 	public void annexPattern(Siteswap toAnnex) {
@@ -168,6 +205,7 @@ public class Siteswap {
 	public void addStar() {
 		//this operation only makes sense on two-handed siteswaps
 		if(numHands != 2) {
+			System.out.println("star notation only makes sense for two-handed patterns");
 			return;
 		}
 		//save old period
@@ -228,7 +266,7 @@ public class Siteswap {
 
 		private Beat starBeat() {
 			if(numHands != 2) {
-				//this should never happen, b/c the parent method returns void...
+				//this should never happen, b/c the parent method checks for it...
 				return this;
 			}
 			//since there is no addHand() method (because that wouldn't make sense in any situation where you aren't just creating a new beat)
@@ -280,21 +318,63 @@ public class Siteswap {
 				}
 				return total;
 			}
+
+			public int normalizedNumTosses() {
+				//makes antitosses count negatively towards toss total
+				int out = 0;
+				for(Toss t : tosses) {
+					if(t.isAntiToss()) {
+						out--;
+					} else {
+						out++;
+					}
+				}
+				return out;
+			}
+
 			public void addToss(int height, int destHand) {
-				tosses.add(new Toss(handIndex, height, destHand));	
+				addToss(height, false, destHand);
+			}
+
+			public void addToss(int height, boolean isInfinite, int destHand) {
+				//prevent redundant zero tosses
+				if(tosses.size() == 1 && tosses.get(0).isZeroToss()) {
+					removeToss(0, true);
+				}
+				tosses.add(new Toss(handIndex, height, isInfinite, destHand));	
 				isEmpty = false;
 				hasInDegree = false;
 			}
 
 			public void addToss() {
+				//prevent redundant zero tosses
+				if(tosses.size() == 1 && tosses.get(0).isZeroToss()) {
+					removeToss(0, true);
+				}
 				tosses.add(new Toss(handIndex));
 				hasInDegree = false;
 			}
 
 			private void addToss(Toss newToss) {
+				//prevent redundant zero tosses
+				if(tosses.size() == 1 && isZeroHand()) {
+					removeToss(0, true);
+				}
 				tosses.add(newToss);
 				if(newToss.height != 0) {
 					isEmpty = false;
+				}
+				hasInDegree = false;
+			}
+
+			private void removeToss(int tossIndex) {
+				removeToss(tossIndex, false);
+			}
+
+			private void removeToss(int tossIndex, boolean dontAddZeroToss) {
+				tosses.remove(tossIndex);
+				if(!dontAddZeroToss && tosses.size() == 0) {
+					addToss();
 				}
 				hasInDegree = false;
 			}
@@ -322,16 +402,6 @@ public class Siteswap {
 					return false;
 				}
 				return true;
-			}
-
-			public int numNonZeroTosses() {
-				int out = 0;
-				for(Toss t : tosses) {
-					if(!t.isZeroToss()) {
-						out++;
-					}
-				}
-				return out;
 			}
 
 			public boolean isEmpty() {
@@ -362,26 +432,27 @@ public class Siteswap {
 			protected class Toss {
 				private int startHand;
 				private int height;
-				private boolean isInfinity;
 				private int destHand;
+				private boolean isInfinite;
+				private boolean isAntiToss = false; //this is only changed by getTransition
 
 				public Toss(int startHand, int height, int destHand) {
 					this.startHand = startHand;
 					this.height = height;
-					this.isInfinity = false;
+					this.isInfinite = false;
 					this.destHand = destHand;
 				}
 
-				public Toss(int startHand, int height, boolean isInfinity, int destHand) {
+				public Toss(int startHand, int height, boolean isInfinite, int destHand) {
 					this.startHand = startHand;
 					this.height = height;
-					this.isInfinity = isInfinity;
+					this.isInfinite = isInfinite;
 					this.destHand = destHand;
 				}
 
 				public Toss(int startHand) {
 					this.height = 0;
-					this.isInfinity = false;
+					this.isInfinite = false;
 					this.startHand = startHand;
 					this.destHand = startHand;
 				}
@@ -390,8 +461,17 @@ public class Siteswap {
 					return height;
 				}
 
-				public boolean isInfinity() {
-					return isInfinity;
+				public boolean isInfinite() {
+					return isInfinite;
+				}
+
+				public boolean isAntiToss() {
+					return isAntiToss;
+				}
+
+				private void makeAntiToss() {
+					height = Math.abs(height);
+					isAntiToss = true;
 				}
 
 				public int startHand() {
@@ -417,34 +497,50 @@ public class Siteswap {
 				}
 
 				private Toss starToss(int newHandIndex) {
-					return new Toss(newHandIndex, height, isInfinity, (destHand + 1) % 2);
+					return new Toss(newHandIndex, height, isInfinite, (destHand + 1) % 2);
 				}
 
 				private Toss deepCopy() {
-					return new Toss(startHand, height, isInfinity, destHand);
+					return new Toss(startHand, height, isInfinite, destHand);
 				}
 
 				public String toString() {
-					List<Integer> listToss = new ArrayList<Integer>();
-					if(!isInfinity) {
-						listToss.add(height);
+					List<String> listToss = new ArrayList<String>();
+					String heightString = "";
+					if(isAntiToss) {
+						heightString = "_";
+					}
+					if(!isInfinite) {
+						heightString += ((Integer)height).toString();
 					} else {
 						if(height < 0) {
 							//negative infinity
-							listToss.add("-&");
+							heightString += "-&";
 						} else if(height > 0) {
 							//positive infinity
-							listToss.add("&");
+							heightString += "&";
 						} else {
 							//don't know how this would happen
-							listToss.add("0");
+							heightString += "0";
 						}
 					}
-					listToss.add(destHand);
+					listToss.add(heightString);
+					listToss.add(((Integer)destHand).toString());
 					return listToss.toString();
 				}
 			}
 		}
+	}
+
+	public static void main(String[] args) {
+		if(args.length == 1) {
+			Siteswap ss = Parser.parse(args[0]);
+			System.out.println(Parser.deParse(ss));
+			System.out.println("antiTossified:");
+			ss.antiTossify();
+			System.out.println(Parser.deParse(ss));
+		}
+
 	}
 
 }
