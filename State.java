@@ -3,9 +3,10 @@ import java.util.ArrayList;
 
 public class State {
 	private List<HandState> hands;
+	private int numBalls;
 
 	//FOR DEBUGGING
-	public static boolean debug = false;
+	public static boolean debug = true;
 	public static void printf(Object input) {
 		if(debug) {
 			try {
@@ -19,44 +20,84 @@ public class State {
 	public State(Siteswap ss) {
 		//initialize instance variable
 		hands = new ArrayList<HandState>();
+		numBalls = 0;
+		int goalNumBalls = ((Double)ss.numBalls()).intValue();
 		//create an empty HandState for each hand in the pattern
 		for(int h=0; h<ss.numHands(); h++) {
 			hands.add(new HandState());
 		}
 		//emulate juggling the pattern, adding balls to hands at beats when needed
-		int ballsAccountedFor = 0;
-		int totalBeats = 0;
-		int b = 0;
+		//turn all of ss's negative tosses into antitosses
+		ss.antiTossify();
 		do {
-			printf("ballsAccountedFor: " + ballsAccountedFor);
-			printf("\tcurBeat: " + b);
-			//loop through hands
-			for(int h=0; h<ss.numHands(); h++) {
-				printf("\t\tcurHand: " + h);
-				//see if there are more (nonzero) throws in this beat in this hand than we currently have balls for; add balls if so
-				while(hands.get(h).valueAt(0) < ss.getBeat(b).getHand(h).numNonZeroTosses()) {
-					incrementValue(h, 0);
-					ballsAccountedFor++;
-					printf("\t\t\taccounted for ball");
-					printf("\t\t\tstate: " + hands);
+			for(int b=0; b<ss.period(); b++) {
+				printf("state: " + hands);
+				printf("curBeat: " + b);
+				//loop through hands
+				for(int h=0; h<ss.numHands(); h++) {
+					printf("\tcurHand: " + h);
+					boolean isAntiToss = false;
+					//account for + throw each ball in this hand at this beat
+					for(Siteswap.Beat.Hand.Toss curToss : ss.getBeat(b).getHand(h).tosses) {
+						printf("\t\tcurToss: " + curToss);
+						//see if we need to do anything with this toss
+						if(curToss.height() != 0) {
+							//see if we need to account for a ball/antiball
+							if(getValueAtHand(h) == 0) {
+								if(curToss.isAntiToss()) {
+									decrementValue(h);
+									numBalls--;
+									printf("\t\t\taccounted for antiball");
+									printf("\t\t\tstate: " + hands);
+									isAntiToss = true;
+								} else {
+									incrementValue(h);
+									numBalls++;
+									printf("\t\t\taccounted for ball");
+									printf("\t\t\tstate: " + hands);
+									isAntiToss = false;
+								}
+							} else {
+								//see if state was opposite sign of curToss (don't know if this is possible for valid siteswaps)
+								if(curToss.isAntiToss()) {
+									if(getValueAtHand(h) > 0) {
+										System.out.println("state has opposite sign as curToss...");
+										System.exit(1);
+									}
+								} else {
+									if(getValueAtHand(h) < 0) {
+										System.out.println("state has opposite sign as curToss...");
+										System.exit(1);
+									}
+								}
+							}
+							throwBall(h, curToss.height(), curToss.destHand(), curToss.isAntiToss());
+							if(curToss.isAntiToss()) {
+								printf("\t\t\tthrew antiball");
+							} else {
+								printf("\t\t\tthrew ball ");
+							}
+							printf("\t\t\tstate: " + hands);
+						} else {
+							if(getValueAtHand(h) != 0) {
+								System.out.println("encountered zero-toss when state was nonzero...");
+								System.exit(1);
+							}
+						}
+					}
+					if(getValueAtHand(h) != 0) {
+						System.out.println("didn't get rid of all balls in hand " + h + " at beat " + b);
+						System.exit(1);
+					}
 				}
-				//now throw all the balls in the hand!
-				for(int t=0; t<ss.getBeat(b).getHand(h).numNonZeroTosses(); t++) {
-					//eventually change Siteswap so we don't need to make instances of those inner classes outside Siteswap.java
-					//or actually maybe not... it is pretty convenient this way
-					Siteswap.Beat.Hand.Toss curToss = ss.getBeat(b).getHand(h).getToss(t);
-					throwBall(h, curToss.height(), curToss.destHand());
-					printf("\t\t\tthrew ball ");
-					printf("\t\t\tstate: " + hands);
-				}
+				//advance time
+				advanceTime();
+				printf("\tadvanced time");
+				printf("\tstate: " + hands);
 			}
-			//advance time
-			advanceTime();
-			printf("\t\tadvanced time");
-			printf("\t\tstate: " + hands);
-			totalBeats++;
-			b = totalBeats % ss.period();
-		} while(b != 0 || ballsAccountedFor < ss.numBalls());
+			printf("balls accounted for: " + numBalls);
+			//FIX WEIRD ENDLESS LOOP PROBLEM
+		} while(numBalls != goalNumBalls);
 	}
 
 	//constructor only for testing
@@ -73,12 +114,20 @@ public class State {
 		return hands.get(0).length;
 	}
 
+	public void incrementValue(int handIndex) {
+		incrementValue(handIndex, 0);
+	}
+
 	public void incrementValue(int handIndex, int beatsFromNow) {
 		try {
 			hands.get(handIndex).incrementValue(beatsFromNow);
 		} catch(ArrayIndexOutOfBoundsException e) {
 			System.out.println("handIndex cannot be greater than numHands");
 		}
+	}
+
+	public void decrementValue(int handIndex) {
+		decrementValue(handIndex, 0);
 	}
 
 	public void decrementValue(int handIndex, int beatsFromNow) {
@@ -171,12 +220,8 @@ public class State {
 		}
 	}
 
-	public void throwBall(int fromHand, int height, int toHand) {
-		/*if(fromHand >= hands.size() || toHand >= hands.size()) {
-			System.out.println("hand index out of bounds in throwBall");
-			System.exit(1);
-		}*/
-		hands.get(fromHand).throwBall(height, toHand);
+	public void throwBall(int fromHand, int height, int destHand, boolean isAntiToss) {
+		hands.get(fromHand).throwBall(height, destHand, isAntiToss);
 	}
 
 	//protected cuz it's used by TransitionFinder.java
@@ -221,6 +266,10 @@ public class State {
 			this.nowNode = new HandStateNode(0, null);
 			this.lastNode = nowNode;
 			this.length = 1;
+		}
+
+		private void increaseNowValueBy(int amount) {
+			nowNode.value += amount;
 		}
 
 		private void incrementValue(int beatsFromNow) {
@@ -273,11 +322,13 @@ public class State {
 			length++;
 		}
 
-		private void throwBall(int height, int destHand) {
-			//decrement the current value (since the ball leaves the current hand)
-			decrementValue(0);
-			//increment the value where the ball gets thrown to
-			hands.get(destHand).incrementValue(height);
+		private void throwBall(int height, int destHand, boolean isAntiToss) {
+			//if it's a regular toss, decrement the current value (since the ball leaves the current hand)
+			//otherwise, increment the current value (since the antiball leaves the current hand)
+			alterValueByOne(0, isAntiToss);
+			//alter the value where the ball gets thrown to by one, again depending on whether or not it's a ball or an antiball
+			//(ball --> increment; antiball --> decrement)
+			hands.get(destHand).alterValueByOne(height, !isAntiToss);
 		}
 
 		private void advanceTime() {
@@ -365,10 +416,6 @@ public class State {
 					value++;
 				} else {
 					value--;
-					if(value < 0) {
-						System.out.println("value was decremented below 0 somehow...");
-						System.exit(1);
-					}
 				}
 			}
 
@@ -389,21 +436,21 @@ public class State {
 			state = new State(Parser.parse(args[0], true));
 			System.out.println(state);
 		}
-		
+
 		/*
-		State state1 = new State(Parser.parse("3"));
-		State state2 = new State(Parser.parse("441"));
-		debug = true;
-		printf("state1: " + state1);
-		printf("state2: " + state2);
-		printf("equals: " + state1.equals(state2));
-		debug = false;
-		state1 = new State(Parser.parse("51"));
-		state2 = new State(Parser.parse("50505"));
-		debug = true;
-		printf("state1: " + state1);
-		printf("state2: " + state2);
-		printf("equals: " + state1.equals(state2));
+		   State state1 = new State(Parser.parse("3"));
+		   State state2 = new State(Parser.parse("441"));
+		   debug = true;
+		   printf("state1: " + state1);
+		   printf("state2: " + state2);
+		   printf("equals: " + state1.equals(state2));
+		   debug = false;
+		   state1 = new State(Parser.parse("51"));
+		   state2 = new State(Parser.parse("50505"));
+		   debug = true;
+		   printf("state1: " + state1);
+		   printf("state2: " + state2);
+		   printf("equals: " + state1.equals(state2));
 		//System.exit(0);
 
 
@@ -445,6 +492,6 @@ public class State {
 		state.decrementValue(0, 4);
 		printf("decremented value in hand 0 at beat 4");
 		printf(state);
-		*/
+		 */
 	}
 }
