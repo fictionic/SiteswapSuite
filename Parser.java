@@ -2,8 +2,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class Parser {
-	/*
-	   siteswap regex patterns:
+	/* siteswap regex patterns:
 	   toss = "(-?(\\d|[a-w]|X|[yz]|&)x?)"
 	   hand = "(toss|\[toss+\])+"
 	   asyncSiteswap = "hand+"
@@ -47,12 +46,18 @@ public class Parser {
 		}	
 	}
 
+	public static Siteswap parse(String s) {
+		return parse(s, true);
+	}
+
 	public static Siteswap parseAsyncAsOneHanded(String s) {
 		Siteswap out = new Siteswap(1, "async");
 		String curToken;
 		int i=0; //index in input string	
 		int b=0; //index (beat) in output siteswap
 		boolean multi = false; //whether or not we're currently in a multiplex throw
+		boolean isNegative = false;
+		boolean isInfinite = false;
 		while(i < s.length()) {
 			curToken = ((Character)s.charAt(i)).toString(); //get string of i-ith character of the input string
 			switch(curToken) {
@@ -65,16 +70,30 @@ public class Parser {
 					multi = false;
 					b++;
 					break;
+				case "-":
+					isNegative = true;
+					break;
 				default:
 					int height = throwHeight(curToken);
+					if(height == -1) {
+						//then height is infinity
+						isInfinite = true;
+						height = 1; //need height to be positive first, its sign is determined by variable "isNegative"
+					} else {
+						isInfinite = false;
+					}
+					if(isNegative) {
+						height = -1 * height;
+						isNegative = false;
+					}
 					if(!multi) {
 						out.addEmptyBeat();
-						out.getLastBeat().getHand(0).addToss(height, 0);
+						out.getLastBeat().getHand(0).addToss(height, isInfinite, 0);
 						b++;
 					} else {
 						//ensure we don't add redundant zero-tosses (i.e. only add if there are no tosses or if the height is nonzero)
 						if(height != 0 || out.getLastBeat().getHand(0).isEmpty()) {
-							out.getLastBeat().getHand(0).addToss(height, 0);
+							out.getLastBeat().getHand(0).addToss(height, isInfinite, 0);
 						}
 					}
 					break;
@@ -96,6 +115,8 @@ public class Parser {
 		int b = 0; //index (beat) in output siteswap
 		int curHand = 0; // which hand's turn it is to throw
 		boolean multi = false; //whether or not we're currently in a multiplex throw
+		boolean isNegative = false;
+		boolean isInfinite = false;
 		while(i < s.length()) {
 			curToken = ((Character)s.charAt(i)).toString();
 			//update current hand
@@ -117,15 +138,30 @@ public class Parser {
 				case "x":
 					out.getLastBeat().getHand((curHand + 1) % 2).getLastToss().flipDestHand();
 					break;
+					//if curToken is "-", the next toss is negative
+				case "-":
+					isNegative = true;
+					break;
 					//if curToken is anything else, it has to be a throw height (since it matched the regex for async pattern)
 				default:
 					int height = throwHeight(curToken);
+					if(height == -1) {
+						//then height is infinity
+						isInfinite = true;
+						height = 1; //need height to be positive first, its sign is determined by variable isNegative
+					} else {
+						isInfinite = false;
+					}
+					if(isNegative) {
+						height = -1 * height;
+						isNegative = false;
+					}
 					int destHand = (curHand + height) % 2; //0=left, 1=right
 					if(!multi) {
 						//create new beat
 						out.addEmptyBeat();
 						//add toss of correct height and destination to current hand
-						out.getLastBeat().getHand(curHand).addToss(height, destHand);
+						out.getLastBeat().getHand(curHand).addToss(height, isInfinite, destHand);
 						//add empty toss to other hand
 						out.getLastBeat().getHand((curHand + 1) % 2).addToss();
 						//increment beat index
@@ -134,7 +170,7 @@ public class Parser {
 						//add toss of correct height and destination to current hand
 						//(only if it isn't a redundant zero-toss
 						if(height != 0 || out.getLastBeat().getHand(curHand).isEmpty()) {
-							out.getLastBeat().getHand(curHand).addToss(height, destHand);
+							out.getLastBeat().getHand(curHand).addToss(height, isInfinite, destHand);
 						}
 					}
 					break;
@@ -152,6 +188,8 @@ public class Parser {
 		int b = 0; //index of beat within output siteswap
 		int curHand = 0;
 		int lastStarredBeat = 0;
+		boolean isInfinite = false;
+		boolean isNegative = false;
 		String curToken;
 
 		while(i < s.length()) {
@@ -190,13 +228,27 @@ public class Parser {
 				case "*":
 					out.addStar();
 					break;
+				case "-":
+					isNegative = true;
+					break;
 				default: //curToken is a throw height
 					int height = throwHeight(curToken);
+					if(height == -1) {
+						//then height is infinity
+						isInfinite = true;
+						height = 1; //need height to be positive first, its sign is determined by variable isNegative
+					} else {
+						isInfinite = false;
+					}
+					if(isNegative) {
+						height = -1 * height;
+						isNegative = false;
+					}
 					int destHand = (curHand + height) % 2;
 					Siteswap.Beat curBeat = out.getLastBeat();
 					//add toss, only if it's not a redundant zero-toss
 					if(height != 0 || curBeat.getHand(curHand).isEmpty()) {
-						curBeat.getHand(curHand).addToss(height, destHand);
+						curBeat.getHand(curHand).addToss(height, isInfinite, destHand);
 					}
 					break;
 			}
@@ -217,24 +269,31 @@ public class Parser {
 			return Integer.parseInt(h);
 		} else if(Pattern.matches("([a-w]|[yz])", h)) {
 			return (int)(h.toCharArray()[0]) - 87;
-		} else { //if h is "X"
+		} else if(h.equals("X")) { //if h is "X"
 			return 33;
+		} else {
+			return -1; //sentinel value, indicates that the height is infinite
 		}
 	}
 
 	private static String reverseThrowHeight(Integer h) {
-		if(h <= 9) {
-			return h.toString();
-		} else if((10 <= h) && (h <= 36) && h != 33) {
-			return (Character.toChars(h - 10 + 97)).toString();
-		} else if(h == 33) {
-			return "X";
-		} else {
-			return "";
+		String toReturn = "";
+		if(h < 0) {
+			toReturn = "-";
 		}
+		h = Math.abs(h);
+		if(h <= 9) {
+			toReturn += h.toString();
+		} else if((10 <= h) && (h <= 36) && h != 33) {
+			toReturn += (Character.toChars(h - 10 + 97)).toString();
+		} else if(h == 33) {
+			toReturn += "X";
+		} else {
+			toReturn += "";
+		}
+		return toReturn;
 	}
 
-	//IDEA: make parse() treat async siteswaps as one-handed, and have a method in Siteswap that turns a one-handed ss into a two-handed one
 	public static String deParse(Siteswap ss) {
 		switch(ss.numHands()) {
 			case 1:
@@ -267,7 +326,14 @@ public class Parser {
 				}
 				out += "]";
 			} else {
-				out += reverseThrowHeight(curHand.getToss(0).height());
+				if(curHand.getToss(0).isInfinite()) {
+					if(curHand.getToss(0).height() < 0) {
+						out += "-";
+					}
+					out += "&";
+				} else {
+					out += reverseThrowHeight(curHand.getToss(0).height());
+				}
 			}
 		}
 		return out;
@@ -297,7 +363,7 @@ public class Parser {
 					curToss = curHand.getToss(t);
 					out += reverseThrowHeight(curToss.height());
 					//see if the throw goes where it normally does; add a "x" if not
-					if(curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
+					if(!curToss.isInfinite() && curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
 						out += "x";
 					}
 				}
@@ -306,7 +372,7 @@ public class Parser {
 				curToss = curHand.getLastToss();
 				out += reverseThrowHeight(curToss.height());
 				//see if the throw goes where it normally does; add a "x" if not
-				if(curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
+				if(!curToss.isInfinite() && curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
 					out += "x";
 				}
 			}
@@ -333,7 +399,7 @@ public class Parser {
 					for(int t=0; t<curHand.numTosses(); t++) {
 						Siteswap.Beat.Hand.Toss curToss = curHand.getToss(t);
 						out += reverseThrowHeight(curToss.height());
-						if(curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
+						if(curToss.destHand() != (curToss.startHand() + Math.abs(curToss.height())) % 2) {
 							out += "x";
 						}
 					}
@@ -342,7 +408,7 @@ public class Parser {
 					//account for only toss in hand
 					Siteswap.Beat.Hand.Toss curToss = curHand.getLastToss();
 					out += reverseThrowHeight(curToss.height());
-					if(curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
+					if(curToss.destHand() != (curToss.startHand() + Math.abs(curToss.height())) % 2) {
 						out += "x";
 					}
 				}
@@ -352,7 +418,7 @@ public class Parser {
 				}
 			}
 			out += ")";
-			//check to see if we should add a "!"
+			//check to see if we should add a "!":
 			//first check that we didn't just skip the previous beat, then check that the next beat is a zero beat (i.e. "(0,0)!")
 			if(b + 1 < ss.period() && ss.getBeat(b+1).isZeroBeat()) {
 				//skip this beat
