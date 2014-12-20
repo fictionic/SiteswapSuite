@@ -4,7 +4,7 @@ import java.util.LinkedList;
 public class TransitionFinder {
 
 	//FOR DEBUGGING
-	public static boolean debug = false;
+	public static boolean debug = true;
 	public static void printf(Object input) {
 		if(debug) {
 			System.out.println(input);
@@ -14,6 +14,7 @@ public class TransitionFinder {
 	public static Siteswap getTransition(Siteswap ss1, Siteswap ss2) {
 		//check if there is a possible transition
 		//(later)
+		//(wait, what did I mean by this?... hmm)
 
 		//adjust for the case of one being a one-handed and the other being two-handed
 		//(later)
@@ -45,6 +46,9 @@ public class TransitionFinder {
 		State.matchLengths(st1, st2);
 		printf("lengths matched:");
 		printf("st1: " + st1 + "\nst2: " + st2);
+
+		//determine the difference in the number of balls in the two siteswaps
+		int gapSize = st2.numBalls() - st1.numBalls();
 
 		int b=-1; //index of beat in out
 		int destHand;
@@ -86,14 +90,19 @@ public class TransitionFinder {
 							while(height < st1.length()) {
 								printf("\t\t\t\tcheck beat: " + height);
 								tempState2Value = st2.getValueAtHandAtBeat(destHand, height);
+								printf("st1: " + st1);
+								printf("st2: " + st2);
+
 								if(tempState2Value != null) {
+									printf(st1.getValueAtHandAtBeat(destHand, height));
+									printf(tempState2Value);
 									if(st1.getValueAtHandAtBeat(destHand, height) < tempState2Value) {
 										//we've computed the next toss!
 										//...so add it
 										out.addToss(b, h, height, destHand);
-										st1.throwBall(h, height, destHand);
+										st1.throwBall(h, height, false, destHand, false); //FIX THIS!!! (shouldn't always be false)
 										printf("\t\t\t\tfound destination!");
-										printf("add toss: from hand " + h + "; to hand " + destHand + ", beat " + height);
+										printf("\t\t\tadd toss: at beat " + b + ", from hand " + h + ", to hand " + destHand + ", height = " + height);
 										printf("st1: " + st1);
 										printf("st2: " + st2);
 										printf("ss: " + out);
@@ -193,6 +202,12 @@ public class TransitionFinder {
 				System.out.println("need to have same number of balls (for now)...");
 				System.exit(1);
 			}
+		} else if(args.length == 3) {
+			//for now, assume first parameter is option saying to interpret args[1] and args[2] as states, not siteswaps
+			System.out.println("transition from " + args[1] + " to " + args[2] + ":");
+			State st1 = new State(args[1]);
+			State st2 = new State(args[2]);
+			System.out.println(Parser.deParse(getTransition(st1, st2, st1.numHands(), "sync")));
 		}
 	}
 }

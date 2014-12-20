@@ -1,5 +1,6 @@
 import java.util.List;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 public class State {
 	private List<HandState> hands;
@@ -116,10 +117,12 @@ public class State {
 			}
 			printf("balls accounted for: " + numBalls);
 			printf("ss.numBalls(): " + goalNumBalls);
+			/*
 			debugCounter++;
 			if(debugCounter > 2) {
 				System.exit(1);
 			}
+			*/
 		} while(numBalls != goalNumBalls);
 	}
 
@@ -129,6 +132,36 @@ public class State {
 		for(int i=0; i<numHands; i++) {
 			hands.add(new HandState());	
 		}
+	}
+
+	public State(String stateString) {
+		String validStateString = "(-?(\\d|a-w|X|yz))+|\\[(-?(\\d|a-w|X|yz))+(,(-?(\\d|a-w|X|yz))+)*\\]";
+		if(!Pattern.matches(validStateString, stateString)) {
+			System.out.println("incorrectly formatted state");
+			System.exit(1);
+		}
+		this.hands = new ArrayList<HandState>();
+		//see if it's one-handed
+		if(!stateString.substring(0,1).equals("[")) {
+			hands.add(new HandState(stateString));
+		} else {
+			int i = 1; //index of first character of current handString
+			int j = stateString.indexOf(",",i);
+			while(j != -1) {
+				hands.add(new HandState(stateString.substring(i,j)));
+				//look for the next handString
+				i = j;
+				j = stateString.indexOf(",",j);
+			}
+		}
+	}
+
+	public int numBalls() {
+		return numBalls;
+	}
+
+	public int numHands() {
+		return hands.size();
 	}
 
 	public int length() {
@@ -289,6 +322,33 @@ public class State {
 			this.nowNode = new HandStateNode(0, null);
 			this.lastNode = nowNode;
 			this.length = 1;
+		}
+
+		private HandState(String string) {
+			//get the value of the nowNode from the last character of the string
+			String curToken = ((Character)string.charAt(string.length()-1)).toString();
+			this.nowNode = new HandStateNode(Integer.parseInt(curToken), null);
+			this.length = 1;
+			HandStateNode node = nowNode; //to keep track of which node we've just added, and add nodes off of it
+			//loop backwards through the rest of the string, adding nodes as we go
+			for(int i=string.length()-2; i>=0; i--) {
+				curToken = ((Character)string.charAt(i)).toString();
+				//negate the last value if we find a -1
+				if(curToken.equals("-")) {
+					node.value = -1 * node.value;
+					numBalls += 2 * node.value;
+					continue;
+				}
+				//add new node on the end with the next value
+				HandStateNode newNode = new HandStateNode(Integer.parseInt(curToken), null);
+				node.prevNode = newNode;
+				node = newNode;
+				length++;
+				System.out.println(node);
+				numBalls += newNode.value;
+			}
+			//set lastNode to the last node we added
+			this.lastNode = node;
 		}
 
 		private void increaseNowValueBy(int amount) {
@@ -460,7 +520,7 @@ public class State {
 		//testing
 		State state;
 		if(args.length == 1) {
-			state = new State(Parser.parse(args[0], true));
+			state = new State(args[0]);
 			System.out.println(state);
 		}
 
