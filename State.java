@@ -1,10 +1,13 @@
 import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.HashSet;
 
 public class State {
 	private List<HandState> hands;
 	private int numBalls;
+	private int shift;
 
 	//FOR DEBUGGING
 	public static boolean debug = false;
@@ -20,8 +23,9 @@ public class State {
 
 	public State(Siteswap ss) {
 		//initialize instance variable
-		hands = new ArrayList<HandState>();
-		numBalls = 0;
+		this.hands = new ArrayList<HandState>();
+		this.numBalls = 0;
+		this.shift = 0;
 		int goalNumBalls = ((Double)ss.numBalls()).intValue();
 		//create an empty HandState for each hand in the pattern
 		for(int h=0; h<ss.numHands(); h++) {
@@ -44,7 +48,7 @@ public class State {
 						//see if we need to do anything with this toss
 						if(curToss.height() != 0) {
 							//see if we need to account for a ball/antiball
-							if(getValueAtHand(h) == 0) {
+							if(getValue(h) == 0) {
 								if(curToss.isAntiToss()) {
 									decrementValue(h);
 									numBalls--;
@@ -60,12 +64,12 @@ public class State {
 								//see if state was opposite sign of curToss
 								//(don't know if this is possible for valid siteswaps)
 								if(curToss.isAntiToss()) {
-									if(getValueAtHand(h) > 0) {
+									if(getValue(h) > 0) {
 										System.out.println("state has opposite sign as curToss...");
 										System.exit(1);
 									}
 								} else {
-									if(getValueAtHand(h) < 0) {
+									if(getValue(h) < 0) {
 										System.out.println("state has opposite sign as curToss...");
 										System.exit(1);
 									}
@@ -99,13 +103,13 @@ public class State {
 							}
 							printf("\t\t\tstate: " + hands);
 						} else {
-							if(getValueAtHand(h) != 0) {
+							if(getValue(h) != 0) {
 								System.out.println("encountered zero-toss when state was nonzero...");
 								System.exit(1);
 							}
 						}
 					}
-					if(getValueAtHand(h) != 0) {
+					if(getValue(h) != 0) {
 						System.out.println("didn't get rid of all balls in hand " + h + " at beat " + b);
 						System.exit(1);
 					}
@@ -126,7 +130,6 @@ public class State {
 		} while(numBalls != goalNumBalls);
 	}
 
-	//constructor only for testing
 	private State(int numHands) {
 		this.hands = new ArrayList<HandState>();
 		for(int i=0; i<numHands; i++) {
@@ -148,11 +151,15 @@ public class State {
 			int i = 1; //index of first character of current handString
 			int j = stateString.indexOf(",",i);
 			while(j != -1) {
+				printf("i: " + i + ", j: " + j);
+				printf("substring: " + stateString.substring(i,j));
 				hands.add(new HandState(stateString.substring(i,j)));
 				//look for the next handString
-				i = j;
-				j = stateString.indexOf(",",j);
+				i = j + 1; //index of the character after the last comma
+				j = stateString.indexOf(",",i); //index of the next comma, if there is one (if not then j==-1 and the loop breaks)
 			}
+			//add the last handString
+			hands.add(new HandState(stateString.substring(i, stateString.length() - 1)));
 		}
 	}
 
@@ -162,6 +169,10 @@ public class State {
 
 	public int numHands() {
 		return hands.size();
+	}
+	
+	public int getShift() {
+		return shift;
 	}
 
 	public int length() {
@@ -200,12 +211,65 @@ public class State {
 		}
 	}
 
-	public Integer getValueAtHand(int handIndex) {
+	public Integer getValue(int handIndex) {
 		return hands.get(handIndex).nowNode.value;
 	}
 
-	public Integer getValueAtHandAtBeat(int handIndex, int beatsFromNow) {
+	public Integer getValue(int handIndex, int beatsFromNow) {
 		return hands.get(handIndex).valueAt(beatsFromNow);
+	}
+
+	public boolean isAlignedWithGENERAL(State otherState) {
+		//check that the two have the same length
+		//(they should, because this method should only get called
+		// after matchLengths() has been run)
+		if(length() != otherState.length()) {
+			return false;
+		}
+
+		/*
+		outline:
+		find the sum of the values of all the shifted-over nodes in each hand of st1, assign to shiftSum
+		find the sum of every difference st2_i - st1_i, where i ranges over every remaining node in st1, st2, assign to diffSum
+		st1 is aligned with st2 if and only if diffSum == shiftSum
+		   */
+
+		//but first see if they haven't been shifted at all. if this is the case then they just have to be the same state,
+		//since there isn't any time to make any throws
+		if(otherState.getShift() == 0) {
+			return this.equals(otherState);
+		}
+		int shiftSum = 0;
+		int diffSum = 0;
+		//calculate sums
+		for(int h=0; h<hands.size(); h++) {
+			HandState.HandStateNode node1 = hands.get(h).nowNode;
+			HandState.HandStateNode node2 = otherState.hands.get(h).nowNode;
+			//calculate component of shiftSum from each handState
+			for(int b=0; b<otherState.shift; b++) {
+				shiftSum += node1.value;
+				node1 = node1.prevNode;
+				node2 = node2.prevNode;
+			}
+			//calculate component of diffSum from each handState
+			while(node1 != null) {
+				diffSum += node2.value - node1.value;
+				node1 = node1.prevNode;
+				node2 = node2.prevNode;
+			}
+
+		}
+		printf("shiftSum: " + shiftSum + "\ndiffSum: " + diffSum);
+		return shiftSum == diffSum;
+	}
+
+	public boolean allNowValuesAreZero() {
+		for(HandState h : hands) {
+			if(h.valueAt(0) != 0) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public boolean isAlignedWith(State otherState) {
@@ -214,29 +278,16 @@ public class State {
 			return false;
 		}
 
-		HandState.HandStateNode node;
-		HandState.HandStateNode node2;
-		//loop through handStates
 		for(int h=0; h<hands.size(); h++) {
-			node = hands.get(h).nowNode;
-			node2 = otherState.hands.get(h).nowNode;
-			//loop through beats
-			for(int b=0; b<length(); b++) {
-				//check that the values at this position are aligned
-				if(node2.value != null && node.value > node2.value) {
-					//then they aren't aligned
-					return false;
-				} else {
-					//then they are aligned
-					node = node.prevNode;
-					node2 = node2.prevNode;
-				}
+			if(!hands.get(h).isAlignedWith(otherState.hands.get(h))) {
+				return false;
 			}
 		}
 		return true;
 	}
 
 	public void shiftForward() {
+		shift++;
 		for(HandState h : hands) {
 			h.shiftForward();
 		}
@@ -285,6 +336,9 @@ public class State {
 		for(HandState h : hands) {
 			h.advanceTime();
 		}
+		if(shift > 0) {
+			shift--;
+		}
 	}
 
 	private void clipOffExtraNodes() {
@@ -293,24 +347,51 @@ public class State {
 		}
 	}
 
+	public boolean hasNegatives() {
+		//check if there are any nodes with negative values
+		for(HandState h : hands) {
+			HandState.HandStateNode node = h.nowNode;
+			while(node != null) {
+				if(node.value != null && node.value < 0) {
+					return true;
+				}
+				node = node.prevNode;
+			}
+		}
+		return false;
+	}
+
+	public State deepCopy() {
+		State out = new State(numHands());
+		List<HandState> newHands = new ArrayList<HandState>();
+		for(int h=0; h<numHands(); h++) {
+			newHands.add(hands.get(h).deepCopy());
+		}
+		out.hands = newHands;
+		return out;
+	}
+
 	public String toString() {
 		//clipOffExtraNodes(); need to put this somewhere better!
 		matchHandStateLengths();
+
 		return hands.toString();
 	}
 
-	public boolean equals(State otherState) {
-		//ignores zero beats at the end
-		//check that they have the same number of hands
+	public boolean equalsUpTo(State otherState, int shift) {
 		if(hands.size() != otherState.hands.size()) {
 			return false;
 		}
 		for(int h=0; h<hands.size(); h++) {
-			if(!hands.get(h).equals(otherState.hands.get(h))) {
+			if(!hands.get(h).equalsUpTo(otherState.hands.get(h), shift)) {
 				return false;
 			}
 		}
 		return true;
+	}
+
+	public boolean equals(State otherState) {
+		return equalsUpTo(otherState, 0);
 	}
 
 	private class HandState {
@@ -324,9 +405,14 @@ public class State {
 			this.length = 1;
 		}
 
+		private HandState(HandStateNode newNowNode, int newLength) {
+			this.nowNode = newNowNode;
+			this.length = newLength;
+		}
+
 		private HandState(String string) {
 			//get the value of the nowNode from the last character of the string
-			String curToken = ((Character)string.charAt(string.length()-1)).toString();
+			String curToken = string.substring(string.length()-1, string.length());
 			this.nowNode = new HandStateNode(Integer.parseInt(curToken), null);
 			this.length = 1;
 			HandStateNode node = nowNode; //to keep track of which node we've just added, and add nodes off of it
@@ -344,7 +430,6 @@ public class State {
 				node.prevNode = newNode;
 				node = newNode;
 				length++;
-				System.out.println(node);
 				numBalls += newNode.value;
 			}
 			//set lastNode to the last node we added
@@ -353,6 +438,24 @@ public class State {
 
 		private void increaseNowValueBy(int amount) {
 			nowNode.value += amount;
+		}
+
+		private void increaseValueAtBeatBy(int beatsFromNow, int amount) {
+			int b=0;
+			HandStateNode node = nowNode;
+			while(b < beatsFromNow) {
+				if(node != null) {
+					if(node.prevNode == null) {
+						padWithOneZero();
+					}
+					node = node.prevNode;
+				} else {
+					padWithOneZero();
+					node = lastNode;
+				}
+				b++;
+			}
+			node.increaseValueBy(amount);
 		}
 
 		private void incrementValue(int beatsFromNow) {
@@ -448,6 +551,35 @@ public class State {
 			length -= numNodesToClip - 1; //minus one because we aren't clipping nowNode
 		}
 
+		private boolean isAlignedWith(HandState otherHandState) {
+			HandStateNode node = nowNode;
+			HandStateNode node2 = otherHandState.nowNode;
+			//loop through beats
+			while(node != null) {
+				//check that the values at this position are aligned
+				if(node2.value != null && node.value > node2.value) {
+					//then they aren't aligned
+					return false;
+				} else {
+					//then they are aligned
+					node = node.prevNode;
+					node2 = node2.prevNode;
+				}
+			}
+			return true;
+		}
+
+		private HandState deepCopy() {
+			HandState out = new HandState(nowNode.deepCopy(), length);
+			//find lastNode of out
+			HandStateNode node = out.nowNode;
+			while(node.prevNode != null) {
+				node = node.prevNode;
+			}
+			out.lastNode = node;
+			return out;
+		}
+
 		public String toString() {
 			String out = "";
 			HandStateNode node = nowNode;
@@ -458,9 +590,14 @@ public class State {
 			return out;
 		}
 
-		public boolean equals(HandState otherHandState) {
+		public boolean equalsUpTo(HandState otherHandState, int shift) {
 			HandStateNode node1 = nowNode;
 			HandStateNode node2 = otherHandState.nowNode;
+			//skip the shifted nodes
+			for(int i=0; i<shift; i++) {
+				node1 = node1.prevNode;
+				node2 = node2.prevNode;
+			}
 			//check to make sure all nodes up to this.length are equal to corresponding other nodes
 			while(node1 != null) {
 				//make sure node2 is also not null
@@ -468,6 +605,11 @@ public class State {
 					return false;
 				}
 				//make sure their values are the same
+				if(node1.value == null) {
+					if(node2.value != null) {
+						return false;
+					}
+				}
 				if(!node1.value.equals(node2.value)) {
 					return false;
 				}
@@ -483,6 +625,10 @@ public class State {
 				node2 = node2.prevNode;
 			}
 			return true;
+		}
+
+		public boolean equals(HandState otherHandState) {
+			return equalsUpTo(otherHandState, 0);
 		}
 
 		private class HandStateNode {
@@ -506,11 +652,27 @@ public class State {
 				}
 			}
 
+			private void increaseValueBy(int amount) {
+				value += amount;
+			}
+
+			private HandStateNode deepCopy() {
+				HandStateNode newPrevNode = null;
+				if(prevNode != null) {
+					newPrevNode = prevNode.deepCopy();
+				}
+				return new HandStateNode(new Integer(value), newPrevNode);
+			}
+
 			public String toString() {
 				if(value == null) {
-					return "_";
+					return " _ ";
 				} else {
-					return value.toString();
+					if(value < 0) {
+						return value.toString() + " ";
+					} else {
+						return " " + value.toString() + " ";
+					}
 				}
 			}
 		}
@@ -520,65 +682,28 @@ public class State {
 		//testing
 		State state;
 		if(args.length == 1) {
-			state = new State(args[0]);
-			System.out.println(state);
+			state = new State(Parser.parse(args[0]));
+			State copy = state.deepCopy();
+			System.out.println(copy);
+			copy.throwBall(0, 1, false, 0, false);
+			System.out.println(copy);
+			//FIX PROBLEM WITH DEEPCOPY NOT ASSOCIATING NEW PREVNODES TO COPIED STATE
 		}
-
-		/*
-		   State state1 = new State(Parser.parse("3"));
-		   State state2 = new State(Parser.parse("441"));
-		   debug = true;
-		   printf("state1: " + state1);
-		   printf("state2: " + state2);
-		   printf("equals: " + state1.equals(state2));
-		   debug = false;
-		   state1 = new State(Parser.parse("51"));
-		   state2 = new State(Parser.parse("50505"));
-		   debug = true;
-		   printf("state1: " + state1);
-		   printf("state2: " + state2);
-		   printf("equals: " + state1.equals(state2));
-		//System.exit(0);
-
-
-		//incrementing values
-		state = new State(2);
-		printf("created blank state w/ 2 hands:");
-		printf(state);
-		state.incrementValue(0, 0);
-		printf("incremented first value in hand 0:");
-		printf(state);
-		state.incrementValue(1, 3);
-		printf("incremented fourth value in hand 1:");
-		printf(state);
-		state.incrementValue(0, 2);
-		printf("incremented third value in hand 0:");
-		printf(state);
-
-		//making tosses
-		state.throwBall(0, 1, 1);
-		printf("threw ball from hand 0 to hand 1 with height 1");
-		printf(state);
-		state.advanceTime();
-		printf("advanced time");
-		printf(state);
-		state.throwBall(1, 1, 1);
-		printf("threw ball from hand 1 to hand 1 with height 1");
-		printf(state);
-		state.advanceTime();
-		printf("advanced time");
-		printf(state);
-		state.throwBall(1, 5, 0);
-		printf("threw ball from hand 1 to hand 0 with height 5");
-		printf(state);
-		state.advanceTime();
-		printf("advanced time");
-		printf(state);
-
-		//clipping off zero-valued nodes
-		state.decrementValue(0, 4);
-		printf("decremented value in hand 0 at beat 4");
-		printf(state);
-		 */
+		if(args.length == 2) {
+			State st1 = new State(args[0]);
+			State st2 = new State(args[1]);
+			st1.matchHandStateLengths();
+			st2.matchHandStateLengths();
+			matchLengths(st1,st2);
+			while(!st1.isAlignedWithGENERAL(st2)) {
+				System.out.println("st1: " + st1 + "\nst2: " + st2);
+				System.out.println(st1.isAlignedWithGENERAL(st2));
+				st1.padWithOneZero();
+				st2.shiftForward();
+			}
+			System.out.println("st1: " + st1 + "\nst2: " + st2);
+			System.out.println(st1.isAlignedWithGENERAL(st2));
+		}
 	}
 }
+

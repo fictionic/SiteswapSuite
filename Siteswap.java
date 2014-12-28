@@ -102,9 +102,11 @@ public class Siteswap {
 	}
 
 	public boolean isValid() {
-		if(!hasInDegree) {
+		//after changing how the class works by making there never be empty anything, just zero-valued things,
+		//I'm afraid I might have messed up hasIndegree
+		//if(!hasInDegree) {
 			calculateInDegree();
-		}
+		//}
 		//see if each node's indegree equals its outdegree 
 		for(int b=0; b<period(); b++) {
 			for(int h=0; h<getBeat(b).numHands(); h++) {
@@ -130,25 +132,28 @@ public class Siteswap {
 	}
 
 	public void addZeroBeat() {
-		Beat zeroBeat = new Beat(period());
-		for(int h=0; h<zeroBeat.numHands(); h++) {
-			zeroBeat.getHand(h).addToss();
-		}
-		beats.add(zeroBeat);
+		beats.add(new Beat(period()));
 	}
 
 	//adds a new toss from the given hand at the given beat to the given desthand with the given height
-	public boolean addToss(int atBeat, int atHand, int tossHeight, boolean isInfinite, int destHand) {
-		if(atBeat >= period() || atHand > numHands || destHand > numHands) {
+	public boolean addToss(int atBeat, int atHand, int tossHeight, boolean isInfinite, int destHand, boolean isAntiToss) {
+		while(atBeat >= period()) {
+			addZeroBeat();
+		}
+		if(atHand > numHands || destHand > numHands) {
 			return false;
 		} else {
-			getBeat(atBeat).getHand(atHand).addToss(tossHeight, isInfinite, destHand);
+			getBeat(atBeat).getHand(atHand).addToss(tossHeight, isInfinite, destHand, isAntiToss);
 			return true;
 		}
 	}
 
+	public boolean addToss(int atBeat, int atHand, int tossHeight, boolean isInfinite, int destHand) {
+		return addToss(atBeat, atHand, tossHeight, isInfinite, destHand, false);
+	}
+
 	public boolean addToss(int atBeat, int atHand, int tossHeight, int destHand) {
-		return addToss(atBeat, atHand, tossHeight, false, destHand);
+		return addToss(atBeat, atHand, tossHeight, false, destHand, false);
 	}
 
 	public Beat getBeat(int index) {
@@ -187,7 +192,7 @@ public class Siteswap {
 					//check if its height is negative
 					if(curToss.height() < 0) {
 						//first make it an antitoss (make its height positive, set antitoss flag)
-						curToss.makeAntiToss();
+						curToss.makeAntiToss(true);
 						//then shift the toss back in time through the siteswap according to its height
 						//...as long as it isn't infinite
 						//(if it is, then we certainly can't shift it back)
@@ -201,6 +206,36 @@ public class Siteswap {
 							if(destBeat < 0) {
 								destBeat += period();
 							}
+							getBeat(destBeat).getHand(h).addToss(curToss);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	public void unAntiTossify() {
+		Beat.Hand curHand;
+		Beat.Hand.Toss curToss;
+		for(int b=0; b<period(); b++) {
+			for(int h=0; h<numHands(); h++) {
+				curHand = getBeat(b).getHand(h);
+				for(int t=0; t<curHand.numTosses(); t++) {
+					curToss = curHand.getToss(t);
+					//check if its height is negative
+					if(curToss.isAntiToss()) {
+						//shift the toss forward in time through the siteswap according to its height
+						//...as long as it isn't infinite
+						//(if it is, then we certainly can't shift it back)
+						//(we just leave it where it is, it works out with getState in the end, don't worry)
+						if(!curToss.isInfinite()) {
+							//first, make it a regular toss
+							curToss.makeAntiToss(false);
+							//shift curtoss back in time by its height value
+							//first remove it from where it was
+							curHand.removeToss(t);
+							//then add it where it needs to go
+							int destBeat = (b + curToss.height()) % period();
 							getBeat(destBeat).getHand(h).addToss(curToss);
 						}
 					}
@@ -250,13 +285,17 @@ public class Siteswap {
 			hands = new ArrayList<Hand>();
 			this.beatIndex = beatIndex;
 			for(int i=0; i<numHands; i++) {
-				hands.add(new Hand(i, beatIndex));
+				addZeroHand(i);
 			}
 		}
 
 		private Beat(List<Hand> handList, int beatIndex) {
 			hands = handList;
 			this.beatIndex = beatIndex;
+		}
+
+		private void addZeroHand(int handIndex) {
+			hands.add(new Hand(handIndex, beatIndex));
 		}
 
 		public int totalFiniteBeatValue() {
@@ -328,10 +367,11 @@ public class Siteswap {
 
 			public Hand(int handIndex, int beatIndex) {
 				this.tosses = new ArrayList<Toss>();
+				this.isEmpty = true;
 				this.handIndex = handIndex;
 				this.beatIndex = beatIndex;
-				this.isEmpty = true;
 				this.inDegree = 0;
+				addToss();
 			}
 
 			private Hand(List<Toss> newTosses, int newHandIndex, int newBeatIndex, boolean newIsEmpty) {
@@ -423,32 +463,28 @@ public class Siteswap {
 				return out;
 			}
 
+			//add (height, destHand)!
 			public void addToss(int height, int destHand) {
 				addToss(height, false, destHand);
 			}
 
-			public void addToss(int height, boolean isInfinite, int destHand) {
-				//prevent redundant zero tosses
-				if(tosses.size() == 1 && tosses.get(0).isZeroToss()) {
-					removeToss(0, true);
-				}
-				tosses.add(new Toss(handIndex, height, isInfinite, destHand));	
-				isEmpty = false;
-				hasInDegree = false;
+			//add (0,0)!
+			public void addToss() {
+				addToss(0, false, handIndex);
 			}
 
-			public void addToss() {
-				//prevent redundant zero tosses
-				if(tosses.size() == 1 && tosses.get(0).isZeroToss()) {
-					removeToss(0, true);
-				}
-				tosses.add(new Toss(handIndex));
-				hasInDegree = false;
+			//add (height, destHand)! or (sign(height)&, destHand)! (though destHand is irrelevant if it's infinite)
+			public void addToss(int height, boolean isInfinite, int destHand) {
+				addToss(height, isInfinite, destHand, false);
+			}
+
+			public void addToss(int height, boolean isInfinite, int destHand, boolean isAntiToss) {
+				addToss(new Toss(handIndex, height, isInfinite, destHand, isAntiToss));
 			}
 
 			private void addToss(Toss newToss) {
 				//prevent redundant zero tosses
-				if(tosses.size() == 1 && isZeroHand()) {
+				if(isZeroHand()) {
 					removeToss(0, true);
 				}
 				tosses.add(newToss);
@@ -486,7 +522,7 @@ public class Siteswap {
 			}
 
 			private boolean isZeroHand() {
-				if(tosses.size() > 1) {
+				if(tosses.size() == 0 || tosses.size() > 1) {
 					return false;
 				}
 				if(!tosses.get(0).isZeroToss()) {
@@ -523,29 +559,28 @@ public class Siteswap {
 			protected class Toss {
 				private int startHand;
 				private int height;
-				private int destHand;
 				private boolean isInfinite;
-				private boolean isAntiToss = false; //this is only changed by getTransition
+				private int destHand;
+				private boolean isAntiToss;
+
+				public Toss(int startHand) {
+					this(startHand, 0, false, startHand, false);
+				}
 
 				public Toss(int startHand, int height, int destHand) {
-					this.startHand = startHand;
-					this.height = height;
-					this.isInfinite = false;
-					this.destHand = destHand;
+					this(startHand, height, false, destHand, false);
 				}
 
 				public Toss(int startHand, int height, boolean isInfinite, int destHand) {
+					this(startHand, height, isInfinite, destHand, false);
+				}
+
+				private Toss(int startHand, int height, boolean isInfinite, int destHand, boolean isAntiToss) {
 					this.startHand = startHand;
 					this.height = height;
 					this.isInfinite = isInfinite;
+					this.isAntiToss = isAntiToss;
 					this.destHand = destHand;
-				}
-
-				public Toss(int startHand) {
-					this.height = 0;
-					this.isInfinite = false;
-					this.startHand = startHand;
-					this.destHand = startHand;
 				}
 
 				public int height() {
@@ -560,7 +595,7 @@ public class Siteswap {
 					return isAntiToss;
 				}
 
-				private void makeAntiToss() {
+				private void makeAntiToss(boolean isAntiToss) {
 					height = Math.abs(height);
 					isAntiToss = true;
 				}
@@ -624,6 +659,10 @@ public class Siteswap {
 	}
 
 	public static void main(String[] args) {
+		if(args.length == 0) {
+			Siteswap ss = new Siteswap(2, "async");
+			System.out.println(ss);
+		}
 		if(args.length == 1) {
 			Siteswap ss = Parser.parse(args[0]);
 			System.out.println(Parser.deParse(ss));
