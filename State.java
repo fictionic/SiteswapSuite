@@ -328,12 +328,13 @@ public class State {
 	}
 
 	public void throwBall(int fromHand, int height, boolean isInfinite, int destHand, boolean isAntiToss) {
-		printf(">State.throwBall");
-		printf("state: " + this.hashCode());
-		printf("hands: " + hands.hashCode());
-		printf("fromHand: " + hands.get(fromHand).hashCode());
-		//HERE THINGS ARE FINE--BUT WHEN THE PROGRAM ENTERS THE BELOW METHOD, THINGS CHANGE
 		hands.get(fromHand).throwBall(height, isInfinite, destHand, isAntiToss);
+		//then put the ball/antiball at its destination height, but only if it isn't infinite
+		if(!isInfinite) {
+			//alter the value where the ball gets thrown to by one, again depending on whether or not it's a ball or an antiball
+			//(ball --> increment; antiball --> decrement)
+			hands.get(destHand).alterValueByOne(height, !isAntiToss);
+		}
 	}
 
 	//protected cuz it's used by TransitionFinder.java
@@ -373,9 +374,6 @@ public class State {
 			newHands.add(hands.get(h).deepCopy());
 		}
 		out.hands = newHands;
-		printf(">State.deepCopy");
-		printf("hands: " + hands.hashCode());
-		printf("copy: " + out.hands.hashCode());
 		return out;
 	}
 
@@ -517,21 +515,10 @@ public class State {
 		}
 
 		private void throwBall(int height, boolean isInfinite, int destHand, boolean isAntiToss) {
-			printf(" >HandState.throwBall");
-			printf("  fromHand: " + this.hashCode());
 			//if it's a regular (non-anti) toss, decrement the current value (since the ball leaves the current hand)
 			//otherwise, increment the current value (since the antiball leaves the current hand)
 			//(this goes for finite and infinite tosses)
 			alterValueByOne(0, isAntiToss);
-			//then put the ball/antiball at its destination height, but only if it isn't infinite
-			if(!isInfinite) {
-				//alter the value where the ball gets thrown to by one, again depending on whether or not it's a ball or an antiball
-				//(ball --> increment; antiball --> decrement)
-				hands.get(destHand).alterValueByOne(height, !isAntiToss);
-				printf("  to hand: " + hands.get(destHand).hashCode());
-				printf("  hands: " + hands.hashCode());
-				//AT THIS POINT IN THE CODE, THINGS ARE WEIRD: hands IS CORRECT (DEEPCOPIED) BUT hands.get(destHand) IS NOT--IT'S THE ORIGINAL ONE
-			}
 		}
 
 		private void advanceTime() {
@@ -584,9 +571,6 @@ public class State {
 
 		private HandState deepCopy() {
 			HandState out = new HandState(nowNode.deepCopy(), length);
-			printf("\t>handState.deepCopy");
-			printf("\thand: " + this.hashCode());
-			printf("\tcopy: " + out.hashCode());
 			//find lastNode of out
 			HandStateNode node = out.nowNode;
 			while(node.prevNode != null) {
@@ -657,18 +641,14 @@ public class State {
 			}
 
 			private void alterValueByOne(boolean increment) {
-				//printf("\t\t>HandStateNode.alterValueByOne");
-				//printf("\t\t node: " + this.hashCode());
 				if(value == null) {
 					System.out.println("value attempted to be altered when null...");
 					System.exit(1);
 				}
 				if(increment) {
 					value++;
-					//printf("\t\tincremented");
 				} else {
 					value--;
-					//printf("\t\tdecremented");
 				}
 			}
 
@@ -682,14 +662,6 @@ public class State {
 					newPrevNode = prevNode.deepCopy();
 				}
 				HandStateNode toReturn = new HandStateNode(new Integer(value), newPrevNode);
-				printf("\t\tnode: " + this.hashCode());
-				if(prevNode != null) {
-					printf("\t\tprevNode: " + prevNode.hashCode());
-				}
-				printf("\t\tcopy: " + toReturn.hashCode());
-				if(prevNode != null) {
-					printf("\t\tnewPrevNode: " + newPrevNode.hashCode());
-				}
 				return toReturn;
 			} 
 
@@ -711,36 +683,8 @@ public class State {
 		//testing
 		State state;
 		if(args.length == 1) {
-			/*
 			state = new State(Parser.parse(args[0]));
-			State copy = state.deepCopy();
-			debug = true;
-			printf("original");
-			for (int i=0; i<state.numHands(); i++) {
-				printf("hand: " + state.hands.get(i).hashCode());
-			}
-			printf("copy");
-			for (int i=0; i<copy.numHands(); i++) {
-				printf("hand: " + copy.hands.get(i).hashCode());
-			}
-			//TO DO: create a method that prints out the hashcode of each component of a State; compare it with a copied one
-			//If there is a any part that is not copied, we know the problem is in one of the deepCopy() methods
-			//If there isn't, then the problem must somehow be in one of the throwBall methods... or a bug in java!
-			*/
-
-
-			state = new State(Parser.parse(args[0]));
-			debug = true;
-			//String originalState = state.toString();
-			System.out.println("creating deep copy...");
-			State copy = state.deepCopy();
-			state.throwBall(0, 1, false, 0, false);
-			copy.throwBall(0, 1, false, 0, false);
-			printf("state:\n" + state.toString());
-			printf("copied state:\n" + copy.toString());
-			printf("they should be the same");
-			printf("but they're not; somehow both balls are 'landing' in the original state");
-			//FIX PROBLEM WITH DEEPCOPY NOT ASSOCIATING NEW PREVNODES TO COPIED STATE
+			System.out.println(state.toString());
 		}
 		if(args.length == 2) {
 			State st1 = new State(args[0]);
