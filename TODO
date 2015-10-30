@@ -1,0 +1,2 @@
+- top priority: make GetTransitionGENERAL work!
+- make classes for various exceptions I might need, rather than just printing errors
