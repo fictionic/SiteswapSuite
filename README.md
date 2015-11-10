@@ -19,13 +19,13 @@ As such, it can also do the following tasks:
 
 **EXAMPLES**
 - Find a transition between the siteswaps `5` and `91`:
-`$ java TransitionFinder 5 91`
+`$ java TransitionFinder 5 91`  
 `678`
 - Display information about the 3-ball box:
-`$ java TransitionFinder '(4,2x)*'`
-`parsed: [[[[4, 0]], [[2, 0]]], [[[0, 0]], [[0, 1]]], [[[2, 1]], [[4, 1]]], [[[0, 0]], [[0, 1]]]]`
-`de-parsed: (4,2x)(2x,4)`
-`number of balls: 3.0`
-`valid: true`
-`period: 4`
-`state: [ 0  0  1 ,  1  0  1 ]`
+`$ java TransitionFinder '(4,2x)*'`  
+`parsed: [[[[4, 0]], [[2, 0]]], [[[0, 0]], [[0, 1]]], [[[2, 1]], [[4, 1]]], [[[0, 0]], [[0, 1]]]]`  
+`de-parsed: (4,2x)(2x,4)`  
+`number of balls: 3.0`  
+`valid: true`  
+`period: 4`  
+`state: [ 0  0  1 ,  1  0  1 ]`  
