@@ -16,3 +16,16 @@ As such, it can also do the following tasks:
 `java TransitionFinder '<siteswap>'` - displays information about the given siteswap (validity, number of balls, juggling state, unabridged notation)
 
 `java TransitionFinder '<siteswap1>' '<siteswap2>'` - prints a transition pattern between the two given patterns, assuming they are valid
+
+**EXAMPLES**
+- Find a transition between the siteswaps `5` and `91`:
+`$ java TransitionFinder 5 91`
+`678`
+- Display information about the 3-ball box:
+`$ java TransitionFinder '(4,2x)*'`
+`parsed: [[[[4, 0]], [[2, 0]]], [[[0, 0]], [[0, 1]]], [[[2, 1]], [[4, 1]]], [[[0, 0]], [[0, 1]]]]`
+`de-parsed: (4,2x)(2x,4)`
+`number of balls: 3.0`
+`valid: true`
+`period: 4`
+`state: [ 0  0  1 ,  1  0  1 ]`
