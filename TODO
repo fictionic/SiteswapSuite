@@ -1,2 +1,5 @@
-- top priority: make GetTransitionGENERAL work!
+top priority: make GetTransitionGENERAL work!
+this involves:
+	- make Parser.parse() work for negative siteswaps
+	- ensure that GetTransitionGENERAL works on regular old siteswaps first! 
 - make classes for various exceptions I might need, rather than just printing errors
