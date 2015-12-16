@@ -3,30 +3,30 @@ public class Toss {
 	private int beatIndex;
 	private int sourceHand;
 
-	private ExtendedNaturalNumber height;
+	private ExtendedInteger height;
 	private boolean isAntitoss;
 	private Integer destHand;
 
 	public Toss(int emptyHandIndex) {
-			this.height = new ExtendedNaturalNumber(0);
+			this.height = new ExtendedInteger(0);
 			this.destHand = emptyHandIndex;
 			this.sourceHand = emptyHandIndex;
 			this.isAntitoss = false;
 	}
 
 	public Toss(int height, int destHand, boolean isAntitoss) {
-			this.height = new ExtendedNaturalNumber(height);
+			this.height = new ExtendedInteger(height);
 			this.destHand = destHand;
 			this.isAntitoss = isAntitoss;
 	}
 
 	public Toss(InfinityType height, boolean isAntitoss) {
-			this.height = new ExtendedNaturalNumber(height);
+			this.height = new ExtendedInteger(height);
 			this.destHand = null;
 			this.isAntitoss = isAntitoss;
 	}
 
-	public ExtendedNaturalNumber height() {
+	public ExtendedInteger height() {
 			return this.height;
 	}
 

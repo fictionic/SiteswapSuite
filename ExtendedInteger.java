@@ -1,16 +1,16 @@
-public class ExtendedNaturalNumber {
+public class ExtendedInteger {
 
 		private Integer finiteValue;
 		private InfinityType infiniteValue;
 		private boolean isInfinite;
 
-		public ExtendedNaturalNumber(InfinityType value) {
+		public ExtendedInteger(InfinityType value) {
 				this.infiniteValue = value;
 				this.finiteValue = null;
 				this.isInfinite = true;
 		}
 
-		public ExtendedNaturalNumber(int value) {
+		public ExtendedInteger(int value) {
 				this.finiteValue = value;
 				this.infiniteValue = null;		
 				this.isInfinite = false;

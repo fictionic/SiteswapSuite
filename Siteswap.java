@@ -82,7 +82,17 @@ public class Siteswap {
 						}
 				}
 
+				private Beat(int beatIndex, List<Hand> handsList) {
+					this.beatIndex = beatIndex;
+					this.hands = handsList;
+				}
+
 				private Beat deepCopy() {
+					List<Hand> newHands = new ArrayList<Hand>();
+					for(int h=0; h<this.hands.size(); h++) {
+						newHands.add(this.hands.get(i));
+					}
+					return new Beat(this.beatIndex, newHands);
 				}
 
 				public String toString() {
