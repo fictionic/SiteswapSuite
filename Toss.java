@@ -1,29 +1,38 @@
 public class Toss {
 	
-	private int beatIndex;
+	private int beatIndex; // figure out if I need these
 	private int sourceHand;
 
 	private ExtendedInteger height;
-	private boolean isAntitoss;
+	private int charge;
 	private Integer destHand;
 
 	public Toss(int emptyHandIndex) {
 			this.height = new ExtendedInteger(0);
 			this.destHand = emptyHandIndex;
 			this.sourceHand = emptyHandIndex;
-			this.isAntitoss = false;
+			this.charge = 0;
 	}
 
 	public Toss(int height, int destHand, boolean isAntitoss) {
 			this.height = new ExtendedInteger(height);
 			this.destHand = destHand;
-			this.isAntitoss = isAntitoss;
+			if(height != 0) {
+					if(isAntitoss)
+							this.charge = -1;
+					else
+							this.charge = 1;
+			} else
+					this.charge = 0;
 	}
 
 	public Toss(InfinityType height, boolean isAntitoss) {
 			this.height = new ExtendedInteger(height);
 			this.destHand = null;
-			this.isAntitoss = isAntitoss;
+			if(isAntitoss)
+					this.charge = -1;
+			else
+					this.charge = 1;
 	}
 
 	public ExtendedInteger height() {
@@ -34,22 +43,53 @@ public class Toss {
 			return this.destHand;
 	}
 
+	public Boolean isAntitoss() {
+			if(this.charge == 0) {
+					return null;
+			} else {
+					if(this.charge == 1)
+							return true;
+					else
+							return false;
+			}
+	}
+
+	public int charge() {
+			return this.charge;
+	}
+
+	public Toss getStarredToss() {
+			if(destHand != null) {
+					return new Toss(this.height.finiteValue(), (this.destHand + 1) % 2, this.charge < 0);
+			 } else 
+					return this.deepCopy();
+	}
+
+	public Toss deepCopy() {
+		if(this.height.isInfinite()) {
+			return new Toss(this.height.infiniteValue(), this.charge < 0);
+		} else {
+			return new Toss(this.height.finiteValue(), this.destHand, this.charge < 0);
+		}
+	}
+
 	public String toString() {
+			if(this.charge == 0)
+					return "[0]";
 			String out = "[";
 			if(this.height.isInfinite()) {
-					if(this.height == InfinityType.NEGATIVE_INFINITY)
+					if(this.height.infiniteValue() == InfinityType.NEGATIVE_INFINITY)
 							out += "-";
-					if(this.isAntitoss)
+					if(this.charge < 0)
 							out += "_";
 					out += "&]";
-			else {
-					if(this.height < 0)
+			} else {
+					if(this.height.finiteValue() < 0)
 							out += "-";
-					if(this.isAntitoss)
+					if(this.charge < 0)
 							out += "_";
 					out += height.finiteValue().toString() + ", " + destHand.toString() + "]";
 			}
 			return out;
 	}
-
 }

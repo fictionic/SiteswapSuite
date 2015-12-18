@@ -3,254 +3,283 @@ import java.util.regex.Pattern;
 
 public class Parser {
 	/* siteswap regex patterns:
-	   toss = "(-?(\\d|[a-w]|X|[yz]|&)x?)"
+	   toss = "(-?(\\d|[a-z]|&)x?)"
 	   hand = "(toss|\[toss+\])+"
 	   asyncSiteswap = "hand+"
 	   syncBeat = "\(hand,hand\)!?"
 	   syncSiteswap = "(beat+)\\*?"
 	   mixedSiteswap = "(toss|beat)+"
-	   */
-	private static final String validAsyncSiteswapString = "((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\])+";
-	private static final String validSynchronousSiteswapString = "(\\(((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\]),((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\])\\)!?)+\\*?";
-	private static final String validMixedNotationTwoHandedSiteswapString = "(((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\])|(\\(((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\]),((-?(\\d|[a-w]|X|[yz]|&)x?)|\\[(-?(\\d|[a-w]|X|[yz]|&)x?)+\\])\\)!?))+";
+	 */
+	private static final String validAsyncSiteswapString = "((-?(\\d|[a-z]|&)x?)|\\[(-?(\\d|[a-z]|&)x?)+\\])+";
+	private static final String validSynchronousSiteswapString = "(\\(((-?(\\d|[a-z]|&)x?)|\\[(-?(\\d|[a-z]|&)x?)+\\]),((-?(\\d|[a-z]|&)x?)|\\[(-?(\\d|[a-z]|&)x?)+\\])\\)!?)+\\*?";
+	private static final String validMixedNotationTwoHandedSiteswapString = "(((-?(\\d|[a-z]|&)x?)|\\[(-?(\\d|[a-z]|&)x?)+\\])|(\\(((-?(\\d|[a-z]|&)x?)|\\[(-?(\\d|[a-z]|&)x?)+\\]),((-?(\\d|[a-z]|&)x?)|\\[(-?(\\d|[a-z]|&)x?)+\\])\\)!?))+";
 	//no star notation on mixed, because it would be ambiguous as to whether the whole pattern is starred or just the most recent sync part
 	private static final String validMultipleJugglerSiteswapString = ""; //later...
 
 	public static String getNotationType(String s) {
-		if(Pattern.matches(validAsyncSiteswapString, s)) {
-			return "async";
-		} else if(Pattern.matches(validSynchronousSiteswapString, s)) {
-			return "sync";
-		} else if(Pattern.matches(validMixedNotationTwoHandedSiteswapString, s)) {
-			return "mixed";
-		} else {
-			return "invalid";
-		}
+	if(Pattern.matches(validAsyncSiteswapString, s)) {
+	return "async";
+	} else if(Pattern.matches(validSynchronousSiteswapString, s)) {
+	return "sync";
+	} else if(Pattern.matches(validMixedNotationTwoHandedSiteswapString, s)) {
+	return "mixed";
+	} else {
+	return "invalid";
+	}
 	}
 
 	public static Siteswap parse(String s, boolean asSimpleAsPossible) {
-		switch(getNotationType(s)) {
-			case "async":
-				if(asSimpleAsPossible) {
-					return parseAsyncAsOneHanded(s);
-				}
-				return parseAsyncAsTwoHanded(s);
-			case "sync":
-				return parseSync(s);
-			case "mixed":
-				return parseMixed(s);
-			default:
-				System.err.println("syntax error");
-				System.exit(1);
-				return null;
-		}	
+	switch(getNotationType(s)) {
+	case "async":
+	if(asSimpleAsPossible) {
+	return parseAsyncAsOneHanded(s);
+	}
+	return parseAsyncAsTwoHanded(s);
+	case "sync":
+	return parseSync(s);
+	case "mixed":
+	return parseMixed(s);
+	default:
+	System.err.println("syntax error");
+	System.exit(1);
+	return null;
+	}	
 	}
 
 	public static Siteswap parse(String s) {
-		return parse(s, true);
+	return parse(s, true);
 	}
 
 	public static Siteswap parseAsyncAsOneHanded(String s) {
-		Siteswap out = new Siteswap(1, "async");
-		String curToken;
-		int i=0; //index in input string	
-		int b=0; //index (beat) in output siteswap
-		boolean multi = false; //whether or not we're currently in a multiplex throw
-		boolean isNegative = false;
-		boolean isInfinite = false;
-		while(i < s.length()) {
-			curToken = ((Character)s.charAt(i)).toString(); //get string of i-ith character of the input string
-			switch(curToken) {
-				//comment
-				case "[":
-					multi = true;
-					out.addEmptyBeat();
-					break;
-				case "]":
-					multi = false;
-					b++;
-					break;
-				case "-":
-					isNegative = true;
-					break;
-				default:
-					int height = throwHeight(curToken);
-					if(height == -1) {
-						//then height is infinity
-						isInfinite = true;
-						height = 1; //need height to be positive first, its sign is determined by variable "isNegative"
-					} else {
-						isInfinite = false;
-					}
-					if(isNegative) {
-						height = -1 * height;
-						isNegative = false;
-					}
-					if(!multi) {
-						out.addEmptyBeat();
-						out.getLastBeat().getHand(0).addToss(height, isInfinite, 0);
-						b++;
-					} else {
-						//ensure we don't add redundant zero-tosses (i.e. only add if there are no tosses or if the height is nonzero)
-						if(height != 0 || out.getLastBeat().getHand(0).isEmpty()) {
-							out.getLastBeat().getHand(0).addToss(height, isInfinite, 0);
-						}
-					}
-					break;
-			}
-			i++;
+	Siteswap out = new Siteswap(1, NotationType.ASYNCHRONOUS);
+	char[] a = s.toCharArray();
+	char curToken;
+	int i=0; //index in input string	
+	int b=0; //index (beat) in output siteswap
+	boolean multi = false; //whether or not we're currently in a multiplex throw
+	boolean isNegative = false;
+	boolean isAntitoss = false;
+	while(i < a.length) {
+	curToken = a[i];
+	switch(curToken) {
+	//comment
+	case '[':
+	multi = true;
+	out.appendEmptyBeat();
+	break;
+	case ']':
+	multi = false;
+	b++;
+	break;
+	case '-':
+	isNegative = true;
+	break;
+	case '_':
+	isAntitoss = true;
+	break;
+	default:
+	ExtendedInteger height = throwHeight(curToken);
+	if(isNegative) {
+	height.negate();
+	isNegative = false;
+	}
+	if(!multi) {
+		out.addEmptyBeat();
+		if(height.isInfinite()) {
+		if(isAntitoss)
+			out.addInfiniteAntitoss(b, 0, height.infiniteValue());
+		else
+			out.addInfiniteToss(b, 0, height.infiniteValue());
+		} else {
+		if(isAntitoss)
+			out.addFiniteAntitoss(b, 0, height.finiteValue(), 0);
+		else
+			out.addFiniteToss(b, 0, height.finiteValue(), 0);
+		b++;
 		}
-		return out;
+	} else {
+		if(height.isInfinite()) {
+		if(isAntitoss)
+			out.addInfiniteAntitoss(b, 0, height.infiniteValue());
+		else
+			out.addInfiniteToss(b, 0, height.infiniteValue());
+		} else {
+		if(isAntitoss)
+			out.addFiniteAntitoss(b, 0, height.finiteValue(), 0);
+		else
+			out.addFiniteToss(b, 0, height.finiteValue(), 0);
+		}
+	}
+	isAntitoss = false;
+	break;
+	}
+	i++;
+	}
+	return out;
 	}
 
 	public static Siteswap parseAsyncAsTwoHanded(String s) {
-		//double string length if it's odd (so e.g. "3" will become (3,0)!(0,3)!) 
-		if(s.length() % 2 == 1) {
-			s += s;
-		}
-		//create new async siteswap
-		Siteswap out = new Siteswap(2, "async");
-		String curToken;
-		int i = 0; //index in input string
-		int b = 0; //index (beat) in output siteswap
-		int curHand = 0; // which hand's turn it is to throw
-		boolean multi = false; //whether or not we're currently in a multiplex throw
-		boolean isNegative = false;
-		boolean isInfinite = false;
-		while(i < s.length()) {
-			curToken = ((Character)s.charAt(i)).toString();
-			//update current hand
-			curHand = b % 2;
-			//System.out.println(curToken);
-			switch(curToken) {
-				//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
-				case "[":
-					multi = true;
-					out.addEmptyBeat();
-					break;
-					//if curToken is "]", we're no longer in a multiplex throw, so add an empty toss to the non-current hand
-				case "]":
-					multi = false;
-					out.getLastBeat().getHand((curHand + 1) % 2).addToss();
-					b++;
-					break;
-					//if curToken is "x", flip the destination hand of the most recently added toss
-				case "x":
-					out.getLastBeat().getHand((curHand + 1) % 2).getLastToss().flipDestHand();
-					break;
-					//if curToken is "-", the next toss is negative
-				case "-":
-					isNegative = true;
-					break;
-					//if curToken is anything else, it has to be a throw height (since it matched the regex for async pattern)
-				default:
-					int height = throwHeight(curToken);
-					if(height == -1) {
-						//then height is infinity
-						isInfinite = true;
-						height = 1; //need height to be positive first, its sign is determined by variable isNegative
-					} else {
-						isInfinite = false;
-					}
-					if(isNegative) {
-						height = -1 * height;
-						isNegative = false;
-					}
-					int destHand = (curHand + height) % 2; //0=left, 1=right
-					if(!multi) {
-						//create new beat
-						out.addEmptyBeat();
-						//add toss of correct height and destination to current hand
-						out.getLastBeat().getHand(curHand).addToss(height, isInfinite, destHand);
-						//add empty toss to other hand
-						out.getLastBeat().getHand((curHand + 1) % 2).addToss();
-						//increment beat index
-						b++;
-					} else {
-						//add toss of correct height and destination to current hand
-						//(only if it isn't a redundant zero-toss
-						if(height != 0 || out.getLastBeat().getHand(curHand).isEmpty()) {
-							out.getLastBeat().getHand(curHand).addToss(height, isInfinite, destHand);
-						}
-					}
-					break;
+	//double string length if it's odd (so e.g. "3" will become (3,0)!(0,3)!) 
+	if(s.length() % 2 == 1) {
+		s += s;
+	}
+	char[] a = s.toCharArray();
+	//create new async siteswap
+	Siteswap out = new Siteswap(2, NotationType.SYNCHRONOUS);
+	char curToken;
+	int i = 0; //index in input string
+	int b = 0; //index (beat) in output siteswap
+	int curHand = 0; // which hand's turn it is to throw
+	ExtendedInteger height;
+	int destHand;
+	boolean multi = false; //whether or not we're currently in a multiplex throw
+	boolean isNegative = false;
+	boolean isAntitoss = false;
+	while(i < a.length) {
+		curToken = a[i];
+		//update current hand
+		curHand = b % 2;
+		//System.out.println(curToken);
+		switch(curToken) {
+		//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
+		case '[':
+			multi = true;
+			out.addEmptyBeat();
+			break;
+		case ']':
+			multi = false;
+			b++;
+			break;
+			//if curToken is "-", the next toss is negative
+		case '-':
+			isNegative = true;
+			break;
+			//if curToken is anything else, it has to be a throw height (since it matched the regex for async pattern)
+		default:
+			height = throwHeight(curToken);
+			if(isNegative) {
+			height.negate();
+			isNegative = false;
 			}
-			//increment index in input string
-			i++;
+			if(!height.isInfinite())
+			destHand = (curHand + height.finiteValue()) % 2; //0=left, 1=right
+			if(!multi) {
+			//create new beat
+			out.addEmptyBeat();
+			//add toss of correct height and destination to current hand
+			if(height.isInfinite()) {
+				if(isAntitoss)
+				out.addInfiniteAntitoss(b, curHand, height.infiniteValue());
+				else
+				out.addInfiniteToss(b, curHand, height.infiniteValue());
+			} else {
+				if(isAntitoss)
+				out.addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
+				else
+				out.addFiniteToss(b, curHand, height.finiteValue(), destHand);
+				//increment beat index
+				b++;
+			}
+			} else {
+			//add toss of correct height and destination to current hand
+				if(height.isInfinite()) {
+					if(isAntitoss)
+						out.addInfiniteAntitoss(b, curHand, height.infiniteValue());
+					else
+						out.addInfiniteToss(b, curHand, height.infiniteValue());
+				} else {
+					if(isAntitoss)
+						out.addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
+					else
+						out.addFiniteToss(b, curHand, height.finiteValue(), destHand);
+				}
+			}
+			isAntitoss = false;
+			break;
 		}
-		return out;
+		//increment index in input string
+		i++;
+	}
+	return out;
 	}
 
 	public static Siteswap parseSync(String s) {
+		char[] a = s.toCharArray();
 		//create new sync siteswap
-		Siteswap out = new Siteswap(2, "sync");
+		Siteswap out = new Siteswap(2, NotationType.SYNCHRONOUS);
 		int i = 0; //index in index string
 		int b = 0; //index of beat within output siteswap
 		int curHand = 0;
 		int lastStarredBeat = 0;
-		boolean isInfinite = false;
+		ExtendedInteger height;
+		int destHand;
 		boolean isNegative = false;
-		String curToken;
+		boolean isAntitoss = false;
+		boolean lookForX = false;
+		char curToken;
 
-		while(i < s.length()) {
-			curToken = ((Character)s.charAt(i)).toString();
+		while(i < a.length) {
+			curToken = a[i];
 			switch(curToken) {
-				case "(":
+				case '(':
 					//create new beat
 					out.addEmptyBeat();
 					curHand = 0;
 					break;
-				case ",":
+				case ',':
 					curHand = 1;
 					break;
-				case ")":
+				case ')':
 					//add empty beat, cuz that's how sync works
-					out.addZeroBeat();
+					out.addEmptyBeat();
 					//increase beat index by 2
 					b += 2;
 					break;
-				case "[":
+				case '[':
 					//doesn't matter whether we're in a multiplex pattern
-					// b/c curHand is determined by other notation
+					// b/c curHand is determined by other notation (commas and parens)
 					break;
-				case "]":
+				case ']':
 					break;
-				case "x":
+				case 'x':
 					//toggle destination hand of most recently added toss
 					out.getLastBeat().getHand(curHand).getLastToss().flipDestHand();
 					break;
-				case "!":
+				case '!':
 					//remove last beat
 					out.removeLastBeat();
 					//decrement beat index
 					b--;
 					break;
-				case "*":
+				case '*':
 					out.addStar();
 					break;
-				case "-":
+				case '-':
 					isNegative = true;
 					break;
+				case '_':
+					isAntitoss = true;
+					break;
 				default: //curToken is a throw height
-					int height = throwHeight(curToken);
-					if(height == -1) {
-						//then height is infinity
-						isInfinite = true;
-						height = 1; //need height to be positive first, its sign is determined by variable isNegative
-					} else {
-						isInfinite = false;
-					}
+					height = throwHeight(curToken);
 					if(isNegative) {
-						height = -1 * height;
+						height.negate();
 						isNegative = false;
 					}
-					int destHand = (curHand + height) % 2;
-					Siteswap.Beat curBeat = out.getLastBeat();
-					//add toss, only if it's not a redundant zero-toss
-					if(height != 0 || curBeat.getHand(curHand).isEmpty()) {
-						curBeat.getHand(curHand).addToss(height, isInfinite, destHand);
+					destHand = (curHand + height) % 2;
+					if(height.isInfinite()) {
+						if(isAntitoss)
+							out.addInfiniteAntitoss(b, curHand, height.infiniteValue());
+						else
+							out.addInfiniteToss(b, curHand, height.infiniteValue());
+					} else {
+							if(isAntitoss)
+								out.addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
+							else
+								out.addFiniteToss(b, curHand, height.finiteValue(), destHand);
+						isAntitoss = false;
+						break;
 					}
-					break;
 			}
 			i++;
 		}
@@ -264,15 +293,14 @@ public class Parser {
 		return null;
 	}
 
-	private static int throwHeight(String h) {
+	private static ExtendedInteger throwHeight(char c) {
+		String h = (Character)c.toString();
 		if(Pattern.matches("\\d", h)) {
-			return Integer.parseInt(h);
-		} else if(Pattern.matches("([a-w]|[yz])", h)) {
-			return (int)(h.toCharArray()[0]) - 87;
-		} else if(h.equals("X")) { //if h is "X"
-			return 33;
-		} else {
-			return -1; //sentinel value, indicates that the height is infinite
+			return new ExtendedInteger(Integer.parseInt(h));
+		} else if(Pattern.matches("([a-z])", h)) {
+			return new ExtendedInteger((int)(h.toCharArray()[0]) - 87);
+		} else { //must be '&'
+			return new ExtendedInteger(InfinityType.POSITIVE_INFINITY);
 		}
 	}
 
