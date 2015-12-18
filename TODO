@@ -1,2 +1,6 @@
-- top priority: make GetTransitionGENERAL work!
-- make classes for various exceptions I might need, rather than just printing errors
+- fix parseAsyncAsTwoHanded
+- fix parseSync
+- fix State
+    - change the interface to better match that of Siteswap
+    - reverse its print order in toString and in the constructor from String input
+- have numBalls return an ExtendedFraction instance!
