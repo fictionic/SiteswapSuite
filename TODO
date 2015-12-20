@@ -2,5 +2,5 @@
 - fix parseSync
 - fix State
     - change the interface to better match that of Siteswap
+    - make the constructor from Siteswap work
     - reverse its print order in toString and in the constructor from String input
-- have numBalls return an ExtendedFraction instance!
