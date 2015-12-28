@@ -1,6 +1,11 @@
-- fix parseAsyncAsTwoHanded
-- fix parseSync
 - fix State
     - change the interface to better match that of Siteswap
     - make the constructor from Siteswap work
     - reverse its print order in toString and in the constructor from String input
+- fix parseAsyncAsTwoHanded
+- fix parseSync
+- finish NotatedSiteswap change, merge back to branch testing
+- fix TransitionFinder to match the changes made to everything
+    - implement the new algorithm(s)
+- do a bunch of testing
+- merge with branch master!
