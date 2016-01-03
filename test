@@ -1,0 +1,59 @@
+51
+--
+[ 0 ]
+5
+account for ball
+[ 1 ]
+throw ball
+[ 0 0 0 0 0 1 ]
+advance time
+[ 0 0 0 0 1 ]
+1
+account for ball
+[ 1 0 0 0 1 ]
+throw ball
+[ 0 1 0 0 1 ]
+advance time
+[ 1 0 0 1 ]
+5
+(don't need to account for ball)
+throw ball
+[ 0 0 0 1 0 1 ]
+advance time
+[ 0 0 1 0 1 ]
+1
+account for ball
+[ 1 0 1 0 1 ]
+throw ball
+[ 0 1 1 0 1 ]
+advance time
+[ 1 1 0 1 ]
+
+
+21
+--
+goalNumBalls = 1.5
+numBalls = 0
+[  0 ]
+{2}
+needCharge = 1
+curCharge = 0
+account for ball
+[  1 ]
+numBalls = 1
+throw ball
+[  0   0   1 ]
+advance time
+[  0   1 ]
+{1}
+needCharge = 1
+curCharge = 0
+account for ball
+[  1   1 ]
+throw ball
+[  0   2 ]
+advance time
+[  2 ]
+2
+account for antiball
+

@@ -370,6 +370,24 @@ public class State {
 
     }
 
+    // get the state of a given siteswap
+    public State(Siteswap ss) {
+	this(ss.numHands());
+	// get the finite portion
+	Toss curToss;
+	for(int b=0; b<ss.period(); b++) {
+	    for(int h=0; h<ss.numHands(); h++) {
+		if(ss.siteIsEmpty(b, h)) {
+		} else {
+		    for(int t=0; t<ss.numTossesAtSite(b, h); t++) {
+			    curToss = ss.getToss(b, h, t);
+			    // throw the ball/antiball
+		    }
+		}
+	    }
+	}
+    }
+
     public static void main(String[] args) {
 	State s = new State(1);
 	System.out.println(s);

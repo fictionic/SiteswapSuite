@@ -111,6 +111,10 @@ public class Siteswap {
 	return this.getSite(atBeat, fromHand).numTosses();
     }
 
+    public int outDegreeAtSite(int atBeat, int fromHand) {
+	return this.getSite(atBeat, fromHand).outDegree();
+    }
+
     public boolean siteIsEmpty(int beatIndex, int handIndex) {
 	return this.getSite(beatIndex, handIndex).isEmpty();
     }
@@ -236,6 +240,7 @@ public class Siteswap {
 		this.tosses.add(new Toss(handIndex));
 	    }
 
+	    // for deepCopy
 	    private Hand(int handIndex, List<Toss> newTosses, int newOutDegree) {
 		this.handIndex = handIndex;
 		this.tosses = newTosses;
@@ -244,6 +249,10 @@ public class Siteswap {
 
 	    private int numTosses() {
 		return this.tosses.size();
+	    }
+	    
+	    private int outDegree() {
+		return this.outDegree;
 	    }
 
 	    private Toss getToss(int tossIndex) {
