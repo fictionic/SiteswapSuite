@@ -16,6 +16,18 @@ public class Parser {
 	//no star notation on mixed, because it would be ambiguous as to whether the whole pattern is starred or just the most recent sync part
 	private static final String validMultipleJugglerSiteswapString = ""; //later...
 
+	private static boolean debug = false;
+
+	private static void printf(Object msg) {
+		if(debug) {
+			try {
+				System.out.println(msg);
+			} catch(NullPointerException e) {
+				System.out.println("null");
+			}
+		}
+	}
+
 	public static String getNotationType(String s) {
 		if(Pattern.matches(validAsyncSiteswapString, s)) {
 			return "async";
@@ -51,6 +63,7 @@ public class Parser {
 	}
 
 	public static Siteswap parseAsyncAsOneHanded(String s) {
+		printf("parsing input as one-handed siteswap...");
 		Siteswap out = new Siteswap(1, "async");
 		String curToken;
 		int i=0; //index in input string	
@@ -61,10 +74,9 @@ public class Parser {
 		while(i < s.length()) {
 			curToken = ((Character)s.charAt(i)).toString(); //get string of i-ith character of the input string
 			switch(curToken) {
-				//comment
 				case "[":
 					multi = true;
-					out.addEmptyBeat();
+					out.addZeroBeat();
 					break;
 				case "]":
 					multi = false;
@@ -87,7 +99,7 @@ public class Parser {
 						isNegative = false;
 					}
 					if(!multi) {
-						out.addEmptyBeat();
+						out.addZeroBeat();
 						out.getLastBeat().getHand(0).addToss(height, isInfinite, 0);
 						b++;
 					} else {
@@ -121,12 +133,12 @@ public class Parser {
 			curToken = ((Character)s.charAt(i)).toString();
 			//update current hand
 			curHand = b % 2;
-			//System.out.println(curToken);
+			//printf(curToken);
 			switch(curToken) {
 				//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
 				case "[":
 					multi = true;
-					out.addEmptyBeat();
+					out.addZeroBeat();
 					break;
 					//if curToken is "]", we're no longer in a multiplex throw, so add an empty toss to the non-current hand
 				case "]":
@@ -159,7 +171,7 @@ public class Parser {
 					int destHand = (curHand + height) % 2; //0=left, 1=right
 					if(!multi) {
 						//create new beat
-						out.addEmptyBeat();
+						out.addZeroBeat();
 						//add toss of correct height and destination to current hand
 						out.getLastBeat().getHand(curHand).addToss(height, isInfinite, destHand);
 						//add empty toss to other hand
@@ -197,7 +209,7 @@ public class Parser {
 			switch(curToken) {
 				case "(":
 					//create new beat
-					out.addEmptyBeat();
+					out.addZeroBeat();
 					curHand = 0;
 					break;
 				case ",":
@@ -259,7 +271,7 @@ public class Parser {
 
 	private static Siteswap parseMixed(String s) {
 		//later...
-		System.out.println("Parsing of mixed notation not yet implemented...");
+		printf("Parsing of mixed notation not yet implemented...");
 		System.exit(1);
 		return null;
 	}
@@ -276,8 +288,12 @@ public class Parser {
 		}
 	}
 
-	private static String reverseThrowHeight(Integer h) {
+	private static String reverseThrowHeight(Siteswap.Beat.Hand.Toss t) {
 		String toReturn = "";
+		if(t.isAntiToss()) {
+			toReturn += "_";
+		}
+		Integer h = t.height();
 		if(h < 0) {
 			toReturn = "-";
 		}
@@ -292,6 +308,11 @@ public class Parser {
 			toReturn += "";
 		}
 		return toReturn;
+	}
+
+	public static String deParse(SiteswapTransition ss) {
+		// make this more robust later
+		return deParse(ss.prefix()) + " | " + deParse(ss.transition()) + " | " + deParse(ss.suffix());
 	}
 
 	public static String deParse(Siteswap ss) {
@@ -322,7 +343,7 @@ public class Parser {
 			if(curHand.numTosses() > 1) {
 				out += "[";
 				for(int t=0; t<curHand.numTosses(); t++) {
-					out += reverseThrowHeight(curHand.getToss(t).height());
+					out += reverseThrowHeight(curHand.getToss(t));
 				}
 				out += "]";
 			} else {
@@ -332,7 +353,7 @@ public class Parser {
 					}
 					out += "&";
 				} else {
-					out += reverseThrowHeight(curHand.getToss(0).height());
+					out += reverseThrowHeight(curHand.getToss(0));
 				}
 			}
 		}
@@ -361,7 +382,7 @@ public class Parser {
 				//loop through tosses of current hand
 				for(int t=0; t<curHand.numTosses(); t++) {
 					curToss = curHand.getToss(t);
-					out += reverseThrowHeight(curToss.height());
+					out += reverseThrowHeight(curToss);
 					//see if the throw goes where it normally does; add a "x" if not
 					if(!curToss.isInfinite() && curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
 						out += "x";
@@ -370,7 +391,7 @@ public class Parser {
 				out += "]";
 			} else {
 				curToss = curHand.getLastToss();
-				out += reverseThrowHeight(curToss.height());
+				out += reverseThrowHeight(curToss);
 				//see if the throw goes where it normally does; add a "x" if not
 				if(!curToss.isInfinite() && curToss.destHand() != (curToss.startHand() + curToss.height()) % 2) {
 					out += "x";
@@ -398,7 +419,7 @@ public class Parser {
 					//loop through tosses within hand
 					for(int t=0; t<curHand.numTosses(); t++) {
 						Siteswap.Beat.Hand.Toss curToss = curHand.getToss(t);
-						out += reverseThrowHeight(curToss.height());
+						out += reverseThrowHeight(curToss);
 						if(curToss.destHand() != (curToss.startHand() + Math.abs(curToss.height())) % 2) {
 							out += "x";
 						}
@@ -407,7 +428,7 @@ public class Parser {
 				} else {
 					//account for only toss in hand
 					Siteswap.Beat.Hand.Toss curToss = curHand.getLastToss();
-					out += reverseThrowHeight(curToss.height());
+					out += reverseThrowHeight(curToss);
 					if(curToss.destHand() != (curToss.startHand() + Math.abs(curToss.height())) % 2) {
 						out += "x";
 					}
@@ -433,7 +454,7 @@ public class Parser {
 	}
 
 	private static String deParseMixed(Siteswap ss) {
-		return "not yet implemented";
+		return "error: deparsing of mixed notation not yet implemented";
 	}
 
 	private static String reduceSiteswapString(String s) {
@@ -445,9 +466,9 @@ public class Parser {
 	public static void main(String[] args) {
 		if(args.length == 1) {
 			Siteswap ss = parse(args[0], true);
-			System.out.println(ss);
+			printf(ss);
 			String s = deParse(ss);
-			System.out.println(s);
+			printf(s);
 		}
 	}
 }
