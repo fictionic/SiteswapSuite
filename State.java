@@ -9,7 +9,6 @@ public class State {
 	private int numBalls;
 	private int shift;
 
-	//FOR DEBUGGING
 	public static boolean debug = false;
 	public static void printf(Object input) {
 		if(debug) {
@@ -32,8 +31,10 @@ public class State {
 			hands.add(new HandState());
 		}
 		//emulate juggling the pattern, adding balls to hands at beats when needed
-		//turn all of ss's negative tosses into antitosses
+		//
+		// first turn all of ss's negative tosses into antitosses
 		ss.antiTossify();
+		printf("computing state for pattern: " + ss);
 		int debugCounter = 0;
 		do {
 			for(int b=0; b<ss.period(); b++) {
@@ -56,7 +57,7 @@ public class State {
 									printf("\t\t\tstate: " + hands);
 								} else {
 									incrementValue(h);
-									numBalls++;
+									this.numBalls++;
 									printf("\t\t\taccounted for ball");
 									printf("\t\t\tstate: " + hands);
 								}
@@ -80,10 +81,9 @@ public class State {
 							printf("old numBalls: " + numBalls);
 							if(curToss.isInfinite()) {
 								if(curToss.isAntiToss()) {
-									numBalls++;
-
+									this.numBalls++;
 								} else {
-									numBalls--;
+									this.numBalls--;
 								}
 							}
 							printf("new numBalls: " + numBalls);
@@ -119,15 +119,13 @@ public class State {
 				printf("\tadvanced time");
 				printf("\tstate: " + hands);
 			}
-			printf("balls accounted for: " + numBalls);
+			printf("balls accounted for: " + this.numBalls);
 			printf("ss.numBalls(): " + goalNumBalls);
-			/*
-			debugCounter++;
-			if(debugCounter > 2) {
+			/* debugCounter++;
+			if(debugCounter > 5) {
 				System.exit(1);
-			}
-			*/
-		} while(numBalls != goalNumBalls);
+			} */
+		} while(this.numBalls != goalNumBalls);
 	}
 
 	private State(int numHands) {
@@ -144,22 +142,32 @@ public class State {
 			System.exit(1);
 		}
 		this.hands = new ArrayList<HandState>();
+		this.numBalls = 0;
 		//see if it's one-handed
 		if(!stateString.substring(0,1).equals("[")) {
-			hands.add(new HandState(stateString));
+			HandState hand = new HandState(stateString);
+			hands.add(hand);
+			this.numBalls = hand.numBallsInHand;
 		} else {
 			int i = 1; //index of first character of current handString
 			int j = stateString.indexOf(",",i);
 			while(j != -1) {
 				printf("i: " + i + ", j: " + j);
-				printf("substring: " + stateString.substring(i,j));
-				hands.add(new HandState(stateString.substring(i,j)));
+				printf("substring: \'" + stateString.substring(i,j) + "\'");
+				HandState newHand = new HandState(stateString.substring(i,j));
+				hands.add(newHand);
+				this.numBalls += newHand.numBallsInHand;
 				//look for the next handString
 				i = j + 1; //index of the character after the last comma
 				j = stateString.indexOf(",",i); //index of the next comma, if there is one (if not then j==-1 and the loop breaks)
 			}
 			//add the last handString
-			hands.add(new HandState(stateString.substring(i, stateString.length() - 1)));
+			j = stateString.length() - 1;
+			printf("i: " + i + ", j: " + j);
+			printf("substring: \'" + stateString.substring(i,j) + "\'");
+			HandState hand = new HandState(stateString.substring(i,j));
+			hands.add(hand);
+			this.numBalls += hand.numBallsInHand;
 		}
 	}
 
@@ -219,48 +227,87 @@ public class State {
 		return hands.get(handIndex).valueAt(beatsFromNow);
 	}
 
-	public boolean isAlignedWithGENERAL(State otherState) {
+	public List<Integer> getDiffSumsWith(State otherState, int shiftAmount) {
+		List<Integer> diffs = new ArrayList<Integer>();
+		int diff, positive = 0, negative = 0;
+		for(int h=0; h<hands.size(); h++) {
+			HandState.HandStateNode node1 = hands.get(h).nowNode;
+			HandState.HandStateNode node2 = otherState.hands.get(h).nowNode;
+			while(shiftAmount > 0) {
+				node1 = node1.prevNode;
+				node2 = node2.prevNode;
+				shiftAmount--;
+			}
+			while(node1 != null) {
+				diff = node2.value - node1.value;
+				if(diff > 0)
+					positive += diff;
+				if(diff < 0)
+					negative += diff;
+				node1 = node1.prevNode;
+				node2 = node2.prevNode;
+			}
+		}
+		diffs.add(positive);
+		diffs.add(negative);
+		return diffs;
+	}
+
+	public boolean isAlignedWith(State otherState, boolean generateBallAntiballPairs) {
 		//check that the two have the same length
-		//(they should, because this method should only get called
+		//(they should, becanegatiuse this method should only get called
 		// after matchLengths() has been run)
 		if(length() != otherState.length()) {
 			return false;
 		}
-
 		/*
 		outline:
 		find the sum of the values of all the shifted-over nodes in each hand of st1, assign to shiftSum
 		find the sum of every difference st2_i - st1_i, where i ranges over every remaining node in st1, st2, assign to diffSum
 		st1 is aligned with st2 if and only if diffSum == shiftSum
+		diffSum == shiftSum if and only if it is possible to turn st1 into st2 by performing some sequence of tosses on st1 within one beat, then advancing time one beat
 		   */
-
 		//but first see if they haven't been shifted at all. if this is the case then they just have to be the same state,
 		//since there isn't any time to make any throws
 		if(otherState.getShift() == 0) {
 			return this.equals(otherState);
 		}
-		int shiftSum = 0;
-		int diffSum = 0;
+		//we'll compute all four of these values without using the dedicated methods, because that would be slower
+		int shiftSumPositive = 0;
+		int shiftSumNegative = 0;
+		int diffSumPositive = 0;
+		int diffSumNegative = 0;
 		//calculate sums
 		for(int h=0; h<hands.size(); h++) {
 			HandState.HandStateNode node1 = hands.get(h).nowNode;
 			HandState.HandStateNode node2 = otherState.hands.get(h).nowNode;
 			//calculate component of shiftSum from each handState
 			for(int b=0; b<otherState.shift; b++) {
-				shiftSum += node1.value;
+				if(node1.value > 0)
+					shiftSumPositive += node1.value;
+				if(node1.value < 0)
+					shiftSumNegative += node1.value;
 				node1 = node1.prevNode;
 				node2 = node2.prevNode;
 			}
 			//calculate component of diffSum from each handState
 			while(node1 != null) {
-				diffSum += node2.value - node1.value;
+				int diff = node2.value - node1.value;
+				if(diff > 0)
+					diffSumPositive += diff;
+				if(diff < 0)
+					diffSumNegative += diff;
 				node1 = node1.prevNode;
 				node2 = node2.prevNode;
 			}
 
 		}
-		printf("shiftSum: " + shiftSum + "\ndiffSum: " + diffSum);
-		return shiftSum == diffSum;
+		printf("shiftSumPositive: " + shiftSumPositive + "\tshiftSumNegative: " + shiftSumNegative);
+		printf("diffSumPositive: " + diffSumPositive + "\tdiffSumNegative: " + diffSumNegative);
+		if(generateBallAntiballPairs)
+			return shiftSumPositive + shiftSumNegative == diffSumPositive + diffSumNegative;
+		else
+			return (shiftSumPositive == diffSumPositive && shiftSumNegative == diffSumNegative);
 	}
 
 	public boolean allNowValuesAreZero() {
@@ -272,24 +319,17 @@ public class State {
 		return true;
 	}
 
-	public boolean isAlignedWith(State otherState) {
-		//check that the two have the same length
-		if(length() != otherState.length()) {
-			return false;
-		}
-
-		for(int h=0; h<hands.size(); h++) {
-			if(!hands.get(h).isAlignedWith(otherState.hands.get(h))) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	public void shiftForward() {
 		shift++;
 		for(HandState h : hands) {
 			h.shiftForward();
+		}
+	}
+
+	public void shiftForwardNEW() {
+		shift++;
+		for(HandState h : hands) {
+			h.shiftForwardNEW();
 		}
 	}
 
@@ -334,6 +374,11 @@ public class State {
 			//alter the value where the ball gets thrown to by one, again depending on whether or not it's a ball or an antiball
 			//(ball --> increment; antiball --> decrement)
 			hands.get(destHand).alterValueByOne(height, !isAntiToss);
+		} else {
+			if(isAntiToss)
+				this.numBalls++;
+			else
+				this.numBalls--;
 		}
 	}
 
@@ -374,6 +419,7 @@ public class State {
 			newHands.add(hands.get(h).deepCopy());
 		}
 		out.hands = newHands;
+		out.numBalls = this.numBalls;
 		return out;
 	}
 
@@ -404,16 +450,19 @@ public class State {
 		private HandStateNode nowNode;
 		private HandStateNode lastNode;
 		private int length;
+		private int numBallsInHand;
 
 		private HandState() {
 			this.nowNode = new HandStateNode(0, null);
 			this.lastNode = nowNode;
 			this.length = 1;
+			this.numBallsInHand = 0;
 		}
 
 		private HandState(HandStateNode newNowNode, int newLength) {
 			this.nowNode = newNowNode;
 			this.length = newLength;
+			this.numBallsInHand = 0;
 		}
 
 		private HandState(String string) {
@@ -421,6 +470,7 @@ public class State {
 			String curToken = string.substring(string.length()-1, string.length());
 			this.nowNode = new HandStateNode(Integer.parseInt(curToken), null);
 			this.length = 1;
+			this.numBallsInHand = nowNode.value;
 			HandStateNode node = nowNode; //to keep track of which node we've just added, and add nodes off of it
 			//loop backwards through the rest of the string, adding nodes as we go
 			for(int i=string.length()-2; i>=0; i--) {
@@ -428,7 +478,7 @@ public class State {
 				//negate the last value if we find a -1
 				if(curToken.equals("-")) {
 					node.value = -1 * node.value;
-					numBalls += 2 * node.value;
+					this.numBallsInHand += 2 * node.value;
 					continue;
 				}
 				//add new node on the end with the next value
@@ -436,7 +486,7 @@ public class State {
 				node.prevNode = newNode;
 				node = newNode;
 				length++;
-				numBalls += newNode.value;
+				this.numBallsInHand += newNode.value;
 			}
 			//set lastNode to the last node we added
 			this.lastNode = node;
@@ -514,6 +564,12 @@ public class State {
 			length++;
 		}
 
+		private void shiftForwardNEW() {
+			HandStateNode newNowNode = new HandStateNode(0, nowNode);
+			nowNode = newNowNode;
+			length++;
+		}
+
 		private void throwBall(int height, boolean isInfinite, int destHand, boolean isAntiToss) {
 			//if it's a regular (non-anti) toss, decrement the current value (since the ball leaves the current hand)
 			//otherwise, increment the current value (since the antiball leaves the current hand)
@@ -549,24 +605,6 @@ public class State {
 			lastNode = lastNonZeroNode;
 			lastNode.prevNode = null;
 			length -= numNodesToClip - 1; //minus one because we aren't clipping nowNode
-		}
-
-		private boolean isAlignedWith(HandState otherHandState) {
-			HandStateNode node = nowNode;
-			HandStateNode node2 = otherHandState.nowNode;
-			//loop through beats
-			while(node != null) {
-				//check that the values at this position are aligned
-				if(node2.value != null && node.value > node2.value) {
-					//then they aren't aligned
-					return false;
-				} else {
-					//then they are aligned
-					node = node.prevNode;
-					node2 = node2.prevNode;
-				}
-			}
-			return true;
 		}
 
 		private HandState deepCopy() {
@@ -683,23 +721,20 @@ public class State {
 		//testing
 		State state;
 		if(args.length == 1) {
-			state = new State(Parser.parse(args[0]));
+			System.out.println("parsing siteswap string...");
+			Siteswap ss = Parser.parse(args[0]);
+			System.out.println("parsed siteswap string");
+			state = new State(ss);
 			System.out.println(state.toString());
+			System.out.println(state.numBalls());
+			state.throwBall(0, 1, true, 0, false);
+			System.out.println(state.toString());
+			System.out.println(state.numBalls());
 		}
 		if(args.length == 2) {
-			State st1 = new State(args[0]);
-			State st2 = new State(args[1]);
-			st1.matchHandStateLengths();
-			st2.matchHandStateLengths();
-			matchLengths(st1,st2);
-			while(!st1.isAlignedWithGENERAL(st2)) {
-				System.out.println("st1: " + st1 + "\nst2: " + st2);
-				System.out.println(st1.isAlignedWithGENERAL(st2));
-				st1.padWithOneZero();
-				st2.shiftForward();
-			}
-			System.out.println("st1: " + st1 + "\nst2: " + st2);
-			System.out.println(st1.isAlignedWithGENERAL(st2));
+			State st1 = new State(args[1]);
+			System.out.println(st1);
+			System.out.println(st1.numBalls());
 		}
 	}
 }

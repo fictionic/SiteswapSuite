@@ -25,15 +25,15 @@ public class Siteswap {
 	}
 
 	public int numHands() {
-		return numHands;
+		return this.numHands;
 	}
 
 	public String type() {
-		return type;
+		return this.type;
 	}
 
 	public boolean hasInDegree() {
-		return hasInDegree;
+		return this.hasInDegree;
 	}
 
 	public double numBalls() {
@@ -53,7 +53,7 @@ public class Siteswap {
 	}
 
 	public int period() {
-		return beats.size();
+		return this.beats.size();
 	}
 
 	private void calculateInDegree() {
@@ -124,40 +124,64 @@ public class Siteswap {
 		hasInDegree = false;
 	}
 
-	//EVENTUALLY GET RID OF THIS METHOD, MAKE NEW BEATS ALWAYS BE ZERO BEATS, AND REMOVE THE ZERO TOSSES WHEN ADDING NONZERO TOSSES
-	public Beat addEmptyBeat() {
-		Beat emptyBeat = new Beat(period());
-		beats.add(emptyBeat);
-		return emptyBeat;
-	}
-
 	public void addZeroBeat() {
 		beats.add(new Beat(period()));
 	}
 
 	//adds a new toss from the given hand at the given beat to the given desthand with the given height
 	public boolean addToss(int atBeat, int atHand, int tossHeight, boolean isInfinite, int destHand, boolean isAntiToss) {
-		while(atBeat >= period()) {
-			addZeroBeat();
-		}
-		if(atHand > numHands || destHand > numHands) {
+		if(atHand > this.numHands || destHand > this.numHands) {
 			return false;
 		} else {
-			getBeat(atBeat).getHand(atHand).addToss(tossHeight, isInfinite, destHand, isAntiToss);
-			return true;
+			if(atBeat >= 0) {
+				while(atBeat >= period()) {
+					this.addZeroBeat();
+				}
+				this.getBeat(atBeat).getHand(atHand).addToss(tossHeight, isInfinite, destHand, isAntiToss);
+				return true;
+			} else {
+				return false;
+			}
 		}
-	}
-
-	public boolean addToss(int atBeat, int atHand, int tossHeight, boolean isInfinite, int destHand) {
-		return addToss(atBeat, atHand, tossHeight, isInfinite, destHand, false);
 	}
 
 	public boolean addToss(int atBeat, int atHand, int tossHeight, int destHand) {
 		return addToss(atBeat, atHand, tossHeight, false, destHand, false);
 	}
 
-	public Beat getBeat(int index) {
-		return beats.get(index);
+	public boolean strictAddToss(int atBeat, int atHand, int tossHeight, boolean isInfinite, int destHand, boolean isAntiToss) {
+		if(atBeat >= 0) {
+			this.addToss(atBeat, atHand, tossHeight, isInfinite, destHand, isAntiToss);
+			return true;
+		} else {
+			// shift everything forward by b beats, putting zero-valued beats in the front
+			int shiftAmount = -atBeat + 1;
+			for(Beat beat : beats) {
+				beat.beatIndex += shiftAmount;
+				for(Beat.Hand hand : beat.hands) {
+					hand.beatIndex += shiftAmount;
+				}
+			}
+			for(int i=9; i<=shiftAmount; i++) {
+				beats.add(0, new Beat(shiftAmount - i));
+			}
+			this.getBeat(0).getHand(atHand).addToss(tossHeight, isInfinite, destHand, isAntiToss);
+			return true;
+		}
+	}
+
+	public boolean strictAddToss(int atBeat, int atHand, int tossHeight, boolean isInfinite, int destHand) {
+		return strictAddToss(atBeat, atHand, tossHeight, isInfinite, destHand, false);
+	}
+
+	public boolean strictAddToss(int atBeat, int atHand, int tossHeight, int destHand) {
+		return strictAddToss(atBeat, atHand, tossHeight, false, destHand, false);
+	}
+
+	public Beat getBeat(int b) {
+		b = b % period();
+		if(b < 0) b += period();
+		return beats.get(b);
 	}
 
 	public Beat getLastBeat() {
@@ -192,7 +216,7 @@ public class Siteswap {
 					//check if its height is negative
 					if(curToss.height() < 0) {
 						//first make it an antitoss (make its height positive, set antitoss flag)
-						curToss.makeAntiToss(true);
+						curToss.makeAntiToss(true); //(this also negates its height)
 						//then shift the toss back in time through the siteswap according to its height
 						//...as long as it isn't infinite
 						//(if it is, then we certainly can't shift it back)
@@ -222,20 +246,20 @@ public class Siteswap {
 				curHand = getBeat(b).getHand(h);
 				for(int t=0; t<curHand.numTosses(); t++) {
 					curToss = curHand.getToss(t);
-					//check if its height is negative
+					//check if it's an antitoss
 					if(curToss.isAntiToss()) {
 						//shift the toss forward in time through the siteswap according to its height
 						//...as long as it isn't infinite
 						//(if it is, then we certainly can't shift it back)
 						//(we just leave it where it is, it works out with getState in the end, don't worry)
 						if(!curToss.isInfinite()) {
-							//first, make it a regular toss
+							//first, make it a regular toss (this also negates its height)
 							curToss.makeAntiToss(false);
 							//shift curtoss back in time by its height value
 							//first remove it from where it was
 							curHand.removeToss(t);
 							//then add it where it needs to go
-							int destBeat = (b + curToss.height()) % period();
+							int destBeat = (b - curToss.height()) % period();
 							getBeat(destBeat).getHand(h).addToss(curToss);
 						}
 					}
@@ -244,10 +268,11 @@ public class Siteswap {
 		}
 	}
 
-	public void annexPattern(Siteswap toAnnex) {
+	public Siteswap annexPattern(Siteswap toAnnex) {
 		for(int b=0; b<toAnnex.period(); b++) {
 			addBeat(toAnnex.getBeat(b));
 		}
+		return this;
 	}
 
 	public void removeLastBeat() {
@@ -482,7 +507,7 @@ public class Siteswap {
 				addToss(new Toss(handIndex, height, isInfinite, destHand, isAntiToss));
 			}
 
-			private void addToss(Toss newToss) {
+			protected void addToss(Toss newToss) {
 				//prevent redundant zero tosses
 				if(isZeroHand()) {
 					removeToss(0, true);
@@ -494,11 +519,11 @@ public class Siteswap {
 				hasInDegree = false;
 			}
 
-			private void removeToss(int tossIndex) {
+			protected void removeToss(int tossIndex) {
 				removeToss(tossIndex, false);
 			}
 
-			private void removeToss(int tossIndex, boolean dontAddZeroToss) {
+			protected void removeToss(int tossIndex, boolean dontAddZeroToss) {
 				tosses.remove(tossIndex);
 				if(!dontAddZeroToss && tosses.size() == 0) {
 					addToss();
@@ -522,13 +547,16 @@ public class Siteswap {
 			}
 
 			private boolean isZeroHand() {
-				if(tosses.size() == 0 || tosses.size() > 1) {
+				if(tosses.size() > 0) {
+					boolean allZero = true;
+					for(Toss toss : tosses) {
+						if(!toss.isZeroToss())
+							allZero = false;
+					}
+					return allZero;
+				} else {
 					return false;
 				}
-				if(!tosses.get(0).isZeroToss()) {
-					return false;
-				}
-				return true;
 			}
 
 			public boolean isEmpty() {
@@ -595,9 +623,11 @@ public class Siteswap {
 					return isAntiToss;
 				}
 
-				private void makeAntiToss(boolean isAntiToss) {
-					height = Math.abs(height);
-					isAntiToss = true;
+				protected void makeAntiToss(boolean isAntiToss) {
+					if(this.isAntiToss != isAntiToss) {
+						this.height = -this.height;
+						this.isAntiToss = isAntiToss;
+					}
 				}
 
 				public int startHand() {
@@ -659,16 +689,19 @@ public class Siteswap {
 	}
 
 	public static void main(String[] args) {
-		if(args.length == 0) {
-			Siteswap ss = new Siteswap(2, "async");
-			System.out.println(ss);
-		}
 		if(args.length == 1) {
+			/*
 			Siteswap ss = Parser.parse(args[0]);
-			System.out.println(Parser.deParse(ss));
-			System.out.println("antiTossified:");
+			System.out.println(ss);
 			ss.antiTossify();
-			System.out.println(Parser.deParse(ss));
+			System.out.println("antiTossified:");
+			System.out.println(ss);
+			ss.unAntiTossify();
+			System.out.println("unAntiTossified:");
+			System.out.println(ss);
+			*/
+
+			Siteswap ss = new Siteswap(1, "async");
 		}
 
 	}
