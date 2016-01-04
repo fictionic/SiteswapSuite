@@ -1,3 +1,5 @@
+package siteswapsuite;
+
 public class ExtendedInteger {
 
     private Integer finiteValue;

@@ -1,3 +1,5 @@
+package siteswapsuite;
+
 public class Toss {
 
     private int beatIndex; // figure out if I need these

@@ -1,3 +1,5 @@
+package siteswapsuite;
+
 public class ExtendedFraction {
 
     private ExtendedInteger numerator;
