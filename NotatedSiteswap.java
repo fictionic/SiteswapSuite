@@ -61,12 +61,12 @@ public class NotatedSiteswap extends Siteswap {
 	private static final String magnitude = "(\\d|[a-z]|&)";
 
 	// async (one-handed)
-	private static final String asyncToss = modifier + magnitude;
+	private static final String asyncToss = "(" + modifier + magnitude + ")";
 	private static final String asyncMux = "(" + asyncToss + "|\\[" + asyncToss + "+\\])";
 	private static final String validAsyncNotation = asyncMux + "+";
 
 	// sync (two-handed)
-	private static final String syncToss = modifier + magnitude + "x?";
+	private static final String syncToss = "(" + modifier + magnitude + "x?)";
 	private static final String syncHand = "(" + syncToss + "|\\[" + syncToss + "+\\])";
 	private static final String syncBeat = "(\\(" + syncHand + "," + syncHand + "\\)!?)";
 	private static final String validSyncNotation = syncBeat + "+\\*?";
