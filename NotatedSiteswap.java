@@ -10,7 +10,7 @@ enum Notation {
 
 class InvalidNotationException extends Exception {}
 
-public class NotatedSiteswap extends Siteswap {
+public abstract class NotatedSiteswap extends Siteswap {
 
 	protected Notation notationType;
 
