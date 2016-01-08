@@ -14,6 +14,12 @@ public class Siteswap {
 		this.beats = new ArrayList<Beat>();
 	}
 
+	// degenerate constructor, only for use in NotatedSiteswap
+	Siteswap(Siteswap ss) {
+		this.numHands = ss.numHands;
+		this.beats = ss.beats;
+	}
+
 	// querying basic info
 	public int numHands() {
 		return this.numHands;
