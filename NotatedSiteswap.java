@@ -1,16 +1,8 @@
 package siteswapsuite;
 
-import java.util.regex.Pattern;
 import java.util.ArrayList;
 
-
-enum Notation { 
-	EMPTY, SYNCHRONOUS, ASYNCHRONOUS, MIXED, PASSING
-}
-
-class InvalidNotationException extends Exception {}
-
-public abstract class NotatedSiteswap extends Siteswap {
+public abstract class NotatedSiteswap extends MutableSiteswap {
 
 	protected Notation notationType;
 
@@ -19,91 +11,66 @@ public abstract class NotatedSiteswap extends Siteswap {
 		return this.notationType;
 	}
 
+	public NotatedSiteswap deepCopy() {
+		return null;
+	}
+
 	/* ------- */
 	/* PARSING */
 	/* ------- */
 
-	protected static ExtendedInteger throwHeight(char c) {
-		String h = ((Character)c).toString();
-		if(Pattern.matches("\\d", h)) {
-			return new ExtendedInteger(Integer.parseInt(h));
-		} else if(Pattern.matches("([a-z])", h)) {
-			return new ExtendedInteger((int)(h.toCharArray()[0]) - 87);
-		} else { //must be '&'
-			return new ExtendedInteger(InfinityType.POSITIVE_INFINITY);
-		}
-	}
-
-	/* siteswap regex patterns */
-	// the empty pattern (need some way of notating it without the empty string, cuz that's never passed on the commandline)
-	private static final String emptyNotation = "\\.";
-
-	// basics
-	private static final String modifier = "(-?_?|_?-?)";
-	private static final String magnitude = "(\\d|[a-z]|&)";
-
-	// async (one-handed)
-	private static final String asyncToss = "(" + modifier + magnitude + ")";
-	private static final String asyncMux = "(" + asyncToss + "|\\[" + asyncToss + "+\\])";
-	private static final String validAsyncNotation = asyncMux + "+";
-
-	// sync (two-handed)
-	private static final String syncToss = "(" + modifier + magnitude + "x?)";
-	private static final String syncHand = "(" + syncToss + "|\\[" + syncToss + "+\\])";
-	private static final String syncBeat = "(\\(" + syncHand + "," + syncHand + "\\)!?)";
-	private static final String validSyncNotation = syncBeat + "+\\*?";
-
-	// mixed (two-handed)
-	private static final String validMixedNotation = "(" + syncToss + "|" + syncBeat + ")+";
-	//no star notation on mixed, because it would be ambiguous as to whether the whole pattern is starred or just the most recent sync part
-
-	// passing (two two-handed jugglers)
-	private static final String validPassingNotation = ""; //later...
-	
-	public static Notation getNotation(String s) {
-		if(Pattern.matches(emptyNotation, s))
-			return Notation.EMPTY;
-		if(Pattern.matches(validAsyncNotation, s))
-			return Notation.ASYNCHRONOUS;
-		else if(Pattern.matches(validSyncNotation, s))
-			return Notation.SYNCHRONOUS;
-		else if(Pattern.matches(validMixedNotation, s))
-			return Notation.MIXED;
-		else if(Pattern.matches(validPassingNotation, s))
-			return Notation.PASSING;
-		else
-			return null;
-	}
-
-	// link to Siteswap() constructor for subclasses
+	// link to MutableSiteswap() constructor for subclasses
 	private NotatedSiteswap(int numHands) {
 		super(numHands);
 	}
 
-	public static NotatedSiteswap parseString(String inputNotation, int desiredNumHands) throws InvalidNotationException {
+	// construct a NotatedSiteswap out of a siteswap and a notationtype
+	public NotatedSiteswap(MutableSiteswap ss, Notation notationType) {
+		super(ss);
+		this.notationType = notationType;
+	}
+
+	// construct a NotatedSiteswap out of a siteswap, guessing a good notationtype
+	public NotatedSiteswap(MutableSiteswap ss) {
+		this(ss, Notation.assumedNotation(ss.numHands()));
+	}
+
+	public static NotatedSiteswap parse(String inputNotation, int desiredNumHands) throws IncompatibleNumberOfHandsException, InvalidNotationException {
 		// determine how we should parse the input, then parse it that way
-		Notation n = getNotation(inputNotation);
-		if(n == null)
-			throw new InvalidNotationException();
+		Notation n = null;
+		n = Notation.analyze(inputNotation);
+		if(desiredNumHands == 0)
+			return new EmptyNotatedSiteswap(0);
 		switch(n) {
 			case EMPTY:
 				return new EmptyNotatedSiteswap(desiredNumHands);
 			case ASYNCHRONOUS:
 				if(desiredNumHands == 2)
 					return new TwoHandedAsyncNotatedSiteswap(inputNotation);
-				else
+				else if(desiredNumHands == 1 || desiredNumHands == -1)
 					return new OneHandedNotatedSiteswap(inputNotation);
+				else
+					throw new IncompatibleNumberOfHandsException();
 			case SYNCHRONOUS:
-				return new TwoHandedSyncNotatedSiteswap(inputNotation);
+				if(desiredNumHands == 2 || desiredNumHands == -1)
+					return new TwoHandedSyncNotatedSiteswap(inputNotation);
+				else
+					throw new IncompatibleNumberOfHandsException();
 			case MIXED:
-				return new TwoHandedMixedNotatedSiteswap(inputNotation);
+				if(desiredNumHands == 2 || desiredNumHands == -1)
+					return new TwoHandedMixedNotatedSiteswap(inputNotation);
+				else
+					throw new IncompatibleNumberOfHandsException();
 			default:
-				return new NotatedPassingSiteswap(inputNotation);
+				if(desiredNumHands == 4 || desiredNumHands == -1)
+					return new NotatedPassingSiteswap(inputNotation);
+				else
+					throw new IncompatibleNumberOfHandsException();
 		}
 	}
 
-	public static NotatedSiteswap parseString(String inputNotation) throws InvalidNotationException {
-		return parseString(inputNotation, 0);
+	public static NotatedSiteswap parse(String inputNotation) throws IncompatibleNumberOfHandsException, InvalidNotationException {
+		return parse(inputNotation, -1);
 	}
 
 	/* ---------- */
@@ -112,36 +79,8 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 	public abstract String print();
 
-	protected static String reverseThrowHeight(Toss t) {
-		String toReturn = "";
-		ExtendedInteger H = t.height();
-		if(H.sign() < 0)
-			toReturn += "-";
-		if(t.charge() < 0)
-			toReturn += "_";
-		if(H.isInfinite()) {
-			toReturn += "&";
-			return toReturn;
-		}
-		Integer h = Math.abs(H.finiteValue());
-		if(h <= 9) {
-			toReturn += h.toString();
-		} else if((10 <= h) && (h <= 36)) {
-			toReturn += (Character.toChars(h - 10 + 97)).toString();
-		} else {
-			// eventually come up with a better solution?
-			toReturn += "{" + h.toString() + "}";
-		}
-		return toReturn;
-	}
-
-	// build a notatedsiteswap from a siteswap
-	private NotatedSiteswap(Siteswap ss, Notation notationType) {
-		super(ss);
-		this.notationType = notationType;
-	}
-
-	public String notate(Siteswap ss) {
+	// de-parse a Siteswap
+	public String notate(MutableSiteswap ss) {
 		if(ss.period() == 0)
 			return (new EmptyNotatedSiteswap(ss)).print();
 		switch(this.numHands) {
@@ -157,7 +96,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 	}
 
 	static class EmptyNotatedSiteswap extends NotatedSiteswap {
-		EmptyNotatedSiteswap(Siteswap ss) {
+		EmptyNotatedSiteswap(MutableSiteswap ss) {
 			super(ss, Notation.EMPTY);
 		}
 
@@ -166,13 +105,13 @@ public abstract class NotatedSiteswap extends Siteswap {
 		}
 
 		public String print() {
-			return emptyNotation;
+			return Notation.emptyNotation;
 		}
 	}
 
 	static class OneHandedNotatedSiteswap extends NotatedSiteswap {
 
-		OneHandedNotatedSiteswap(Siteswap ss) {
+		OneHandedNotatedSiteswap(MutableSiteswap ss) {
 			super(ss, Notation.ASYNCHRONOUS);
 		}
 
@@ -205,7 +144,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 						isAntitoss = true;
 						break;
 					default:
-						ExtendedInteger height = throwHeight(curToken);
+						ExtendedInteger height = Notation.throwHeight(curToken);
 						if(isNegative) {
 							height.negate();
 							isNegative = false;
@@ -241,11 +180,11 @@ public abstract class NotatedSiteswap extends Siteswap {
 				if(this.numTossesAtSite(b, 0) > 1) {
 					out += "[";
 					for(int t=0; t<this.numTossesAtSite(b,0); t++) {
-						out += reverseThrowHeight(this.getToss(b, 0, t));
+						out += Notation.reverseThrowHeight(this.getToss(b, 0, t));
 					}
 					out += "]";
 				} else {
-					out += reverseThrowHeight(this.getToss(b, 0, 0));
+					out += Notation.reverseThrowHeight(this.getToss(b, 0, 0));
 				}
 			}
 			return out;
@@ -254,7 +193,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 	static class TwoHandedAsyncNotatedSiteswap extends NotatedSiteswap {
 
-		TwoHandedAsyncNotatedSiteswap(Siteswap ss) {
+		TwoHandedAsyncNotatedSiteswap(MutableSiteswap ss) {
 			super(ss, Notation.ASYNCHRONOUS);
 		}
 
@@ -296,7 +235,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 						break;
 						//if curToken is anything else, it has to be a throw height (since it matched the regex for async pattern)
 					default:
-						height = throwHeight(curToken);
+						height = Notation.throwHeight(curToken);
 						if(isNegative) {
 							height.negate();
 							isNegative = false;
@@ -358,11 +297,11 @@ public abstract class NotatedSiteswap extends Siteswap {
 					out += "[";
 					//loop through tosses of current hand
 					for(int t=0; t<this.numTossesAtSite(b, curHandIndex); t++) {
-						out += reverseThrowHeight(this.getToss(b, curHandIndex, t));
+						out += Notation.reverseThrowHeight(this.getToss(b, curHandIndex, t));
 					}
 					out += "]";
 				} else {
-					out += reverseThrowHeight(this.getToss(b, curHandIndex, 0));
+					out += Notation.reverseThrowHeight(this.getToss(b, curHandIndex, 0));
 				}
 				//alternate curHandIndex
 				curHandIndex = (curHandIndex + 1) % 2;
@@ -373,7 +312,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 	static class TwoHandedSyncNotatedSiteswap extends NotatedSiteswap {
 
-		TwoHandedSyncNotatedSiteswap(Siteswap ss) {
+		TwoHandedSyncNotatedSiteswap(MutableSiteswap ss) {
 			super(ss, Notation.SYNCHRONOUS);
 		}
 
@@ -436,7 +375,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 						isAntitoss = true;
 						break;
 					default: //curToken is a throw height
-						height = throwHeight(curToken);
+						height = Notation.throwHeight(curToken);
 						if(isNegative) {
 							height.negate();
 							isNegative = false;
@@ -474,7 +413,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 						//loop through tosses within hand
 						for(int t=0; t<this.numTossesAtSite(b, h); t++) {
 							Toss curToss = this.getToss(b, h, t);
-							out += reverseThrowHeight(curToss);
+							out += Notation.reverseThrowHeight(curToss);
 							if(!curToss.height().isInfinite() && curToss.destHand() != (h + Math.abs(curToss.height().finiteValue())) % 2) {
 								out += "x";
 							}
@@ -483,7 +422,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 					} else {
 						//account for only toss in hand
 						Toss curToss = this.getToss(b, h, 0);
-						out += reverseThrowHeight(curToss);
+						out += Notation.reverseThrowHeight(curToss);
 						if(!curToss.height().isInfinite() && curToss.destHand() != (h + Math.abs(curToss.height().finiteValue())) % 2) {
 							out += "x";
 						}
@@ -512,7 +451,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 	static class TwoHandedMixedNotatedSiteswap extends NotatedSiteswap {
 
-		TwoHandedMixedNotatedSiteswap(Siteswap ss) {
+		TwoHandedMixedNotatedSiteswap(MutableSiteswap ss) {
 			super(ss, Notation.MIXED);
 		}
 
@@ -531,7 +470,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 	static class NotatedPassingSiteswap extends NotatedSiteswap {
 
-		NotatedPassingSiteswap(Siteswap ss) {
+		NotatedPassingSiteswap(MutableSiteswap ss) {
 			super(ss, Notation.PASSING);
 		}
 
@@ -551,12 +490,14 @@ public abstract class NotatedSiteswap extends Siteswap {
 	public static void main(String[] args) {
 		if(args.length == 1) {
 			try {
-				NotatedSiteswap nss = NotatedSiteswap.parseString(args[0]);
+				NotatedSiteswap nss = NotatedSiteswap.parse(args[0]);
 				System.out.println("parsed: " + nss.toString());
 				String s = nss.print();
 				System.out.println("de-parsed: " + s);
 			} catch(InvalidNotationException e) {
 				System.out.println("invalid notation");
+			} catch(IncompatibleNumberOfHandsException e) {
+				System.out.println("incompatible number of hands");
 			}
 		}
 	}
