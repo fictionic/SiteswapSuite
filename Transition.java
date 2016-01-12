@@ -24,31 +24,31 @@ abstract class Transition extends MutableSiteswap {
 	}
 
 	// link to Siteswap() constructor for subclasses
-	private Transition(State from, State to) {
-		super(from.numHands());
+	private Transition(int numHands) {
+		super(numHands);
 	}
 
 	private static class StandardTransition extends Transition {
 		private StandardTransition(State from, State to) {
-			super(from, to);
+			super(from.numHands());
 		}
 	}
 
 	private static class AllowExtraSqueezeCatches extends Transition {
 		private AllowExtraSqueezeCatches(State from, State to) {
-			super(from, to);
+			super(from.numHands());
 		}
 	}
 
 	private static class GenerateBallAntiballPairs extends Transition {
 		private GenerateBallAntiballPairs(State from, State to) {
-			super(from, to);
+			super(from.numHands());
 		}
 	}
 
 	private static class OneBeatTransition extends Transition {
 		private OneBeatTransition(State from, State to) {
-			super(from, to);
+			super(from.numHands());
 		}
 	}
 

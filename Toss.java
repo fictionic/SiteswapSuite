@@ -9,7 +9,6 @@ public class Toss {
 	public Toss(int emptyHandIndex) {
 		this.height = new ExtendedInteger(0);
 		this.destHand = emptyHandIndex;
-		this.sourceHand = emptyHandIndex;
 		this.charge = 0;
 	}
 
