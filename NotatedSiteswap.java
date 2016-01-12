@@ -69,7 +69,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 
 	// construct a NotatedSiteswap out of a siteswap, guessing a good notationtype
 	public NotatedSiteswap(MutableSiteswap ss) {
-		this(ss, Notation.assumedNotation(ss.numHands()));
+		this(ss, Notation.defaultNotationType(ss.numHands()));
 	}
 
 	public static NotatedSiteswap parse(String inputNotation, int desiredNumHands) throws IncompatibleNotationException, InvalidNotationException {

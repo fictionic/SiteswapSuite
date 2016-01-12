@@ -3,7 +3,6 @@ package siteswapsuite;
 import java.util.regex.Pattern;
 
 class InvalidNotationException extends Exception {}
-class IncompatibleNumberOfHandsException extends Exception {}
 
 public enum Notation { 
 
