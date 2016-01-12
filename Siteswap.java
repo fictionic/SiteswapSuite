@@ -44,7 +44,7 @@ public interface Siteswap {
 	// --------------- //
 	// generic methods //
 	// --------------- //
-	
+
 	// get a toss-for-toss copy of this pattern
 	//public abstract ? super Siteswap deepCopy();
 

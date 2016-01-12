@@ -74,7 +74,7 @@ public enum Notation {
 
 	// passing (two two-handed jugglers)
 	static final String validPassingNotation = ""; //later...
-	
+
 	// put them all together!
 	public static Notation analyze(String s) throws InvalidNotationException {
 		if(Pattern.matches(emptyNotation, s))

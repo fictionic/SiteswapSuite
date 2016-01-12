@@ -235,12 +235,6 @@ public class MutableSiteswap implements Siteswap {
 			this.inDegree = 0;
 		}
 
-		// for converting from Site
-		/*private Site(Siteswap.Site site) {
-			this.handIndex = site.handIndex;
-			this.tosses = site.tosses;
-		}*/
-
 		private int numTosses() {
 			return this.tosses.size();
 		}
