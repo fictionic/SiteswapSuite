@@ -3,35 +3,22 @@ package siteswapsuite;
 import java.util.List;
 import java.util.ArrayList;
 
-public class MutableSiteswap {
+public class MutableSiteswap implements Siteswap {
 
 	int numHands;
-	List<List<MutableSite>> sites;
+	List<List<Site>> sites;
 
 	// main constructor - initialize a completely empty siteswap with the appropriate number of hands
 	public MutableSiteswap(int numHands) {
 		this.numHands = numHands;
-		this.sites = new ArrayList<List<MutableSite>>();
+		this.sites = new ArrayList<List<Site>>();
 	}
 
-	// private constructor, only for subPattern()
-	private MutableSiteswap(int numHands, List<List<MutableSite>> sites) {
+	// private constructor, only for subPattern() and NotatedSiteswap
+	MutableSiteswap(int numHands, List<List<Site>> sites) {
 		this.numHands = numHands;
 		this.sites = sites;
 	}
-
-	// degenerate constructor, only for use in NotatedSiteswap
-	/*MutableSiteswap(Siteswap ss) {
-		this.numHands = ss.numHands;
-		this.sites = new ArrayList<List<MutableSite>>();
-		for(int b=0; b<ss.period(); b++) {
-			this.sites.add(new ArrayList<MutableSite>());
-			for(int h=0; h<ss.numHands(); h++) {
-				this.sites.get(b).add(new MutableSite(ss.getSite(b, h)));
-			}
-		}
-		this.sites = ss.sites;
-	}*/
 
 	// querying basic info
 	public int numHands() {
@@ -109,7 +96,7 @@ public class MutableSiteswap {
 		return true;
 	}
 
-	private MutableSite getSite(int beatIndex, int handIndex) {
+	Site getSite(int beatIndex, int handIndex) {
 		if(beatIndex < 0)
 			beatIndex += this.sites.size();
 		else
@@ -165,7 +152,9 @@ public class MutableSiteswap {
 
 	// extending pattern
 	public void appendEmptyBeat() {
-		this.sites.add(new ArrayList<MutableSite>());
+		this.sites.add(new ArrayList<Site>());
+		for(int h=0; h<this.numHands; h++)
+			this.sites.get(period()-1).add(new Site(h));
 	}
 
 	public int extendToBeatIndex(int beatIndex) { //returns index of beat that was previously "at" given index (either 0 or period(), if any extending happens)
@@ -204,9 +193,9 @@ public class MutableSiteswap {
 
 	public MutableSiteswap subPattern(int startBeat, int endBeat) {
 		//get deep copy of each beat within specified indices
-		List<List<MutableSite>> newSites = new ArrayList<List<MutableSite>>();
+		List<List<Site>> newSites = new ArrayList<List<Site>>();
 		for(int b=startBeat; b<endBeat; b++) {
-			List<MutableSite> newBeat = new ArrayList<MutableSite>();
+			List<Site> newBeat = new ArrayList<Site>();
 			for(int h=0; h<this.numHands; h++) {
 				newBeat.add(this.getSite(b, h).deepCopy());
 			}
@@ -223,14 +212,14 @@ public class MutableSiteswap {
 		return this.subPattern(0, this.period());
 	}
 
-	private class MutableSite {
+	class Site {
 		private List<Toss> tosses;
 		private int handIndex;
 		private int inDegree;
 		private int outDegree;
 
 		// standard constructor - create an empty site
-		private MutableSite(int handIndex) {
+		private Site(int handIndex) {
 			this.handIndex = handIndex;
 			this.tosses = new ArrayList<Toss>();
 			this.tosses.add(new Toss(handIndex));
@@ -239,7 +228,7 @@ public class MutableSiteswap {
 		}
 
 		// for deepCopy
-		private MutableSite(int handIndex, List<Toss> newTosses, int newOutDegree) {
+		private Site(int handIndex, List<Toss> newTosses, int newOutDegree) {
 			this.handIndex = handIndex;
 			this.tosses = newTosses;
 			this.outDegree = newOutDegree;
@@ -247,10 +236,10 @@ public class MutableSiteswap {
 		}
 
 		// for converting from Site
-		private MutableSite(Siteswap.Site site) {
+		/*private Site(Siteswap.Site site) {
 			this.handIndex = site.handIndex;
 			this.tosses = site.tosses;
-		}
+		}*/
 
 		private int numTosses() {
 			return this.tosses.size();
@@ -260,11 +249,11 @@ public class MutableSiteswap {
 			return this.outDegree;
 		}
 
-		private Toss getToss(int tossIndex) {
+		Toss getToss(int tossIndex) {
 			return this.tosses.get(tossIndex);
 		}
 
-		private void addToss(Toss toss) {
+		void addToss(Toss toss) {
 			if(toss.charge() != 0) {
 				if(this.isEmpty())
 					this.tosses.remove(0);
@@ -280,12 +269,12 @@ public class MutableSiteswap {
 				return false;
 		}
 
-		private MutableSite deepCopy() {
+		private Site deepCopy() {
 			List<Toss> newTosses = new ArrayList<Toss>();
 			for(int t=0; t<this.tosses.size(); t++) {
 				newTosses.add(this.tosses.get(t));
 			}
-			return new MutableSite(this.handIndex, newTosses, this.outDegree);
+			return new Site(this.handIndex, newTosses, this.outDegree);
 		}
 
 		public String toString() {

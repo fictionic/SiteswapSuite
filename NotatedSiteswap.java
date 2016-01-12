@@ -2,6 +2,8 @@ package siteswapsuite;
 
 import java.util.ArrayList;
 
+class IncompatibleNotationException extends Exception {}
+
 public abstract class NotatedSiteswap extends MutableSiteswap {
 
 	protected Notation notationType;
@@ -24,10 +26,45 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 		super(numHands);
 	}
 
+	//IMPLEMENT THIS
+	public static NotatedSiteswap assemble(MutableSiteswap ss, Notation notationType) throws IncompatibleNotationException {
+		switch(notationType) {
+			case EMPTY:
+				if(ss.period() == 0)
+					return new EmptyNotatedSiteswap(ss);
+				else
+					throw new IncompatibleNotationException();
+			case ASYNCHRONOUS:
+				if(ss.numHands() == 1)
+					return new OneHandedNotatedSiteswap(ss);
+				if(ss.numHands() == 2)
+					return new TwoHandedAsyncNotatedSiteswap(ss);
+				else
+					throw new IncompatibleNotationException();
+			case SYNCHRONOUS:
+				if(ss.numHands() == 2)
+					return new TwoHandedSyncNotatedSiteswap(ss);
+				else
+					throw new IncompatibleNotationException();
+			case MIXED:
+				if(ss.numHands() == 2)
+					return new TwoHandedMixedNotatedSiteswap(ss);
+				else
+					throw new IncompatibleNotationException();
+			default: // case PASSING:
+				if(ss.numHands() == 4)
+					return new NotatedPassingSiteswap(ss);
+				else
+					throw new IncompatibleNotationException();
+		}
+	}
+
 	// construct a NotatedSiteswap out of a siteswap and a notationtype
-	public NotatedSiteswap(MutableSiteswap ss, Notation notationType) {
-		super(ss);
+	private NotatedSiteswap(MutableSiteswap ss, Notation notationType) {
+		super(ss.numHands, ss.sites);
 		this.notationType = notationType;
+		// (no compatibility checking is done because it's only called by inner classes
+		// as a result of methods it itself calls)
 	}
 
 	// construct a NotatedSiteswap out of a siteswap, guessing a good notationtype
@@ -35,7 +72,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 		this(ss, Notation.assumedNotation(ss.numHands()));
 	}
 
-	public static NotatedSiteswap parse(String inputNotation, int desiredNumHands) throws IncompatibleNumberOfHandsException, InvalidNotationException {
+	public static NotatedSiteswap parse(String inputNotation, int desiredNumHands) throws IncompatibleNotationException, InvalidNotationException {
 		// determine how we should parse the input, then parse it that way
 		Notation n = null;
 		n = Notation.analyze(inputNotation);
@@ -50,26 +87,26 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 				else if(desiredNumHands == 1 || desiredNumHands == -1)
 					return new OneHandedNotatedSiteswap(inputNotation);
 				else
-					throw new IncompatibleNumberOfHandsException();
+					throw new IncompatibleNotationException();
 			case SYNCHRONOUS:
 				if(desiredNumHands == 2 || desiredNumHands == -1)
 					return new TwoHandedSyncNotatedSiteswap(inputNotation);
 				else
-					throw new IncompatibleNumberOfHandsException();
+					throw new IncompatibleNotationException();
 			case MIXED:
 				if(desiredNumHands == 2 || desiredNumHands == -1)
 					return new TwoHandedMixedNotatedSiteswap(inputNotation);
 				else
-					throw new IncompatibleNumberOfHandsException();
+					throw new IncompatibleNotationException();
 			default:
 				if(desiredNumHands == 4 || desiredNumHands == -1)
 					return new NotatedPassingSiteswap(inputNotation);
 				else
-					throw new IncompatibleNumberOfHandsException();
+					throw new IncompatibleNotationException();
 		}
 	}
 
-	public static NotatedSiteswap parse(String inputNotation) throws IncompatibleNumberOfHandsException, InvalidNotationException {
+	public static NotatedSiteswap parse(String inputNotation) throws IncompatibleNotationException, InvalidNotationException {
 		return parse(inputNotation, -1);
 	}
 
@@ -494,10 +531,14 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 				System.out.println("parsed: " + nss.toString());
 				String s = nss.print();
 				System.out.println("de-parsed: " + s);
+				//
+				MutableSiteswap mss = nss;
+				NotatedSiteswap blah = NotatedSiteswap.assemble(mss, Notation.SYNCHRONOUS);
+				System.out.println(blah.print());
 			} catch(InvalidNotationException e) {
 				System.out.println("invalid notation");
-			} catch(IncompatibleNumberOfHandsException e) {
-				System.out.println("incompatible number of hands");
+			} catch(IncompatibleNotationException e) {
+				System.out.println("notation type incompatible with given number of hands");
 			}
 		}
 	}

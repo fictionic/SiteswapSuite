@@ -2,10 +2,7 @@ package siteswapsuite;
 
 import java.util.List;
 
-public abstract class Siteswap {
-
-	int numHands;
-	List<List<? extends Site>> sites;
+public interface Siteswap {
 
 	// ------------- //
 	// querying info //
@@ -53,15 +50,6 @@ public abstract class Siteswap {
 
 	// universal string representation (mostly for debugging)
 	public abstract String toString();
-
-	<T extends Site> T getSite(int atBeat, int atHand) {
-		return this.sites.get(atBeat).get(atHand);
-	}
-
-	abstract class Site {
-		List<Toss> tosses;
-		int handIndex;
-	}
 
 	// --------------------- //
 	// get a mutable version //
