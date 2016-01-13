@@ -106,8 +106,12 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 		}
 	}
 
-	public static NotatedSiteswap parse(String inputNotation) throws IncompatibleNotationException, InvalidNotationException {
-		return parse(inputNotation, -1);
+	public static NotatedSiteswap parse(String inputNotation) throws InvalidNotationException {
+		try {
+			return parse(inputNotation, -1);
+		} catch(IncompatibleNotationException e) {
+			return null; // this should never happen
+		}
 	}
 
 	/* ---------- */
