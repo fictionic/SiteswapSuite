@@ -13,8 +13,7 @@ public class State {
 	}
 
 	private int numHands;
-	private Node firstFiniteNode;
-	private Node lastFiniteNode;
+	private Node nowNode;
 	private int finiteLength;
 	private Node firstRepeatedNode;
 	private Node lastRepeatedNode;
@@ -23,7 +22,7 @@ public class State {
 	// initialize an empty state
 	public State(int numHands) {
 		this.numHands = numHands;
-		this.firstFiniteNode = null;
+		this.nowNode = null;
 		this.finiteLength = 0;
 		this.firstRepeatedNode = null;
 		this.lastRepeatedNode = null;
@@ -44,7 +43,11 @@ public class State {
 			printf(" sim: " + simulationState.toString());
 			printf("this: " + this.toString());
 			// first extend simulationState to have length 1, so we can actually do tosses on it
-			simulationState.extendToBeat(0);
+			simulationState.extendToFiniteBeat(0);
+
+			// assume, for each iteration, that it will be the final one--
+			// set repeatedLength to ss.period(), and only increase finiteLength
+			// by ss.period() after we know there's another period to compute
 
 			// compute the finite portion of the state
 			// --> simulate juggling the pattern until
@@ -56,20 +59,21 @@ public class State {
 				printf("prev: " + simulationStateAtLastIteration.toString());
 				simulationStateAtLastIteration = simulationState.deepCopy();
 				// assume this next series of nodes will be the repeated portion
-				if(thisCurNode != null)
-					this.lastFiniteNode = thisCurNode;
+				if(thisCurNode != null) {
+					this.finiteLength += ss.period();
+					this.repeatedLength = 0;
+				}
 				for(int b=0; b<ss.period(); b++) {
 					printf("b = " + b);
 					// add a new Node for a new beat
 					Node newNode = new Node();
 					if(thisCurNode == null) {
-						this.firstFiniteNode = newNode;
+						this.nowNode = newNode;
 						thisCurNode = newNode;
 					} else {
 						thisCurNode.prev = newNode;
 					}
 					thisCurNode = newNode;
-					this.finiteLength++;
 					for(int h=0; h<this.numHands; h++) {
 						// set value to charge needed at this site
 						int neededCharge = ss.outDegreeAtSite(b, h);
@@ -81,6 +85,7 @@ public class State {
 						} else
 							printf("no need to account for balls/antiballs");
 						thisCurNode.setChargeAtHand(h, neededCharge - curCharge);
+						this.repeatedLength++;
 						printf("this: " + this.toString());
 						// then simulate the tosses at this site
 						for(int t=0; t<ss.numTossesAtSite(b, h); t++) {
@@ -106,12 +111,8 @@ public class State {
 						printf(" sim: " + simulationState.toString());
 					}
 				}
-				// set lastRepeatedNode of this
-				if(this.lastFiniteNode != null) {
-					this.firstRepeatedNode = this.lastFiniteNode.prev;
-					this.lastRepeatedNode = thisCurNode;
-				}
 			} while(!simulationState.equals(simulationStateAtLastIteration));
+			this.repeatedLength = ss.period();
 			printf(" sim: " + simulationState.toString());
 			printf("prev: " + simulationStateAtLastIteration.toString());
 			printf("\n");
@@ -119,20 +120,19 @@ public class State {
 	}
 
 	Node getFiniteNode(int beatsFromNow) {
-		this.extendToBeat(beatsFromNow);
-		Node n = this.firstFiniteNode;
+		this.extendToFiniteBeat(beatsFromNow);
+		Node n = this.nowNode;
 		for(int b=0; b<beatsFromNow; b++) {
 			n = n.prev;
 		}
 		return n;
 	}
 
-	void extendToBeat(int beatIndex) {
+	void extendToFiniteBeat(int beatIndex) {
 		if(this.finiteLength == 0) {
-			Node newOnlyFiniteNode = new Node();
-			newOnlyFiniteNode.prev = this.firstRepeatedNode;
-			this.firstFiniteNode = newOnlyFiniteNode;
-			this.lastFiniteNode = newOnlyFiniteNode;
+			Node newNowNode = new Node();
+			newNowNode.prev = this.firstRepeatedNode;
+			this.nowNode = newNowNode;
 			this.finiteLength = 1;
 		}
 		while(beatIndex >= this.finiteLength) {
@@ -154,8 +154,8 @@ public class State {
 	}
 
 	private void advanceTime() {
-		if(this.firstFiniteNode != null) {
-			this.firstFiniteNode = this.firstFiniteNode.prev;
+		if(this.nowNode != null) {
+			this.nowNode = this.nowNode.prev;
 			this.finiteLength--;
 		}
 	}
@@ -165,8 +165,8 @@ public class State {
 			return false;
 		if(this.numHands != other.numHands)
 			return false;
-		Node thisCurNode = this.firstFiniteNode;
-		Node otherCurNode = other.firstFiniteNode;
+		Node thisCurNode = this.nowNode;
+		Node otherCurNode = other.nowNode;
 		while(thisCurNode != null || otherCurNode != null) {
 			if(thisCurNode != null && otherCurNode != null) {
 				if(!thisCurNode.equals(otherCurNode))
@@ -192,12 +192,14 @@ public class State {
 
 	public State deepCopy() {
 		State out = new State(this.numHands);
-		Node thisCurNode = this.firstFiniteNode;
+		out.finiteLength = this.finiteLength;
+		out.repeatedLength = this.repeatedLength;
+		Node thisCurNode = this.nowNode;
 		Node otherCurNode;
-		if(this.firstFiniteNode != null) {
-			thisCurNode = this.firstFiniteNode;
-			out.firstFiniteNode = this.firstFiniteNode.deepCopy();
-			otherCurNode = out.firstFiniteNode;
+		if(this.nowNode != null) {
+			thisCurNode = this.nowNode;
+			out.nowNode = this.nowNode.deepCopy();
+			otherCurNode = out.nowNode;
 		} else
 			return out;
 		for(int i=1; i<this.finiteLength; i++) {
@@ -225,12 +227,17 @@ public class State {
 
 	public String toString() {
 		String out = "[";
-		Node n = this.firstFiniteNode;
-		while(n != null) {
+		Node n = this.nowNode;
+		for(int i=0; i<this.finiteLength; i++) {
 			out += n.toString();
 			n = n.prev;
-			if(n == this.firstRepeatedNode)
-				out += ":";
+		}
+		out += ":";
+		if(n != null) {
+		for(int i=0; i<this.repeatedLength; i++) {
+			out += n.toString();
+			n = n.prev;
+		}
 		}
 		out += "]";
 		return out;
@@ -300,19 +307,15 @@ public class State {
 		if(args.length == 1) {
 			try {
 				Siteswap ss = NotatedSiteswap.parse(args[0]);
-				try {
 				State s = new State(ss);
 				printf(s);
-				} catch(NullPointerException e) {
-					e.printStackTrace();
-				}
 			} catch(InvalidNotationException e) {
 				printf("invalid notation");
 			}
 		} else if(args.length == 0) {
 			State s1 = new State(1);
 			State s2 = new State(1);
-			s1.extendToBeat(1);
+			s1.extendToFiniteBeat(1);
 			s2.getFiniteNode(3).incChargeAtHand(0);
 			printf(s1);
 			printf(s2);
