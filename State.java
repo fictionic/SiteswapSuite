@@ -79,7 +79,11 @@ public class State {
 					printf("b = " + b);
 					// add a new Node for a new beat
 					Node newNode = new Node();
-					if(thisCurNode == null) { // if this is the first Node we're adding to the state
+					
+					if(b == 0)
+						this.firstRepeatedNode = newNode;
+
+					if(thisCurNode == null) { // if this is the very first Node we're adding to the state
 						this.nowNode = newNode;
 						thisCurNode = newNode;
 					} else {
@@ -131,6 +135,7 @@ public class State {
 			printf("\n");
 			if(isAllZeros) {
 				endOfLastSection.prev = null;
+				this.firstRepeatedNode = null;
 				this.repeatedLength -= ss.period();
 			} else {
 				this.repeatedLength = ss.period();
