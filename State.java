@@ -5,18 +5,20 @@ import java.util.ArrayList;
 
 public class State {
 
+	private static final boolean debug = false;
 	private static void printf(Object toPrint) {
-		if(toPrint == null)
-			System.out.println("{null}");
-		else
-			System.out.println(toPrint);
+		if(debug) {
+			if(toPrint == null)
+				System.out.println("{null}");
+			else
+				System.out.println(toPrint);
+		}
 	}
 
 	private int numHands;
 	private Node nowNode;
 	private int finiteLength;
 	private Node firstRepeatedNode;
-	private Node lastRepeatedNode;
 	private int repeatedLength;
 
 	// initialize an empty state
@@ -33,11 +35,16 @@ public class State {
 		this(ss.numHands());
 
 		if(ss.period() > 0) {
-			// we construct a State that represents the state associated with the given ss
+
+			// we construct a State that represents the state associated with the given siteswap.
 			// but to do this we need a State object that keeps track of the current state we're
 			// actually in as we juggle through the given pattern.
 			State simulationState = new State(this.numHands);
+			// further, we sample this state at each period, and terminate the algorithm when there is
+			// no change from one period to the next
 			State simulationStateAtLastIteration = new State(this.numHands);
+
+			// thisCurNode is the furthest node along the state being constructed ('this')
 			Node thisCurNode = null;
 			printf(" sim: " + simulationState.toString());
 			printf("this: " + this.toString());
@@ -47,6 +54,8 @@ public class State {
 			// assume, for each iteration, that it will be the final one--
 			// set repeatedLength to ss.period(), and only increase finiteLength
 			// by ss.period() after we know there's another period to compute
+			Node endOfLastSection;
+			boolean isAllZeros;
 
 			// compute the finite portion of the state
 			// --> simulate juggling the pattern until
@@ -56,17 +65,21 @@ public class State {
 				printf("\n");
 				printf(" sim: " + simulationState.toString());
 				printf("prev: " + simulationStateAtLastIteration.toString());
-				simulationStateAtLastIteration = simulationState.deepCopy();
+				simulationStateAtLastIteration = simulationState.deepCopy(); // sample the simulation state
+
 				// assume this next series of nodes will be the repeated portion
 				if(thisCurNode != null) {
+					// merge previous section into finite portion, leaving an empty repeated portion to be filled in this iteration
 					this.finiteLength += ss.period();
 					this.repeatedLength = 0;
 				}
+				endOfLastSection = thisCurNode;
+				isAllZeros = true;
 				for(int b=0; b<ss.period(); b++) {
 					printf("b = " + b);
 					// add a new Node for a new beat
 					Node newNode = new Node();
-					if(thisCurNode == null) {
+					if(thisCurNode == null) { // if this is the first Node we're adding to the state
 						this.nowNode = newNode;
 						thisCurNode = newNode;
 					} else {
@@ -83,11 +96,12 @@ public class State {
 							printf("\t\taccounting for balls/antiballs");
 							printf("\t\tneeded charge: " + neededCharge);
 							printf("\t\tcurrent charge: " + curCharge);
+							thisCurNode.setChargeAtHand(h, neededCharge - curCharge);
+							isAllZeros = false;
 						} else
 							printf("\t\tno need to account for balls/antiballs");
-						thisCurNode.setChargeAtHand(h, neededCharge - curCharge);
 						printf("\t\tthis: " + this.toString());
-						// then simulate the tosses at this site
+						// then simulate the tosses at this site on simulationState
 						for(int t=0; t<ss.numTossesAtSite(b, h); t++) {
 							Toss toss = ss.getToss(b, h, t);
 							printf("\t\t\tsimulating toss: " + toss.toString());
@@ -112,11 +126,18 @@ public class State {
 					printf("\t\t sim: " + simulationState.toString());
 				}
 			} while(!simulationState.equals(simulationStateAtLastIteration));
-			this.repeatedLength = ss.period();
 			printf(" sim: " + simulationState.toString());
 			printf("prev: " + simulationStateAtLastIteration.toString());
 			printf("\n");
+			if(isAllZeros) {
+				endOfLastSection.prev = null;
+				this.repeatedLength -= ss.period();
+			} else {
+				this.repeatedLength = ss.period();
+			}
 		}
+		// clean it up!
+		// (get rid of redundant repeated zeroes, then redundant non-repeated zeroes)
 	}
 
 	Node getFiniteNode(int beatIndex) {
@@ -171,6 +192,41 @@ public class State {
 			}
 		}
 		return true;
+	}
+
+	public ExtendedFraction numBalls() {
+		if(this.finiteLength + this.repeatedLength == 0) {
+			return new ExtendedFraction(new ExtendedInteger(0), 0);
+		}
+		int finitePortion = 0;
+		Node curNode = this.nowNode;
+		for(int i=0; i<this.finiteLength; i++) {
+			finitePortion += curNode.getTotalCharge();
+			curNode = curNode.prev;
+		}
+		int repeatedPortion = 0;
+		int signCounter = 0;
+		if(this.repeatedLength > 0) {
+			for(int i=0; i<this.repeatedLength; i++) {
+				signCounter += curNode.getTotalCharge();
+				repeatedPortion += signCounter;
+				curNode = curNode.prev;
+			}
+			ExtendedInteger numerator;
+			int denominator;
+			if(signCounter == 0) {
+				numerator = new ExtendedInteger(finitePortion * this.repeatedLength + repeatedPortion);
+				denominator = this.repeatedLength;
+			} else if(signCounter < 0) {
+				numerator = new ExtendedInteger(InfinityType.NEGATIVE_INFINITY);
+				denominator = 1;
+			} else {
+				numerator = new ExtendedInteger(InfinityType.POSITIVE_INFINITY);
+				denominator = 1;
+			}
+			return new ExtendedFraction(numerator, denominator);
+		} else
+			return new ExtendedFraction(new ExtendedInteger(finitePortion), 1);
 	}
 
 	public State deepCopy() {
@@ -246,6 +302,12 @@ public class State {
 		private void decChargeAtHand(int handIndex) {
 			this.handCharges.get(handIndex).dec();
 		}
+		private int getTotalCharge() {
+			int charge = 0;
+			for(int i=0; i<numHands; i++)
+				charge += this.handCharges.get(i).value;
+			return charge;
+		}
 		private boolean isEmpty() {
 			for(int h=0; h<numHands; h++) {
 				if(this.handCharges.get(h).value != 0)
@@ -289,26 +351,27 @@ public class State {
 			try {
 				Siteswap ss = NotatedSiteswap.parse(args[0]);
 				State s = new State(ss);
-				printf(s);
+				System.out.println(s);
+				System.out.println(s.numBalls());
 			} catch(InvalidNotationException e) {
-				printf("invalid notation");
+				System.out.println("invalid notation");
 			}
 		} else if(args.length == 0) {
 			State s1 = new State(1);
-			printf(s1);
-			printf("finiteLength: " + s1.finiteLength + "\n");
-			printf("extend to beat 4");
+			System.out.println(s1);
+			System.out.println("finiteLength: " + s1.finiteLength + "\n");
+			System.out.println("extend to beat 4");
 			s1.getFiniteNode(4).incChargeAtHand(0);
-			printf(s1);
-			printf("finiteLength: " + s1.finiteLength + "\n");
-			printf("extend to beat 3");
+			System.out.println(s1);
+			System.out.println("finiteLength: " + s1.finiteLength + "\n");
+			System.out.println("extend to beat 3");
 			s1.getFiniteNode(3).incChargeAtHand(0);
-			printf(s1);
-			printf("finiteLength: " + s1.finiteLength + "\n");
-			printf("extend to beat 2");
+			System.out.println(s1);
+			System.out.println("finiteLength: " + s1.finiteLength + "\n");
+			System.out.println("extend to beat 2");
 			s1.getFiniteNode(2).incChargeAtHand(0);
-			printf(s1);
-			printf("finiteLength: " + s1.finiteLength);
+			System.out.println(s1);
+			System.out.println("finiteLength: " + s1.finiteLength);
 		}
 	}
 }

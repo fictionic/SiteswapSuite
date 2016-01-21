@@ -6,6 +6,10 @@ public class ExtendedFraction {
 	private int denominator;
 	private int sign;
 
+	private static int gcm(int a, int b) {
+		return b == 0 ? a : gcm(b, a % b);
+	}
+
 	public ExtendedFraction(ExtendedInteger top, int bottom) {
 		if(bottom != 0) {
 			//extract sign
@@ -23,41 +27,16 @@ public class ExtendedFraction {
 				top.negate();
 			//reduce common factors
 			if(!top.isInfinite()) {
-				int newTop = top.finiteValue();
-				int max = Math.max(top.finiteValue(), bottom);
-				int c;
-				boolean found = false;
-				for(int factor=2; factor<=max; factor++) {
-					//look for thing to multiply to get bottom
-					c = 1;
-					while(c * factor <= bottom) {
-						if(c * factor == bottom) {
-							found = true;
-							break;
-						}
-						c++;
-					}
-					if(found) {
-						found = false;
-						while(c * factor <= newTop) {
-							if(c * factor == newTop) {
-								found = true;
-								break;
-							}
-							c++;
-						}
-						if(found) {
-							newTop /= factor;
-							bottom /= factor;
-						}
-					}
-				}
-				this.numerator = new ExtendedInteger(newTop);
-				this.denominator = bottom;
+				int gcm = gcm(top.finiteValue(), bottom);
+				this.numerator = new ExtendedInteger(top.finiteValue()/gcm);
+				this.denominator = bottom/gcm;
 			} else {
-				this.numerator = top;
 				this.denominator = bottom;
+				this.numerator = top;
 			}
+		} else {
+			this.denominator = 0;
+			this.numerator = top;
 		}
 	}
 
@@ -86,7 +65,10 @@ public class ExtendedFraction {
 			if(this.sign == 0)
 				return "0";
 			else
-				return this.numerator.toString() + "/" + ((Integer)this.denominator).toString();
+				if(this.denominator == 1)
+					return this.numerator.toString();
+				else
+					return this.numerator.toString() + "/" + ((Integer)this.denominator).toString();
 		}
 	}
 }
