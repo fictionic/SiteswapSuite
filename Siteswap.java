@@ -32,6 +32,9 @@ public interface Siteswap {
 	// computing another pattern out of this one //
 	// ----------------------------------------- //
 
+	// turn negative tosses into antitosses
+	public abstract Siteswap antitossify();
+
 	// analagous to substring
 	public abstract Siteswap subPattern(int startBeat, int endBeat);
 

@@ -21,6 +21,10 @@ public class State {
 	private Node firstRepeatedNode;
 	private int repeatedLength;
 
+	public int numHands() { return this.numHands; }
+	public int finiteLength() { return this.finiteLength; }
+	public boolean isFinite() { return this.repeatedLength == 0; }
+
 	// initialize an empty state
 	public State(int numHands) {
 		this.numHands = numHands;
@@ -33,6 +37,8 @@ public class State {
 	// construct a state from a siteswap...
 	public State(Siteswap ss) {
 		this(ss.numHands());
+
+		ss = ss.antitossify();
 
 		if(ss.period() > 0) {
 
@@ -162,11 +168,26 @@ public class State {
 		return curNode;
 	}
 
-	private void advanceTime() {
+	void advanceTime() {
 		if(this.nowNode != null) {
 			this.nowNode = this.nowNode.prev;
 			this.finiteLength--;
 		}
+	}
+
+	void shiftBackward() {
+		Node newNode = new Node();
+		newNode.prev = this.nowNode;
+		this.nowNode = newNode;
+		this.finiteLength++;
+	}
+
+	public boolean nowNodeIsEmpty() {
+		return this.nowNode.isEmpty();
+	}
+
+	public int getChargeAtBeatAtHand(int b, int h) {
+		return this.getFiniteNode(b).getChargeAtHand(h);
 	}
 
 	public boolean equals(State other) {
@@ -197,6 +218,41 @@ public class State {
 			}
 		}
 		return true;
+	}
+
+	class DiffSum {
+		int positive;
+		int negative;
+		DiffSum(int numHands) {
+			this.positive = 0;
+			this.negative = 0;
+		}
+		public String toString() {
+			String ret = "";
+			ret += "pos: " + positive;
+			ret += "\nneg: " + negative;
+			return ret;
+		}
+	}
+
+	DiffSum diffSums(State other) {
+		Node thisCurNode = this.nowNode;
+		Node otherCurNode = other.nowNode;
+		DiffSum diffs = new DiffSum(this.numHands);
+		for(int i=0; i<this.finiteLength; i++) {
+			for(int h=0; h<this.numHands; h++) {
+				int t = thisCurNode.getChargeAtHand(h);
+				int o = otherCurNode.getChargeAtHand(h);
+				if(t < o) {
+					diffs.positive += o - t;
+				} else if(t > o) {
+					diffs.negative += o - t;
+				}
+			}
+			thisCurNode = thisCurNode.prev;
+			otherCurNode = otherCurNode.prev;
+		}
+		return diffs;
 	}
 
 	public ExtendedFraction numBalls() {

@@ -166,12 +166,6 @@ public class MutableSiteswap implements Siteswap {
 	}
 
 	// manipulating pattern
-	public void antitossify() {
-	}
-
-	public void unAntitossify() {
-	}
-
 	public void starify() {
 	}
 
@@ -179,6 +173,14 @@ public class MutableSiteswap implements Siteswap {
 	}
 
 	// misc
+	public MutableSiteswap antitossify() {
+		return this;
+	}
+
+	public MutableSiteswap unAntitossify() {
+		return this;
+	}
+
 	public List<MutableSiteswap> unInfinitize() {
 		return null;
 	}
