@@ -403,7 +403,13 @@ public class State {
 			private void set(int newValue) { this.value = newValue; }
 			private void inc() { this.value++; }
 			private void dec() { this.value--; }
-			public String toString() { return Integer.toString(this.value); }
+			//public String toString() { return Integer.toString(this.value); }
+			public String toString() { 
+				if(this.value < 0)
+					return Notation.reverseThrowHeight(new Toss(this.value, 0, false));
+				else
+					return " " + Notation.reverseThrowHeight(new Toss(this.value, 0, false));
+			}
 		}
 	}
 
