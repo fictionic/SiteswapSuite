@@ -60,7 +60,7 @@ public class State {
 			// assume, for each iteration, that it will be the final one--
 			// set repeatedLength to ss.period(), and only increase finiteLength
 			// by ss.period() after we know there's another period to compute
-			Node endOfLastSection;
+			Node endOfLastSection = null;
 			boolean isAllZeros;
 
 			// compute the finite portion of the state
@@ -140,15 +140,19 @@ public class State {
 			printf("prev: " + simulationStateAtLastIteration.toString());
 			printf("\n");
 			if(isAllZeros) {
-				endOfLastSection.prev = null;
+				if(endOfLastSection != null)
+					endOfLastSection.prev = null;
 				this.firstRepeatedNode = null;
 				this.repeatedLength -= ss.period();
 			} else {
 				this.repeatedLength = ss.period();
 			}
 		}
-		// clean it up!
-		// (get rid of redundant repeated zeroes, then redundant non-repeated zeroes)
+		// add one zero node if it's empty
+		if(this.finiteLength == 0) {
+			this.nowNode = new Node();
+			this.finiteLength = 1;
+		}
 	}
 
 	Node getFiniteNode(int beatIndex) {
