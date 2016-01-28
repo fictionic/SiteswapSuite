@@ -13,8 +13,14 @@ abstract class Transition extends MutableSiteswap {
 	}
 
 	int firstCatchIndex = -1;
-	
+
 	static Transition compute(State from, State to, int minLength, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) {
+
+		System.out.println("computing transition between states:");
+		printf(from);
+		printf(to);
+		printf("");
+
 		// first check that the states are finite, otherwise there won't be a transition
 		if(!from.isFinite() || !to.isFinite()) {
 			System.out.println("error: cannot compute transition between non-finite states");
@@ -52,68 +58,119 @@ abstract class Transition extends MutableSiteswap {
 		private StandardTransition(State from, State to, int minLength) {
 			super(from.numHands());
 
-			int tossSumPositive = 0;
-			int tossSumNegative = 0;
-			State.DiffSum diffs;
-			int b = 0;
+			int b = 0; // index of beat in output siteswap
 
 			printf("s1: " + from.toString());
 			printf("s2: " + to.toString());
 
-			diffs = from.diffSums(to);
+			State.DiffSum diffs;
+			int futureCatches = 0;
+			int futureAnticatches = 0;
+			boolean shifted = false;
+
+			diffs = from.diffSums(to); // compute difference sum
 			printf(diffs);
+
+			int ballNumDiff = (diffs.catches - diffs.antiCatches) - (diffs.tosses - diffs.antiTosses);
+			printf("ballNumDiff: " + ballNumDiff);
 
 			printf("this: ");
 			printf(this);
+			printf("");
 
-
-			int debugCounter = 10;
+			int debugCounter = 20;
 
 			// find the transition!
-			while(diffs.positive != tossSumPositive || diffs.negative != tossSumNegative) {
-				// see if we can make tosses
-				// (if the nowNode of other is empty
-				if(to.nowNodeIsEmpty()) {
-					this.appendEmptyBeat();
-					// make tosses
-					for(int h=0; h<numHands; h++) {
-						int chargeAtHand = from.getChargeAtBeatAtHand(0, h);
-						while(chargeAtHand > 0) {
-							this.addInfiniteToss(b, h, InfinityType.POSITIVE_INFINITY);
-							tossSumPositive++;
-							chargeAtHand--;
-						}
-						while(chargeAtHand < 0) {
-							this.addInfiniteAntitoss(b, h, InfinityType.POSITIVE_INFINITY);
-							tossSumNegative--;
-							chargeAtHand++;
+			while(b < minLength || diffs.tosses != 0 || diffs.antiTosses != 0 || futureCatches != diffs.catches || futureAnticatches != diffs.antiCatches || shifted) {
+
+				printf(">>>>>  b: " + b);
+				this.appendEmptyBeat();
+				// see if we can catch new balls/antiballs
+				for(int h=0; h<numHands; h++) {
+					if(from.getChargeAtBeatAtHand(0,h) == 0) {
+						if(ballNumDiff < 0 && to.getChargeAtBeatAtHand(0,h) < 0) {
+							printf("catching new antiball at beat " + b);
+							this.addInfiniteAntitoss(b, h, InfinityType.NEGATIVE_INFINITY);
+							from.decChargeOfNowNodeAtHand(h);
+							ballNumDiff++;
+						} else if(ballNumDiff > 0 && to.getChargeAtBeatAtHand(0,h) > 0) {
+							printf("catching new ball at beat " + b);
+							this.addInfiniteToss(b, h, InfinityType.NEGATIVE_INFINITY);
+							from.incChargeOfNowNodeAtHand(h);
+							ballNumDiff--;
 						}
 					}
-					from.advanceTime();
-					to.advanceTime();
-					b++;
-				} else {
-					// shift goal state backward by one beat, and match lengths
-					to.shiftBackward();
-					from.getFiniteNode(to.finiteLength() - 1);
 				}
+				// shift goal state backward by one beat, and match lengths
+				printf("shifting");
+				to.shiftBackward();
+				from.getFiniteNode(to.finiteLength() - 1);
+
+				// make tosses to match charges in nodes between states
+				for(int h=0; h<numHands; h++) {
+					int chargeAtHand = from.getChargeAtBeatAtHand(0, h);
+					while(chargeAtHand > 0) {
+						printf("performing toss at beat " + b);
+						this.addInfiniteToss(b, h, InfinityType.POSITIVE_INFINITY);
+						chargeAtHand--;
+						if(ballNumDiff < 0)
+							ballNumDiff++;
+						else
+							futureCatches++;
+					}
+					while(chargeAtHand < 0) {
+						printf("performing antitoss at beat " + b);
+						this.addInfiniteAntitoss(b, h, InfinityType.POSITIVE_INFINITY);
+						chargeAtHand++;
+						if(ballNumDiff > 0)
+							ballNumDiff--;
+						else
+							futureAnticatches--;
+					}
+				}
+				printf("advancing time");
+				from.advanceTime();
+				to.advanceTime();
+				b++;
 
 				printf("s1: " + from.toString());
 				printf("s2: " + to.toString());
 				diffs = from.diffSums(to);
 				printf(diffs);
-				printf("tosP: " + tossSumPositive);
-				printf("tosN: " + tossSumNegative);
-				printf("this: ");
+				printf("futureCatches: " + futureCatches);
+				printf("futureAnticatches: " + futureAnticatches);
+				printf("ballNumDiff: " + ballNumDiff);
 				printf(this);
 				debugCounter--;
-				if(debugCounter == 0)
+				if(debugCounter == 0) {
+					printf("debug counter threshhold reached; aborting");
 					break;
+				}
 			}
 
+			this.appendEmptyBeat();
 			this.firstCatchIndex = b;
+			printf(this);
+
+			printf("FINDING CATCHES!");
 
 			// find catches!
+			while(from.finiteLength() > 0) {
+				for(int h=0; h<numHands; h++) {
+					int diff = to.getChargeAtBeatAtHand(0, h) - from.getChargeAtBeatAtHand(0, h);
+					if(diff > 0) {
+						printf("catching ball at beat " + b);
+						this.addInfiniteToss(b, h, InfinityType.NEGATIVE_INFINITY);
+					} else if(diff < 0) {
+						printf("catching antiball at beat " + b);
+						this.addInfiniteAntitoss(b, h, InfinityType.NEGATIVE_INFINITY);
+					}
+				}
+				b++;
+				this.appendEmptyBeat();
+				from.advanceTime();
+				to.advanceTime();
+			}
 
 		}
 	}
@@ -149,7 +206,7 @@ abstract class Transition extends MutableSiteswap {
 				boolean allowExtraSqueezeCatches = false;
 				boolean generateBallAntiballPairs = false;
 				Transition t = compute(s1, s2, minLength, allowExtraSqueezeCatches, generateBallAntiballPairs);
-				System.out.println(t);
+				System.out.println(NotatedSiteswap.assemble(t).print());
 			} catch(InvalidNotationException e) {
 				System.out.println(e);
 			}

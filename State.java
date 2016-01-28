@@ -168,6 +168,14 @@ public class State {
 		return curNode;
 	}
 
+	void incChargeOfNowNodeAtHand(int h) {
+		this.nowNode.incChargeAtHand(h);
+	}
+
+	void decChargeOfNowNodeAtHand(int h) {
+		this.nowNode.decChargeAtHand(h);
+	}
+
 	void advanceTime() {
 		if(this.nowNode != null) {
 			this.nowNode = this.nowNode.prev;
@@ -221,16 +229,13 @@ public class State {
 	}
 
 	class DiffSum {
-		int positive;
-		int negative;
-		DiffSum(int numHands) {
-			this.positive = 0;
-			this.negative = 0;
-		}
+		int tosses, antiTosses, catches, antiCatches;
 		public String toString() {
 			String ret = "";
-			ret += "pos: " + positive;
-			ret += "\nneg: " + negative;
+			ret += "tossP: " + tosses;
+			ret += "\ntossN: " + antiTosses;
+			ret += "\ncatcP: " + catches;
+			ret += "\ncatcN: " + antiCatches;
 			return ret;
 		}
 	}
@@ -238,15 +243,39 @@ public class State {
 	DiffSum diffSums(State other) {
 		Node thisCurNode = this.nowNode;
 		Node otherCurNode = other.nowNode;
-		DiffSum diffs = new DiffSum(this.numHands);
+		DiffSum diffs = new DiffSum();
 		for(int i=0; i<this.finiteLength; i++) {
 			for(int h=0; h<this.numHands; h++) {
 				int t = thisCurNode.getChargeAtHand(h);
 				int o = otherCurNode.getChargeAtHand(h);
-				if(t < o) {
-					diffs.positive += o - t;
-				} else if(t > o) {
-					diffs.negative += o - t;
+				if(o < t) {
+					if(t <= 0) {
+						// o < t <= 0
+						diffs.antiCatches += t - o;
+						continue;
+					}
+					if(o >= 0) {
+						// 0 <= o < t
+						diffs.tosses += t - o;
+						continue;
+					}
+					// o <= 0 <= t
+					diffs.tosses += t;
+					diffs.antiCatches -= o;
+				} else if(t < o) {
+					if(o <= 0) {
+						// t < o <= 0
+						diffs.antiTosses += o - t;
+						continue;
+					}
+					if(t >= 0) {
+						// 0 <= o < t
+						diffs.catches += o - t;
+						continue;
+					}
+					// t <= 0 <= o
+					diffs.antiTosses += o;
+					diffs.catches -= t;
 				}
 			}
 			thisCurNode = thisCurNode.prev;
