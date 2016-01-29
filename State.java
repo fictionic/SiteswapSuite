@@ -149,7 +149,7 @@ public class State {
 			}
 		}
 		// add one zero node if it's empty
-		if(this.finiteLength == 0) {
+		if(this.finiteLength + this.repeatedLength == 0) {
 			this.nowNode = new Node();
 			this.finiteLength = 1;
 		}

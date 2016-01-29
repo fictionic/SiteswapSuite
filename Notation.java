@@ -2,7 +2,15 @@ package siteswapsuite;
 
 import java.util.regex.Pattern;
 
-class InvalidNotationException extends Exception {}
+class InvalidNotationException extends Exception {
+	String s;
+	InvalidNotationException(String s) {
+		this.s = s;
+	}
+	public String getMessage() {
+		return "string `" + s + "' is not valid siteswap notation";
+	}
+}
 
 public enum Notation { 
 
@@ -88,7 +96,7 @@ public enum Notation {
 		else if(Pattern.matches(validPassingNotation, s))
 			return Notation.PASSING;
 		else {
-			throw new InvalidNotationException();
+			throw new InvalidNotationException(s);
 		}
 	}
 

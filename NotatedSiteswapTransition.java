@@ -19,40 +19,87 @@ public class NotatedSiteswapTransition {
 		}
 	}
 
-	public static NotatedSiteswapTransition parseStrings(String s1, String s2, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) {
-		Notation n1, n2;
+	public static NotatedSiteswapTransition parseStrings(String s1, String s2, int minLength, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs)
+		throws IncompatibleNotationException, InvalidNotationException {
+		// figure out if there is a compatible number of hands for both notations
+		Notation n1;
+		Notation n2;
 		int numHands;
-		NotatedSiteswap from = null, transition = null, to = null;
 		try {
 			n1 = Notation.analyze(s1);
 			n2 = Notation.analyze(s2);
-			// determine if there is a compatible way to parse the inputs
-			// (so the resulting siteswaps have the same number of hands)
-			if(n1 == Notation.ASYNCHRONOUS && n2 == Notation.ASYNCHRONOUS)
-				numHands = 1;
-			else if(n1 == Notation.ASYNCHRONOUS && n2 == Notation.SYNCHRONOUS
-					|| n2 == Notation.SYNCHRONOUS && n2 == Notation.ASYNCHRONOUS)
-				numHands = 2;
-			else if(n1 == Notation.SYNCHRONOUS && n2 == Notation.SYNCHRONOUS)
-				numHands = 2;
-			else if(n1 == Notation.PASSING && n2 == Notation.PASSING)
-				numHands = 4;
-			else
-				throw new IncompatibleNotationException();
-			// parse notation into notatedsiteswaps
-			// first the prefix
-			from = NotatedSiteswap.parse(s1, numHands);
-			// then the suffix
-			to = NotatedSiteswap.parse(s2, numHands);
-			// now get transition
-			// first pick a valid notationtype for it to have based on prefix/suffix
-			Notation transitionNotationType = Notation.defaultNotationType(numHands);
-			transition = NotatedSiteswap.assemble(Transition.compute(from, to, allowExtraSqueezeCatches, generateBallAntiballPairs), transitionNotationType);
-		} catch(InvalidNotationException | IncompatibleNotationException e) {
-			System.err.println("error: invalid notation");
-			System.exit(1);
+		} catch(InvalidNotationException e) {
+			throw e;
 		}
-		return new NotatedSiteswapTransition(from, transition, to);
+		NotatedSiteswap nss1;
+		NotatedSiteswap nss2;
+		// parse the strings appropriately
+		if(n1 == Notation.EMPTY) {
+			numHands = n2.defaultNumHands();
+			nss1 = new NotatedSiteswap.EmptyNotatedSiteswap(numHands);
+			nss2 = NotatedSiteswap.parseSingle(s2);
+		} else if(n2 == Notation.EMPTY) {
+			numHands = n1.defaultNumHands();
+			nss1 = NotatedSiteswap.parseSingle(s1);
+			nss2 = new NotatedSiteswap.EmptyNotatedSiteswap(numHands);
+		} else if(n1 == Notation.ASYNCHRONOUS) {
+			if(n2 == Notation.ASYNCHRONOUS) {
+				numHands = 1;
+				nss1 = new NotatedSiteswap.OneHandedNotatedSiteswap(s1);
+				nss2 = new NotatedSiteswap.OneHandedNotatedSiteswap(s2);
+			} else if(n2 == Notation.SYNCHRONOUS) {
+				numHands = 2;
+				nss1 = new NotatedSiteswap.TwoHandedAsyncNotatedSiteswap(s1);
+				nss2 = new NotatedSiteswap.TwoHandedSyncNotatedSiteswap(s2);
+			} else if(n2 == Notation.MIXED) {
+				numHands = 2;
+				nss1 = new NotatedSiteswap.TwoHandedAsyncNotatedSiteswap(s1);
+				nss2 = new NotatedSiteswap.TwoHandedMixedNotatedSiteswap(s2);
+			} else {
+				throw new IncompatibleNotationException(s1, s2);
+			}
+		} else if(n1 == Notation.SYNCHRONOUS) {
+			numHands = 2;
+			if(n2 == Notation.ASYNCHRONOUS) {
+				nss1 = new NotatedSiteswap.TwoHandedSyncNotatedSiteswap(s1);
+				nss2 = new NotatedSiteswap.TwoHandedAsyncNotatedSiteswap(s2);
+			} else if(n2 == Notation.SYNCHRONOUS) {
+				nss1 = new NotatedSiteswap.TwoHandedSyncNotatedSiteswap(s1);
+				nss2 = new NotatedSiteswap.TwoHandedSyncNotatedSiteswap(s2);
+			} else if(n2 == Notation.MIXED) {
+				nss1 = new NotatedSiteswap.TwoHandedSyncNotatedSiteswap(s1);
+				nss2 = new NotatedSiteswap.TwoHandedMixedNotatedSiteswap(s2);
+			} else {
+				throw new IncompatibleNotationException(s1, s2);
+			}
+		} else if(n1 == Notation.MIXED) {
+			numHands = 2;
+			if(n2 == Notation.ASYNCHRONOUS) {
+				nss1 = new NotatedSiteswap.TwoHandedMixedNotatedSiteswap(s1);
+				nss2 = new NotatedSiteswap.TwoHandedAsyncNotatedSiteswap(s2);
+			} else if(n2 == Notation.SYNCHRONOUS) {
+				nss1 = new NotatedSiteswap.TwoHandedMixedNotatedSiteswap(s1);
+				nss2 = new NotatedSiteswap.TwoHandedSyncNotatedSiteswap(s2);
+			} else if(n2 == Notation.MIXED) {
+				nss1 = new NotatedSiteswap.TwoHandedMixedNotatedSiteswap(s1);
+				nss2 = new NotatedSiteswap.TwoHandedMixedNotatedSiteswap(s2);
+			} else {
+				throw new IncompatibleNotationException(s1, s2);
+			}
+		} else { // n1 == Notation.PASSING
+			if(n2 == Notation.PASSING) {
+				numHands = 4;
+				nss1 = new NotatedSiteswap.NotatedPassingSiteswap(s1);
+				nss2 = new NotatedSiteswap.NotatedPassingSiteswap(s2);
+			} else {
+				throw new IncompatibleNotationException(s1, s2);
+			}
+		}
+		// now get transition
+		// first pick a valid notationtype for it to have based on prefix/suffix
+		Notation transitionNotationType = Notation.defaultNotationType(numHands);
+		NotatedSiteswap t = NotatedSiteswap.assemble(Transition.compute(new State(nss1), new State(nss2), minLength, allowExtraSqueezeCatches, generateBallAntiballPairs), transitionNotationType);
+		return new NotatedSiteswapTransition(nss1, t, nss2);
 	}
 
 	private NotatedSiteswapTransition(NotatedSiteswap from, NotatedSiteswap via, NotatedSiteswap to) {
@@ -64,19 +111,19 @@ public class NotatedSiteswapTransition {
 		this.suffixLength = to.period();
 	}
 
-	public Siteswap prefix() {
+	public NotatedSiteswap prefix() {
 		return this.prefix;
 	}
 
-	public Siteswap transition() {
+	public NotatedSiteswap transition() {
 		return this.transition;
 	}
 
-	public Siteswap suffix() {
+	public NotatedSiteswap suffix() {
 		return this.suffix;
 	}
 
-	private MutableSiteswap.Site getSite(int atBeat, int handIndex) {
+	MutableSiteswap.Site getSite(int atBeat, int handIndex) {
 		if(atBeat < 0) {
 			return prefix.getSite(atBeat, handIndex);
 		} else if(atBeat < transitionLength) {
@@ -86,7 +133,7 @@ public class NotatedSiteswapTransition {
 		}
 	}
 
-	private Toss getToss(int atBeat, int fromHand, int tossIndex) {
+	public Toss getToss(int atBeat, int fromHand, int tossIndex) {
 		if(atBeat < 0) {
 			return this.getSite(atBeat, fromHand).getToss(tossIndex);
 		} else if(atBeat < transitionLength) {
@@ -237,15 +284,15 @@ public class NotatedSiteswapTransition {
 			NotatedSiteswap transition;
 			NotatedSiteswap suffix;
 			try {
-				prefix = NotatedSiteswap.parse(args[0]);
+				prefix = NotatedSiteswap.parseSingle(args[0]);
 				prefix.antitossify();
-				transition = NotatedSiteswap.parse(args[1]);
+				transition = NotatedSiteswap.parseSingle(args[1]);
 				transition.antitossify();
-				suffix = NotatedSiteswap.parse(args[2]);
+				suffix = NotatedSiteswap.parseSingle(args[2]);
 				suffix.antitossify();
 				NotatedSiteswapTransition t = new NotatedSiteswapTransition(prefix, transition, suffix);
 				System.out.println(t.print());
-			} catch(InvalidNotationException | IncompatibleNotationException e) {
+			} catch(InvalidNotationException e) {
 				System.out.println("error");
 				System.exit(1);
 			}

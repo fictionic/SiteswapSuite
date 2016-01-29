@@ -30,10 +30,10 @@ public class MutableSiteswap implements Siteswap {
 	}
 
 	// computing more complicated info
+
 	public ExtendedFraction numBalls() {
 		MutableSiteswap toRunOn = this.deepCopy();
-		toRunOn.unInfinitize();
-		toRunOn.unAntitossify();
+		toRunOn.unAntitossify(); // needs to be implemented
 		int finiteValue = 0;
 		int numInfinities = 0;
 		ExtendedInteger curTossHeight;

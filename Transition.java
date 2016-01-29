@@ -1,5 +1,8 @@
 package siteswapsuite;
 
+import java.util.List;
+import java.util.ArrayList;
+
 abstract class Transition extends MutableSiteswap {
 
 	private static final boolean debug = true;
@@ -66,7 +69,6 @@ abstract class Transition extends MutableSiteswap {
 			State.DiffSum diffs;
 			int futureCatches = 0;
 			int futureAnticatches = 0;
-			boolean shifted = false;
 
 			diffs = from.diffSums(to); // compute difference sum
 			printf(diffs);
@@ -81,7 +83,7 @@ abstract class Transition extends MutableSiteswap {
 			int debugCounter = 20;
 
 			// find the transition!
-			while(b < minLength || diffs.tosses != 0 || diffs.antiTosses != 0 || futureCatches != diffs.catches || futureAnticatches != diffs.antiCatches || shifted) {
+			while(b < minLength || diffs.tosses != 0 || diffs.antiTosses != 0 || futureCatches != diffs.catches || futureAnticatches != diffs.antiCatches) {
 
 				printf(">>>>>  b: " + b);
 				this.appendEmptyBeat();
@@ -148,8 +150,8 @@ abstract class Transition extends MutableSiteswap {
 				}
 			}
 
-			this.appendEmptyBeat();
 			this.firstCatchIndex = b;
+			this.appendEmptyBeat();
 			printf(this);
 
 			printf("FINDING CATCHES!");
@@ -191,6 +193,11 @@ abstract class Transition extends MutableSiteswap {
 		private OneBeatTransition(State from, State to) {
 			super(from.numHands());
 		}
+	}
+
+	@Override // because it needs to take into account firstCatchIndex
+	public List<MutableSiteswap> unInfinitize() {
+		return null;
 	}
 
 	public static void main(String[] args) {
