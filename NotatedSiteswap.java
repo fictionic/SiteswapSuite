@@ -2,19 +2,46 @@ package siteswapsuite;
 
 import java.util.ArrayList;
 
-class IncompatibleNotationException extends Exception {}
+class IncompatibleNotationException extends Exception {
+	String s1;
+	String s2;
+	Notation n;
+	int numHands;
+	IncompatibleNotationException(String s1, String s2) {
+		this.s1 = s1;
+		this.s2 = s2;
+	}
+	IncompatibleNotationException(Notation n, int numHands) {
+		this.n = n;
+		this.numHands = numHands;
+		this.s1 = null;
+		this.s2 = null;
+	}
+	public String getMessage() {
+		if(this.n == null)
+			return "notation strings `" + s1 + "' and `" + s2 + "' are incompatible";
+		else {
+			if(n == Notation.EMPTY)
+				return "notation type `" + n.name() + "' is incompatible with period > 0";
+			else
+				return "notation type `" + n.name() + "' is incompatible with numHands==" + numHands;
+		}
+	}
+}
 
 public abstract class NotatedSiteswap extends MutableSiteswap {
+
+	private static boolean debug = false;
+	private static void printf(Object o) {
+		if(debug)
+			System.out.println(o);
+	}
 
 	protected Notation notationType;
 
 	// querying basic info
 	public Notation notationType() {
 		return this.notationType;
-	}
-
-	public NotatedSiteswap deepCopy() {
-		return null;
 	}
 
 	/* ------- */
@@ -26,36 +53,43 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 		super(numHands);
 	}
 
-	//IMPLEMENT THIS
+	public static NotatedSiteswap assemble(MutableSiteswap ss) throws IncompatibleNotationException {
+		try {
+			return assemble(ss, Notation.defaultNotationType(ss.numHands()));
+		} catch(IncompatibleNotationException e) {
+			throw e;
+		}
+	}
+
 	public static NotatedSiteswap assemble(MutableSiteswap ss, Notation notationType) throws IncompatibleNotationException {
 		switch(notationType) {
 			case EMPTY:
 				if(ss.period() == 0)
 					return new EmptyNotatedSiteswap(ss);
 				else
-					throw new IncompatibleNotationException();
+					throw new IncompatibleNotationException(notationType, -1);
 			case ASYNCHRONOUS:
 				if(ss.numHands() == 1)
 					return new OneHandedNotatedSiteswap(ss);
 				if(ss.numHands() == 2)
 					return new TwoHandedAsyncNotatedSiteswap(ss);
 				else
-					throw new IncompatibleNotationException();
+					throw new IncompatibleNotationException(Notation.ASYNCHRONOUS, ss.numHands());
 			case SYNCHRONOUS:
 				if(ss.numHands() == 2)
 					return new TwoHandedSyncNotatedSiteswap(ss);
 				else
-					throw new IncompatibleNotationException();
+					throw new IncompatibleNotationException(Notation.SYNCHRONOUS, ss.numHands());
 			case MIXED:
 				if(ss.numHands() == 2)
 					return new TwoHandedMixedNotatedSiteswap(ss);
 				else
-					throw new IncompatibleNotationException();
+					throw new IncompatibleNotationException(Notation.MIXED, ss.numHands());
 			default: // case PASSING:
 				if(ss.numHands() == 4)
 					return new NotatedPassingSiteswap(ss);
 				else
-					throw new IncompatibleNotationException();
+					throw new IncompatibleNotationException(Notation.PASSING, ss.numHands());
 		}
 	}
 
@@ -72,45 +106,24 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 		this(ss, Notation.defaultNotationType(ss.numHands()));
 	}
 
-	public static NotatedSiteswap parse(String inputNotation, int desiredNumHands) throws IncompatibleNotationException, InvalidNotationException {
-		// determine how we should parse the input, then parse it that way
-		Notation n = null;
-		n = Notation.analyze(inputNotation);
-		if(desiredNumHands == 0)
-			return new EmptyNotatedSiteswap(0);
+	public static NotatedSiteswap parseSingle(String inputNotation) throws InvalidNotationException {
+		Notation n;
+		try {
+			n = Notation.analyze(inputNotation);
+		} catch(InvalidNotationException e) {
+			throw e;
+		}
 		switch(n) {
 			case EMPTY:
-				return new EmptyNotatedSiteswap(desiredNumHands);
+				return new EmptyNotatedSiteswap(0);
 			case ASYNCHRONOUS:
-				if(desiredNumHands == 2)
-					return new TwoHandedAsyncNotatedSiteswap(inputNotation);
-				else if(desiredNumHands == 1 || desiredNumHands == -1)
-					return new OneHandedNotatedSiteswap(inputNotation);
-				else
-					throw new IncompatibleNotationException();
+				return new OneHandedNotatedSiteswap(inputNotation);
 			case SYNCHRONOUS:
-				if(desiredNumHands == 2 || desiredNumHands == -1)
-					return new TwoHandedSyncNotatedSiteswap(inputNotation);
-				else
-					throw new IncompatibleNotationException();
+				return new TwoHandedSyncNotatedSiteswap(inputNotation);
 			case MIXED:
-				if(desiredNumHands == 2 || desiredNumHands == -1)
-					return new TwoHandedMixedNotatedSiteswap(inputNotation);
-				else
-					throw new IncompatibleNotationException();
-			default:
-				if(desiredNumHands == 4 || desiredNumHands == -1)
-					return new NotatedPassingSiteswap(inputNotation);
-				else
-					throw new IncompatibleNotationException();
-		}
-	}
-
-	public static NotatedSiteswap parse(String inputNotation) throws InvalidNotationException {
-		try {
-			return parse(inputNotation, -1);
-		} catch(IncompatibleNotationException e) {
-			return null; // this should never happen
+				return new TwoHandedMixedNotatedSiteswap(inputNotation);
+			default: // case PASSING
+				return new NotatedPassingSiteswap(inputNotation);
 		}
 	}
 
@@ -122,7 +135,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 
 	// de-parse a Siteswap
 	public String notate(MutableSiteswap ss) {
-		if(ss.period() == 0)
+		if(ss.period() == 0 || ss.numHands() == 0)
 			return (new EmptyNotatedSiteswap(ss)).print();
 		switch(this.numHands) {
 			case 1:
@@ -442,49 +455,69 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 
 		public String print() {
 			String out = "";
-			boolean skipBeat = false;
+			String nextBeat;
+			boolean skippedLastBeat = false;
+			boolean allZeroes = true;
 			//loop through beats of siteswap
 			for(int b=0; b<this.period(); b++) {
-				out += "(";
+				nextBeat = "(";
+				allZeroes = true;
 				//loop through hands within each beat (we know numHands = 2 since we screened for that in parse())
 				for(int h=0; h<2; h++) {
 					//see if we need to add multiplex notation
 					if(this.numTossesAtSite(b, h) > 1) {
-						out += "[";
+						nextBeat += "[";
 						//loop through tosses within hand
 						for(int t=0; t<this.numTossesAtSite(b, h); t++) {
 							Toss curToss = this.getToss(b, h, t);
+							printf(curToss.charge());
+							if(curToss.charge() != 0)
+								allZeroes = false;
 							out += Notation.reverseThrowHeight(curToss);
 							if(!curToss.height().isInfinite() && curToss.destHand() != (h + Math.abs(curToss.height().finiteValue())) % 2) {
-								out += "x";
+								nextBeat += "x";
 							}
 						}
-						out += "]";
+						nextBeat += "]";
 					} else {
 						//account for only toss in hand
 						Toss curToss = this.getToss(b, h, 0);
-						out += Notation.reverseThrowHeight(curToss);
+						if(curToss.charge() != 0) {
+							printf("encountered non-zero toss");
+							printf(curToss);
+							allZeroes = false;
+						}
+						nextBeat += Notation.reverseThrowHeight(curToss);
 						if(!curToss.height().isInfinite() && curToss.destHand() != (h + Math.abs(curToss.height().finiteValue())) % 2) {
-							out += "x";
+							nextBeat += "x";
 						}
 					}
 					//put a comma if we've just finished doing the left hand
 					if(h == 0) {
-						out += ",";
+						nextBeat += ",";
 					}
 				}
-				out += ")";
-				//check to see if we should add a "!":
-				//first check that we didn't just skip the previous beat, then check that the next beat is a zero beat (i.e. "(0,0)!")
-				if(skipBeat) {
-					//skip this beat
-					b++;
-					skipBeat = false;
+				nextBeat += ")";
+				if(b == 0) {
+					printf("not skipping beat 0");
+					out += nextBeat;
+					skippedLastBeat = false;
+				} else if(!skippedLastBeat && allZeroes) {
+					// skip this beat
+					printf("skipping beat " + b);
+					skippedLastBeat = true;
 				} else {
-					//don't skip this beat
-					out += "!";
-					skipBeat = true;
+					// don't skip this beat
+					printf("not skipping beat " + b);
+					if(!skippedLastBeat)
+						out += "!";
+					out += nextBeat;
+					skippedLastBeat = false;
 				}
+			}
+			if(!skippedLastBeat) {
+				printf("adding final '!'");
+				out += "!";
 			}
 			return out;
 		}
@@ -531,19 +564,19 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 	public static void main(String[] args) {
 		if(args.length == 1) {
 			try {
-				NotatedSiteswap nss = NotatedSiteswap.parse(args[0]);
+				NotatedSiteswap nss = NotatedSiteswap.parseSingle(args[0]);
 				System.out.println("parsed: " + nss.toString());
 				String s = nss.print();
 				System.out.println("de-parsed: " + s);
 				//
-				MutableSiteswap mss = nss;
-				NotatedSiteswap blah = NotatedSiteswap.assemble(mss, Notation.SYNCHRONOUS);
-				System.out.println(blah.print());
+				//MutableSiteswap mss = nss;
+				//NotatedSiteswap blah = NotatedSiteswap.assemble(mss, Notation.SYNCHRONOUS);
+				//System.out.println(blah.print());
 			} catch(InvalidNotationException e) {
 				System.out.println("invalid notation");
-			} catch(IncompatibleNotationException e) {
+			}/* catch(IncompatibleNotationException e) {
 				System.out.println("notation type incompatible with given number of hands");
-			}
+			}*/
 		}
 	}
 }
