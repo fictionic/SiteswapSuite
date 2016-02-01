@@ -15,7 +15,7 @@ abstract class Transition extends MutableSiteswap {
 		}
 	}
 
-	int firstCatchIndex = -1;
+	int eventualPeriod = -1;
 
 	static Transition compute(State from, State to, int minLength, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) {
 
@@ -83,7 +83,7 @@ abstract class Transition extends MutableSiteswap {
 			int debugCounter = 20;
 
 			// find the transition!
-			while(b < minLength || diffs.tosses != 0 || diffs.antiTosses != 0 || futureCatches != diffs.catches || futureAnticatches != diffs.antiCatches) {
+			while(b < minLength || futureCatches != diffs.catches || futureAnticatches != diffs.antiCatches) {
 
 				printf(">>>>>  b: " + b);
 				this.appendEmptyBeat();
@@ -127,7 +127,7 @@ abstract class Transition extends MutableSiteswap {
 						if(ballNumDiff > 0)
 							ballNumDiff--;
 						else
-							futureAnticatches--;
+							futureAnticatches++;
 					}
 				}
 				printf("advancing time");
@@ -150,7 +150,7 @@ abstract class Transition extends MutableSiteswap {
 				}
 			}
 
-			this.firstCatchIndex = b;
+			this.eventualPeriod = b;
 			this.appendEmptyBeat();
 			printf(this);
 
@@ -173,7 +173,9 @@ abstract class Transition extends MutableSiteswap {
 				from.advanceTime();
 				to.advanceTime();
 			}
-
+			printf("found general transition:");
+			printf(this);
+			printf("-");
 		}
 	}
 
@@ -195,29 +197,126 @@ abstract class Transition extends MutableSiteswap {
 		}
 	}
 
-	@Override // because it needs to take into account firstCatchIndex
+	@Override // because it needs to take into account eventualPeriod
 	public List<MutableSiteswap> unInfinitize() {
-		return null;
-	}
-
-	public static void main(String[] args) {
-		if(args.length == 2) {
-			try {
-				Siteswap ss1 = NotatedSiteswap.parse(args[0]);
-				Siteswap ss2 = NotatedSiteswap.parse(args[1]);
-				printf(ss1);
-				printf(ss2);
-				State s1 = new State(ss1);
-				State s2 = new State(ss2);
-				int minLength = 0;
-				boolean allowExtraSqueezeCatches = false;
-				boolean generateBallAntiballPairs = false;
-				Transition t = compute(s1, s2, minLength, allowExtraSqueezeCatches, generateBallAntiballPairs);
-				System.out.println(NotatedSiteswap.assemble(t).print());
-			} catch(InvalidNotationException e) {
-				System.out.println(e);
+		int numTosses = 0;
+		int numAntitosses = 0;
+		// count [anti]tosses
+		for(int tossBeat=0; tossBeat<eventualPeriod; tossBeat++) {
+			// loop through hands
+			for(int tossHand=0; tossHand<numHands; tossHand++) {
+				// loop through tosses in hand
+				for(int tossToss=0; tossToss<this.numTossesAtSite(tossBeat,tossHand); tossToss++) {
+					// see if toss at this index is a real toss
+					Toss curToss = this.getToss(tossBeat,tossHand,tossToss);
+					if(curToss.height().sign() > 0) {
+						if(!curToss.isAntitoss())
+							numTosses++;
+						else
+							numAntitosses++;
+					}
+				}
 			}
 		}
+		int numCatches = 0;
+		int numAnticatches = 0;
+		// count [anti]catches
+		for(int catchBeat=eventualPeriod; catchBeat<period(); catchBeat++) {
+			// loop through hands
+			for(int catchHand=0; catchHand<this.numHands; catchHand++) {
+				// loop through tosses in hand
+				for(int catchToss=0; catchToss<this.numTossesAtSite(catchBeat,catchHand); catchToss++) {
+					Toss curCatch = this.getToss(catchBeat, catchHand, catchToss);
+					// make sure it's actually a catch, not a zero-toss
+					if(curCatch.height().sign() < 0) {
+						if(!curCatch.isAntitoss())
+							numCatches++;
+						else
+							numAnticatches++;
+					}
+				}
+			}
+		}
+		int extraTosses = numTosses - numCatches;
+		int extraAntitosses = numAntitosses - numAnticatches;
+		printf("extraTosses: " + extraTosses);
+		printf("extraAntitosses: " + extraAntitosses);
+		// get list of all options for tosses, and null where non-tosses are
+		List<List<Toss>> tossOptionsList = new ArrayList<List<Toss>>();
+		for(int tossBeat=0; tossBeat<eventualPeriod; tossBeat++) {
+			// loop through hands
+			for(int tossHand=0; tossHand<numHands; tossHand++) {
+				// loop through tosses in hand
+				for(int tossToss=0; tossToss<this.numTossesAtSite(tossBeat,tossHand); tossToss++) {
+					// see if toss at this index is a real toss
+					Toss curToss = this.getToss(tossBeat,tossHand,tossToss);
+					if(curToss.height().sign() <= 0) {
+						tossOptionsList.add(null);
+					} else {
+						// add the appropriate number of infinite-height tosses of appropriate charge
+						ArrayList<Toss> tossOptions = new ArrayList<Toss>();
+						if(!curToss.isAntitoss()) {
+							for(int i=0; i<extraTosses; i++) {
+								tossOptions.add(new Toss(InfinityType.POSITIVE_INFINITY, false));
+							}
+						} else {
+							for(int i=0; i<extraAntitosses; i++) {
+								tossOptions.add(new Toss(InfinityType.POSITIVE_INFINITY, true));
+							}
+						}
+						// loop through catches to get all other possible tosses
+						for(int catchBeat=eventualPeriod; catchBeat<period(); catchBeat++) {
+							// loop through hands
+							for(int catchHand=0; catchHand<this.numHands; catchHand++) {
+								// loop through tosses in hand
+								for(int catchToss=0; catchToss<this.numTossesAtSite(catchBeat,catchHand); catchToss++) {
+									Toss curCatch = this.getToss(catchBeat, catchHand, catchToss);
+									// make sure it's a catch of matching charge
+									if(curCatch.height().sign() < 0 && curCatch.isAntitoss() == curToss.isAntitoss()) {
+										int height = catchBeat - tossBeat;
+										tossOptions.add(new Toss(height, catchHand, curToss.isAntitoss()));
+									}
+								}
+							}
+						}
+						tossOptionsList.add(tossOptions);
+					}
+				}
+			}
+		}
+		printf("tossOptionsList");
+		printf(tossOptionsList);
+		printf("size of each non-null tossOptions: " + "<to do>");
+		//
+		// then do stuff with tossOptionsList to get the answer...
+		return new ArrayList<MutableSiteswap>();
+	}
+
+	static List<List<Integer>> findAllPermutations(int numTosses) {
+		ArrayList<Integer> list = new ArrayList<Integer>();
+		for(int i=0; i<numTosses; i++) {
+			list.add(i);
+		}
+		return findAllPermutationsHelper(list);
+	}
+
+	static List<List<Integer>> findAllPermutationsHelper(List<Integer> list) {
+		if(list.size() == 0) { 
+			List<List<Integer>> result = new ArrayList<List<Integer>>();
+			result.add(new ArrayList<Integer>());
+			return result;
+		}
+		Integer firstElement = list.remove(0);
+		List<List<Integer>> returnValue = new ArrayList<List<Integer>>();
+		List<List<Integer>> permutations = findAllPermutationsHelper(list);
+		for(List<Integer> smallerPermutated : permutations) {
+			for(int index=0; index <= smallerPermutated.size(); index++) {
+				List<Integer> temp = new ArrayList<Integer>(smallerPermutated);
+				temp.add(index, firstElement);
+				returnValue.add(temp);
+			}
+		}
+		return returnValue;
 	}
 
 }
