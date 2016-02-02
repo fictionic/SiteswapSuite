@@ -55,7 +55,7 @@ public class TransitionFinder {
 			} catch(InvalidNotationException e) {
 				printf(e.getMessage());
 			} catch(IncompatibleNotationException e) {
-				printf("incompatible notations");
+				printf(e.getMessage());
 			}
 		}
 	}
