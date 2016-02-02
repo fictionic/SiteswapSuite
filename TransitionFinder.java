@@ -44,6 +44,7 @@ public class TransitionFinder {
 					printf("General Transition:");
 					printf(transitions.printGeneralTransition());
 					printf(transitions.generalTransition());
+					printf("transitionLength: " + transitions.transitionLength());
 					printf("All Transitions:");
 					List<NotatedSiteswap> ts = transitions.transitionList();
 					for(int i=0; i<ts.size(); i++) {
