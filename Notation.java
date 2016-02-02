@@ -77,7 +77,7 @@ public enum Notation {
 	static final String validSyncNotation = syncBeat + "+\\*?";
 
 	// mixed (two-handed)
-	static final String validMixedNotation = "(" + syncToss + "|" + syncBeat + ")+";
+	static final String validMixedNotation = "(" + syncHand + "|" + syncBeat + ")+";
 	//no star notation on mixed, because it would be ambiguous as to whether the whole pattern is starred or just the most recent sync part
 
 	// passing (two two-handed jugglers)
