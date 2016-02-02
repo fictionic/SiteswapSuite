@@ -337,6 +337,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 			} while(this.period() % 2 == 1);
 		}
 
+		// I DON'T THINK THIS EVER GETS CALLED, ACTUALLY... HMMM
 		public String print() {
 			String out = "";
 			int curHandIndex;
@@ -466,18 +467,20 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 				allZeroes = true;
 				//loop through hands within each beat (we know numHands = 2 since we screened for that in parse())
 				for(int h=0; h<2; h++) {
+					printf("nextBeat: " + nextBeat);
 					//see if we need to add multiplex notation
 					if(this.numTossesAtSite(b, h) > 1) {
 						nextBeat += "[";
 						//loop through tosses within hand
 						for(int t=0; t<this.numTossesAtSite(b, h); t++) {
 							Toss curToss = this.getToss(b, h, t);
-							printf(curToss.charge());
-							if(curToss.charge() != 0)
+							printf(curToss);
+							nextBeat += Notation.reverseThrowHeight(curToss);
+							if(curToss.charge() != 0) {
 								allZeroes = false;
-							out += Notation.reverseThrowHeight(curToss);
-							if(!curToss.height().isInfinite() && curToss.destHand() != (h + Math.abs(curToss.height().finiteValue())) % 2) {
-								nextBeat += "x";
+								if(!curToss.height().isInfinite() && curToss.destHand() != (h + Math.abs(curToss.height().finiteValue())) % 2) {
+									nextBeat += "x";
+								}
 							}
 						}
 						nextBeat += "]";
