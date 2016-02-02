@@ -147,11 +147,11 @@ public class State {
 			} else {
 				this.repeatedLength = ss.period();
 			}
-		}
-		// add one zero node if it's empty
-		if(this.finiteLength + this.repeatedLength == 0) {
-			this.nowNode = new Node();
-			this.finiteLength = 1;
+			// add one zero node if it's empty
+			if(this.finiteLength + this.repeatedLength == 0) {
+				this.nowNode = new Node();
+				this.finiteLength = 1;
+			}
 		}
 	}
 
@@ -449,7 +449,7 @@ public class State {
 	public static void main(String[] args) {
 		if(args.length == 1) {
 			try {
-				Siteswap ss = NotatedSiteswap.parse(args[0]);
+				Siteswap ss = NotatedSiteswap.parseSingle(args[0]);
 				State s = new State(ss);
 				System.out.println(s);
 				System.out.println(s.numBalls());

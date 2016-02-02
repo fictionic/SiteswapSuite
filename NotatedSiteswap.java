@@ -19,12 +19,12 @@ class IncompatibleNotationException extends Exception {
 	}
 	public String getMessage() {
 		if(this.n == null)
-			return "notation strings `" + s1 + "' and `" + s2 + "' are incompatible";
+			return "ERROR: notation strings `" + s1 + "' and `" + s2 + "' are incompatible";
 		else {
 			if(n == Notation.EMPTY)
-				return "notation type `" + n.name() + "' is incompatible with period > 0";
+				return "ERROR: notation type `" + n.name() + "' is incompatible with period > 0";
 			else
-				return "notation type `" + n.name() + "' is incompatible with numHands==" + numHands;
+				return "ERROR: notation type `" + n.name() + "' is incompatible with numHands==" + numHands;
 		}
 	}
 }
@@ -149,6 +149,10 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 		}
 	}
 
+	/* -------------- */
+	/* THE SUBCLASSES */
+	/* -------------- */
+
 	static class EmptyNotatedSiteswap extends NotatedSiteswap {
 		EmptyNotatedSiteswap(MutableSiteswap ss) {
 			super(ss, Notation.EMPTY);
@@ -254,13 +258,8 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 		TwoHandedAsyncNotatedSiteswap(String s) {
 			super(2);
 			this.notationType = Notation.ASYNCHRONOUS;
-			//double string length if it's odd (so e.g. "3" will become (3,0)!(0,3)!) 
-			if(s.length() % 2 == 1) {
-				s += s;
-			}
 			char[] a = s.toCharArray();
 			char curToken;
-			int i = 0; //index in input string
 			int b = 0; //index (beat) in output siteswap
 			int curHand = 0; // which hand's turn it is to throw
 			ExtendedInteger height;
@@ -268,71 +267,74 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 			boolean multi = false; //whether or not we're currently in a multiplex throw
 			boolean isNegative = false;
 			boolean isAntitoss = false;
-			while(i < a.length) {
-				curToken = a[i];
-				//update current hand
-				curHand = b % 2;
-				//System.out.println(curToken);
-				switch(curToken) {
-					//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
-					case '[':
-						multi = true;
-						appendEmptyBeat();
-						break;
-					case ']':
-						multi = false;
-						b++;
-						break;
-						//if curToken is "-", the next toss is negative
-					case '-':
-						isNegative = true;
-						break;
-						//if curToken is anything else, it has to be a throw height (since it matched the regex for async pattern)
-					default:
-						height = Notation.throwHeight(curToken);
-						if(isNegative) {
-							height.negate();
-							isNegative = false;
-						}
-						if(!multi) {
-							//create new beat
+			do {
+				int i = 0; //index in input string
+				while(i < a.length) {
+					curToken = a[i];
+					//update current hand
+					curHand = b % 2;
+					//System.out.println(curToken);
+					switch(curToken) {
+						//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
+						case '[':
+							multi = true;
 							appendEmptyBeat();
-							//add toss of correct height and destination to current hand
-							if(height.isInfinite()) {
-								if(isAntitoss)
-									addInfiniteAntitoss(b, curHand, height.infiniteValue());
-								else
-									addInfiniteToss(b, curHand, height.infiniteValue());
-							} else {
-								destHand = (curHand + height.finiteValue()) % 2; //0=left, 1=right
-								if(isAntitoss)
-									addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
-								else
-									addFiniteToss(b, curHand, height.finiteValue(), destHand);
-								//increment beat index
-								b++;
+							break;
+						case ']':
+							multi = false;
+							b++;
+							break;
+							//if curToken is "-", the next toss is negative
+						case '-':
+							isNegative = true;
+							break;
+							//if curToken is anything else, it has to be a throw height (since it matched the regex for async pattern)
+						default:
+							height = Notation.throwHeight(curToken);
+							if(isNegative) {
+								height.negate();
+								isNegative = false;
 							}
-						} else {
-							//add toss of correct height and destination to current hand
-							if(height.isInfinite()) {
-								if(isAntitoss)
-									addInfiniteAntitoss(b, curHand, height.infiniteValue());
-								else
-									addInfiniteToss(b, curHand, height.infiniteValue());
+							if(!multi) {
+								//create new beat
+								appendEmptyBeat();
+								//add toss of correct height and destination to current hand
+								if(height.isInfinite()) {
+									if(isAntitoss)
+										addInfiniteAntitoss(b, curHand, height.infiniteValue());
+									else
+										addInfiniteToss(b, curHand, height.infiniteValue());
+								} else {
+									destHand = (curHand + height.finiteValue()) % 2; //0=left, 1=right
+									if(isAntitoss)
+										addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
+									else
+										addFiniteToss(b, curHand, height.finiteValue(), destHand);
+									//increment beat index
+									b++;
+								}
 							} else {
-								destHand = (curHand + height.finiteValue()) % 2; //0=left, 1=right
-								if(isAntitoss)
-									addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
-								else
-									addFiniteToss(b, curHand, height.finiteValue(), destHand);
+								//add toss of correct height and destination to current hand
+								if(height.isInfinite()) {
+									if(isAntitoss)
+										addInfiniteAntitoss(b, curHand, height.infiniteValue());
+									else
+										addInfiniteToss(b, curHand, height.infiniteValue());
+								} else {
+									destHand = (curHand + height.finiteValue()) % 2; //0=left, 1=right
+									if(isAntitoss)
+										addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
+									else
+										addFiniteToss(b, curHand, height.finiteValue(), destHand);
+								}
 							}
-						}
-						isAntitoss = false;
-						break;
+							isAntitoss = false;
+							break;
+					}
+					//increment index in input string
+					i++;
 				}
-				//increment index in input string
-				i++;
-			}
+			} while(this.period() % 2 == 1);
 		}
 
 		public String print() {

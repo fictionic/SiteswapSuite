@@ -18,8 +18,9 @@ public class ExtendedFraction {
 			else {
 				if(top.sign() < 0 && bottom < 0 || top.sign() > 0 && bottom > 0)
 					this.sign = 1;
-				else
+				else {
 					this.sign = -1;
+				}
 			}
 			//take abs of top and bottom
 			bottom = Math.abs(bottom);
@@ -64,11 +65,17 @@ public class ExtendedFraction {
 		} else {
 			if(this.sign == 0)
 				return "0";
-			else
-				if(this.denominator == 1)
+			else {
+				if(this.denominator == 1) {
+					if(this.sign < 0)
+						return "-" + this.numerator.toString();
 					return this.numerator.toString();
-				else
+				} else {
+					if(this.sign < 0)
+						return "-" + this.numerator.toString() + "/" + ((Integer)this.denominator).toString();
 					return this.numerator.toString() + "/" + ((Integer)this.denominator).toString();
+				}
+			}
 		}
 	}
 }

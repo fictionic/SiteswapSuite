@@ -8,7 +8,7 @@ class InvalidNotationException extends Exception {
 		this.s = s;
 	}
 	public String getMessage() {
-		return "string `" + s + "' is not valid siteswap notation";
+		return "ERROR: string `" + s + "' is not valid siteswap notation";
 	}
 }
 
@@ -59,7 +59,7 @@ public enum Notation {
 
 	/* siteswap regex patterns */
 	// the empty pattern (need some way of notating it without the empty string, cuz that's never passed on the commandline)
-	static final String emptyNotation = "\\.";
+	static final String emptyNotation = ".";
 
 	// basics
 	static final String modifier = "(-?_?|_?-?)";
@@ -85,7 +85,7 @@ public enum Notation {
 
 	// put them all together!
 	public static Notation analyze(String s) throws InvalidNotationException {
-		if(Pattern.matches(emptyNotation, s))
+		if(s.equals(emptyNotation))
 			return Notation.EMPTY;
 		if(Pattern.matches(validAsyncNotation, s))
 			return Notation.ASYNCHRONOUS;

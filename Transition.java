@@ -3,9 +3,12 @@ package siteswapsuite;
 import java.util.List;
 import java.util.ArrayList;
 
+class ImpossibleTransitionException extends Exception {}
+
 abstract class Transition extends MutableSiteswap {
 
-	private static final boolean debug = true;
+	private static final boolean debug = false;
+
 	private static void printf(Object toPrint) {
 		if(debug) {
 			if(toPrint == null)
@@ -15,24 +18,27 @@ abstract class Transition extends MutableSiteswap {
 		}
 	}
 
-	int eventualPeriod = -1;
+	int eventualPeriod = 0;
 
-	static Transition compute(State from, State to, int minLength, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) {
+	static Transition compute(State from, State to, int minLength, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) throws ImpossibleTransitionException {
 
-		System.out.println("computing transition between states:");
 		printf(from);
 		printf(to);
 		printf("");
 
 		// first check that the states are finite, otherwise there won't be a transition
 		if(!from.isFinite() || !to.isFinite()) {
-			System.out.println("error: cannot compute transition between non-finite states");
-			return null;
+			throw new ImpossibleTransitionException();
 		}
 
 		// make copies of the states, so as not to muck up the originals
 		State fromCopy = from.deepCopy();
 		State toCopy = to.deepCopy();
+		
+		// see if either state is empty
+		if(fromCopy.finiteLength() == 0 || toCopy.finiteLength() == 0) {
+			return new EmptyTransition(from.numHands());
+		}
 
 		// equalize the state lengths
 		if(fromCopy.finiteLength() < toCopy.finiteLength())
@@ -56,6 +62,12 @@ abstract class Transition extends MutableSiteswap {
 
 	// link to Siteswap() constructor for subclasses
 	private Transition(int numHands) { super(numHands); }
+
+	private static class EmptyTransition extends Transition {
+		private EmptyTransition(int numHands) {
+			super(numHands);
+		}
+	}
 
 	private static class StandardTransition extends Transition {
 		private StandardTransition(State from, State to, int minLength) {
@@ -83,7 +95,7 @@ abstract class Transition extends MutableSiteswap {
 			int debugCounter = 20;
 
 			// find the transition!
-			while(b < minLength || futureCatches != diffs.catches || futureAnticatches != diffs.antiCatches) {
+			while(b < minLength || diffs.tosses != 0 || diffs.antiTosses != 0 || futureCatches != diffs.catches || futureAnticatches != diffs.antiCatches) {
 
 				printf(">>>>>  b: " + b);
 				this.appendEmptyBeat();
@@ -115,7 +127,7 @@ abstract class Transition extends MutableSiteswap {
 						printf("performing toss at beat " + b);
 						this.addInfiniteToss(b, h, InfinityType.POSITIVE_INFINITY);
 						chargeAtHand--;
-						if(ballNumDiff < 0)
+						if(ballNumDiff < 0 && diffs.catches == 0)
 							ballNumDiff++;
 						else
 							futureCatches++;
@@ -124,7 +136,7 @@ abstract class Transition extends MutableSiteswap {
 						printf("performing antitoss at beat " + b);
 						this.addInfiniteAntitoss(b, h, InfinityType.POSITIVE_INFINITY);
 						chargeAtHand++;
-						if(ballNumDiff > 0)
+						if(ballNumDiff > 0 && diffs.antiCatches == 0)
 							ballNumDiff--;
 						else
 							futureAnticatches++;
@@ -220,7 +232,7 @@ abstract class Transition extends MutableSiteswap {
 		}
 		int numCatches = 0;
 		int numAnticatches = 0;
-		// count [anti]catches
+		// count catches/anticatches
 		for(int catchBeat=eventualPeriod; catchBeat<period(); catchBeat++) {
 			// loop through hands
 			for(int catchHand=0; catchHand<this.numHands; catchHand++) {
@@ -239,8 +251,12 @@ abstract class Transition extends MutableSiteswap {
 		}
 		int extraTosses = numTosses - numCatches;
 		int extraAntitosses = numAntitosses - numAnticatches;
-		printf("extraTosses: " + extraTosses);
-		printf("extraAntitosses: " + extraAntitosses);
+		printf("     numTosses: " + numTosses);
+		printf("    numCatches: " + numCatches);
+		printf(" numAntitosses: " + numAntitosses);
+		printf("numAnticatches: " + numAnticatches);
+		printf(">     extraTosses: " + extraTosses);
+		printf("> extraAntitosses: " + extraAntitosses);
 		// get list of all options for tosses, and null where non-tosses are
 		List<List<Toss>> tossOptionsList = new ArrayList<List<Toss>>();
 		for(int tossBeat=0; tossBeat<eventualPeriod; tossBeat++) {
@@ -286,10 +302,46 @@ abstract class Transition extends MutableSiteswap {
 		}
 		printf("tossOptionsList");
 		printf(tossOptionsList);
-		printf("size of each non-null tossOptions: " + "<to do>");
-		//
-		// then do stuff with tossOptionsList to get the answer...
-		return new ArrayList<MutableSiteswap>();
+		printf("toss perms: " + (numCatches + extraTosses));
+		printf("antiToss perms: " + (numAnticatches + extraAntitosses));
+		List<List<Integer>> tossPerms = findAllPermutations(numCatches + extraTosses);
+		List<List<Integer>> antiTossPerms = findAllPermutations(numAnticatches + extraAntitosses);
+		// combine into final list of transitions! (to be processed by a different class shortly...)
+		List<MutableSiteswap> ret = new ArrayList<MutableSiteswap>();
+		for(int t1=0; t1<tossPerms.size(); t1++) {
+			for(int t2=0; t2<antiTossPerms.size(); t2++) {
+				int totalFlatAnyTossIndex = 0;
+				List<Integer> curTossPerm = tossPerms.get(t1);
+				int flatTossIndex = 0;
+				List<Integer> curAntitossPerm = antiTossPerms.get(t2);
+				int flatAntitossIndex = 0;
+				MutableSiteswap curSS = new MutableSiteswap(numHands);
+				for(int b=0; b<eventualPeriod; b++) {
+					curSS.appendEmptyBeat();
+					for(int h=0; h<numHands; h++) {
+						for(int t=0; t<numTossesAtSite(b, h); t++) {
+							Toss curToss = this.getToss(b, h, t);
+							if(tossOptionsList.get(totalFlatAnyTossIndex) == null) {
+								curSS.addToss(b, h, curToss);
+							} else {
+								if(!curToss.isAntitoss()) {
+									curSS.addToss(b, h, tossOptionsList.get(totalFlatAnyTossIndex).get(curTossPerm.get(flatTossIndex)));
+									flatTossIndex++;
+								} else {
+									curSS.addToss(b, h, tossOptionsList.get(totalFlatAnyTossIndex).get(curAntitossPerm.get(flatAntitossIndex)));
+									flatAntitossIndex++;
+								}
+							}
+							totalFlatAnyTossIndex++;
+						}
+					}
+
+				}
+				ret.add(curSS);
+			}
+		}
+		printf(ret);
+		return ret;
 	}
 
 	static List<List<Integer>> findAllPermutations(int numTosses) {

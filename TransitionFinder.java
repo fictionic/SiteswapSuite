@@ -18,6 +18,7 @@ public class TransitionFinder {
 		printf("parsed: " + ss.toString());
 		printf("de-parsed: " + ss.print());
 		printf("number of balls: " + ss.numBalls());
+		printf("number of hands: " + ss.numHands());
 		printf("valid: " + ss.isValid());
 		printf("period: " + ss.period());
 		printf("state: " + new State(ss));
@@ -33,20 +34,30 @@ public class TransitionFinder {
 			}
 		} else if(args.length == 2) {
 			try {
-				NotatedSiteswapTransition t = NotatedSiteswapTransition.parseStrings(args[0], args[1], 0, false, false);
-				NotatedSiteswap from = t.prefix();
-				NotatedSiteswap to = t.suffix();
-				analyze(from);
+				CompatibleNotatedSiteswapPair patterns = new CompatibleNotatedSiteswapPair(args[0], args[1]);
+				analyze(patterns.prefix());
 				printf("-----");
-				analyze(to);
+				analyze(patterns.suffix());
 				printf("-----");
-				printf("TRANSITION:");
-				printf(t.transition().print());
+				try {
+					ContextualizedNotatedTransitionList transitions = new ContextualizedNotatedTransitionList(patterns, 0, false, false);
+					printf("General Transition:");
+					printf(transitions.printGeneralTransition());
+					printf(transitions.generalTransition());
+					printf("All Transitions:");
+					List<NotatedSiteswap> ts = transitions.transitionList();
+					for(int i=0; i<ts.size(); i++) {
+						printf(ts.get(i).print());
+					}
+				} catch(ImpossibleTransitionException e) {
+					printf("ERROR: cannot compute transition between non-finite states");
+				}
 			} catch(InvalidNotationException e) {
-				printf("invalid notation");
+				printf(e.getMessage());
 			} catch(IncompatibleNotationException e) {
 				printf("incompatible notations");
 			}
 		}
 	}
+
 }

@@ -36,18 +36,28 @@ public class MutableSiteswap implements Siteswap {
 		toRunOn.unAntitossify(); // needs to be implemented
 		int finiteValue = 0;
 		int numInfinities = 0;
+		Toss curToss;
 		ExtendedInteger curTossHeight;
 		for(int b=0; b<toRunOn.sites.size(); b++) {
 			for(int h=0; h<toRunOn.numHands; h++) {
 				for(int t=0; t<toRunOn.numTossesAtSite(b, h); t++) {
-					curTossHeight = toRunOn.getToss(b, h, t).height();
+					curToss = toRunOn.getToss(b, h, t);
+					curTossHeight = curToss.height();
 					if(curTossHeight.isInfinite()) {
-						if(curTossHeight.infiniteValue() == InfinityType.POSITIVE_INFINITY)
-							numInfinities++;
-						else
-							numInfinities--;
-					} else
-						finiteValue += curTossHeight.finiteValue();
+						if(curTossHeight.infiniteValue() == InfinityType.POSITIVE_INFINITY) {
+							if(!curToss.isAntitoss())
+								numInfinities++;
+							else
+								numInfinities--;
+						} else {
+							if(!curToss.isAntitoss())
+								numInfinities--;
+							else
+								numInfinities++;
+						}
+					} else {
+						finiteValue += curToss.charge() * curTossHeight.finiteValue();
+					}
 				}
 			}
 		}
