@@ -39,6 +39,7 @@ public class State {
 		this(ss.numHands());
 
 		ss = ss.antitossify();
+		printf(ss);
 
 		if(ss.period() > 0) {
 
@@ -446,7 +447,7 @@ public class State {
 		}
 	}
 
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		if(args.length == 1) {
 			try {
 				Siteswap ss = NotatedSiteswap.parseSingle(args[0]);
@@ -473,5 +474,5 @@ public class State {
 			System.out.println(s1);
 			System.out.println("finiteLength: " + s1.finiteLength);
 		}
-	}
+	}*/
 }

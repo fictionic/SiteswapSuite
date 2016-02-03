@@ -90,6 +90,8 @@ public class MutableSiteswap implements Siteswap {
 					curToss = this.getToss(b, h, t);
 					if(curToss.charge() != 0 && !curToss.height().isInfinite()) {
 						destBeat = (b + curToss.height().finiteValue()) % this.period();
+						if(destBeat < 0)
+							destBeat += this.period();
 						destHand = curToss.destHand();
 						this.getSite(destBeat, destHand).inDegree += curToss.charge();
 					}
@@ -167,8 +169,21 @@ public class MutableSiteswap implements Siteswap {
 			this.sites.get(period()-1).add(new Site(h));
 	}
 
-	public int extendToBeatIndex(int beatIndex) { //returns index of beat that was previously "at" given index (either 0 or period(), if any extending happens)
-		return 0;
+	public int extendToBeatIndex(int beatIndex) { //returns index of beat that was previously "at" given index (either 0, period(), or beatIndex)
+		if(beatIndex < 0) {
+			MutableSiteswap toAnnex = new MutableSiteswap(this.numHands);
+			while(beatIndex < 0) {
+				toAnnex.appendEmptyBeat();
+				beatIndex++;
+			}
+			toAnnex.appendSiteswap(this);
+			this.sites = toAnnex.sites;
+		}
+		while(beatIndex > this.period()) {
+			this.appendEmptyBeat();
+			beatIndex--;
+		}
+		return beatIndex;
 	}
 
 	public void appendSiteswap(MutableSiteswap toApppend) {
@@ -184,7 +199,32 @@ public class MutableSiteswap implements Siteswap {
 
 	// misc
 	public MutableSiteswap antitossify() {
-		return this;
+		MutableSiteswap ret = this.deepCopy();
+		// loop through beats
+		for(int b=0; b<ret.period(); b++) {
+			// loop through hands
+			for(int h=0; h<ret.numHands(); h++) {
+				// loop through tosses
+				for(int t=0; t<ret.numTossesAtSite(b, h); t++) {
+					Toss curToss = ret.getToss(b, h, t);
+					// check if it's a negative toss
+					if(curToss.height().sign() < 0) {
+						ret.getSite(b, h).removeToss(t);
+						// check if it's infinite
+						if(curToss.height().isInfinite()) {
+							// replace the negative toss with an antitoss in the same site
+							Toss newToss = new Toss(InfinityType.POSITIVE_INFINITY, true);
+							ret.addToss(b, h, newToss);
+						} else {
+							// add an antitoss to the appropriate site
+							Toss newToss = new Toss(-curToss.height().finiteValue(), h, true);
+							ret.addToss(b - curToss.height().finiteValue(), curToss.destHand(), newToss);
+						}
+					}
+				}
+			}
+		}
+		return ret;
 	}
 
 	public MutableSiteswap unAntitossify() {
@@ -257,6 +297,17 @@ public class MutableSiteswap implements Siteswap {
 
 		Toss getToss(int tossIndex) {
 			return this.tosses.get(tossIndex);
+		}
+
+		Toss removeToss(int tossIndex) {
+			if(!this.isEmpty()) {
+				this.outDegree -= this.tosses.get(tossIndex).charge();
+				Toss toReturn = this.tosses.remove(tossIndex);
+				if(this.tosses.size() == 0)
+					this.tosses.add(new Toss(this.handIndex));
+				return toReturn;
+			} else
+				return null;
 		}
 
 		void addToss(Toss toss) {

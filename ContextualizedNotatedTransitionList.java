@@ -93,54 +93,62 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 		return this.transitionList;
 	}
 
+	public List<NotatedSiteswap> unUnAntitossifiedTransitionList() {
+		return this.unUnAntitossifiedTransitionList;
+	}
+
 	private NotatedSiteswap getUnAntitossifiedTransition(int transitionIndex) {
-		return this.unUnAntitossifiedTransitionList.get(transitionIndex);
-		////////// UPDATE THIS TO USE THE NEW INTERFACES
-		/*
-		Siteswap newTransition = new Siteswap(transition.numHands());
-		//
+		if(true)
+			return this.unUnAntitossifiedTransitionList.get(transitionIndex); // don't actually do anything until we figure out the alg!
+		else {
+		////////
+		MutableSiteswap oldTransition = this.unUnAntitossifiedTransitionList.get(transitionIndex);
+		printf("oldTransition:");
+		printf(oldTransition);
+		MutableSiteswap newTransition = oldTransition.deepCopy();
 		Integer newTransitionStart = null, newTransitionEnd = null;
 		int destBeat, destHand;
 		Toss curToss;
 		// un-antitossify transition
 		printf("un-antitossifying transition...");
-		for(int b=0; b<transition.period(); b++) {
+		for(int b=0; b<oldTransition.period(); b++) {
 			printf("b: " + b);
-			for(int t=0; t<curHand.numTossesAtSite(b, h); t++) {
-				curToss = getToss(b, h, t);
-				// if it's an antitoss, make it a regular toss and put in its proper place in the output siteswap
-				ExtendedInteger tossHeight;
-				if(curToss.isAntitoss()) {
-					if(curToss.height().isInfinite()) {
-						destBeat = b;
-						tossHeight = new ExtendedInteger(curToss.height().infiniteValue());
-						tossHeight.negate();
-						newTransition.addInfiniteToss(destBeat, h, tossHeight.infiniteValue(), curToss.destHand());
-					} else {
-						destBeat = b + curToss.height();
-						tossHeight = new ExtendedInteger(curToss.height().finiteValue());
-						tossHeight.negate();
-						newTransition.addFiniteToss(destBeat, h, tossHeight.finiteValue(), curToss.destHand());
-					}
-				} else {
-					destBeat = b;
-					if(curToss.height().isInfinite()) {
-						tossHeight = new ExtendedInteger(curToss.height().infiniteValue());
-						newTransition.addInfiniteToss(destBeat, h, tossHeight.infiniteValue(), curToss.destHand());
-					} else {
-						tossHeight = new ExtendedInteger(curToss.height().finiteValue());
-						newTransition.addFiniteToss(destBeat, h, tossHeight.finiteValue(), curToss.destHand());
+			for(int h=0; h<this.numHands; h++) {
+				for(int t=0; t<oldTransition.numTossesAtSite(b, h); t++) {
+					curToss = oldTransition.getToss(b, h, t);
+					// if it's an antitoss, make it a regular toss and put in its proper place in the output siteswap
+					ExtendedInteger tossHeight;
+					Toss toAdd;
+					if(curToss.charge() != 0 && curToss.isAntitoss()) {
+						printf("removing toss");
+						newTransition.getSite(b, h).removeToss(t);
+						if(curToss.height().isInfinite()) {
+							destBeat = b;
+							tossHeight = new ExtendedInteger(curToss.height().infiniteValue());
+							tossHeight.negate();
+							toAdd = new Toss(tossHeight.infiniteValue(), false);
+							newTransition.addToss(destBeat, h, toAdd);
+						} else {
+							destBeat = b + curToss.height().finiteValue();
+							printf("extending transition");
+							destBeat = newTransition.extendToBeatIndex(destBeat);
+							printf(destBeat);
+							tossHeight = new ExtendedInteger(-curToss.height().finiteValue());
+							toAdd = new Toss(tossHeight.finiteValue(), h, false);
+							newTransition.addToss(destBeat, curToss.destHand(), toAdd);
+						}
+						printf(newTransition);
+						// update endpoints
+						if(newTransitionStart == null || destBeat < newTransitionStart)
+							newTransitionStart = destBeat;
+						if(newTransitionEnd == null || destBeat > newTransitionEnd)
+							newTransitionEnd = destBeat;
 					}
 				}
-				destBeat = newTransition.extendToBeatIndex(destBeat);
-				printf(newTransition);
-				// update endpoints
-				if(newTransitionStart == null || destBeat < newTransitionStart)
-					newTransitionStart = destBeat;
-				if(newTransitionEnd == null || destBeat > newTransitionEnd)
-					newTransitionEnd = destBeat;
 			}
 		}
+		printf("CURRENT STATE OF TRANSITION:");
+		printf(newTransition);
 		printf("start: " + newTransitionStart);
 		printf("end: " + newTransitionEnd);
 		// un-antitossify prefix
@@ -148,15 +156,25 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 		for(int b=-prefixLength; b<0; b++) {
 			printf("b: " + b);
 			for(int h=0; h<prefix.numHands(); h++) {
-				for(int t=0; t<numTossesAtSite(b, h); t++) {
-					curToss = getToss(b, h, t);
+				for(int t=0; t<prefix.numTossesAtSite(b, h); t++) {
+					curToss = prefix.getToss(b, h, t);
+					ExtendedInteger tossHeight;
+					Toss toAdd;
 					printf(curToss);
-					if(curToss.isAntitoss()) {
-						destBeat = b + curToss.height();
-						printf("destBeat: " + destBeat);
-						tossHeight = -curToss.height();
-						if(tossHeight != 0 && destBeat >= newTransitionStart) {
-							newTransition.addToss(destBeat, h, tossHeight, curToss.destHand());
+					if(curToss.charge() != 0 && curToss.isAntitoss()) {
+						if(!curToss.height().isInfinite()) {
+							destBeat = b + curToss.height().finiteValue();
+							printf("destBeat: " + destBeat);
+							tossHeight = new ExtendedInteger(-curToss.height().finiteValue());
+							toAdd = new Toss(tossHeight.finiteValue(), curToss.destHand(), false);
+						} else {
+							destBeat = b;
+							tossHeight = new ExtendedInteger(curToss.height().infiniteValue());
+							tossHeight.negate();
+							toAdd = new Toss(tossHeight.infiniteValue(), false);
+						}
+						if(!tossHeight.isInfinite() && tossHeight.finiteValue() != 0 && destBeat >= newTransitionStart) {
+							newTransition.addToss(destBeat, h, toAdd);
 							if(destBeat > newTransitionEnd) {
 								newTransitionEnd = destBeat;
 								printf("end: " + newTransitionEnd);
@@ -167,47 +185,63 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 				}
 			}
 		}
+		printf("CURRENT STATE OF TRANSITION:");
+		printf(newTransition);
 		// un-antitossify suffix
 		printf("un-antitossifying suffix...");
 		int shiftAmount = 0;
 		boolean skippedAll;
-		int b, base = transitionLength;
+		int b, base = oldTransition.period();
 		do {
 			printf("trying another period");
 			skippedAll = true;
 			for(int i=0; i<suffixLength; i++) {
 				b = base + i;
 				printf("b: " + b);
-				for(int h=0; h<suffix.numHands(); h++) {b
-					curHand = getBeat(b).getHand(h);
-					for(int t=0; t<curHand.numTosses(); t++) {a
-						curToss = curHand.getToss(t);
+				for(int h=0; h<suffix.numHands(); h++) {
+					for(int t=0; t<suffix.numTossesAtSite(b, h); t++) {
+						curToss = suffix.getToss(b, h, t);
+						ExtendedInteger tossHeight;
+						Toss toAdd;
 						printf(curToss);
-						if(curToss.isAntitoss()) {
-							destBeat = b + curToss.height();
-							tossHeight = -curToss.height();
-						} else {
-							destBeat = b;
-							tossHeight = curToss.height();
+						if(curToss.charge() != 0 && curToss.isAntitoss()) {
+							if(!curToss.height().isInfinite()) {
+								destBeat = b + curToss.height().finiteValue();
+								tossHeight = new ExtendedInteger(-curToss.height().finiteValue());
+								toAdd = new Toss(tossHeight.finiteValue(), curToss.destHand(), false);
+							} else {
+								destBeat = b;
+								tossHeight = new ExtendedInteger(InfinityType.NEGATIVE_INFINITY);
+								toAdd = new Toss(tossHeight.infiniteValue(), false);
+							}
+							printf("destBeat: " + destBeat);
+							if(!tossHeight.isInfinite() && tossHeight.finiteValue() != 0 && (destBeat <= newTransitionEnd || !skippedAll)) {
+								destBeat = newTransition.extendToBeatIndex(destBeat);
+								newTransition.addToss(destBeat, h, toAdd);
+								skippedAll = false;
+								if(destBeat < newTransitionStart)
+									newTransitionStart = destBeat;
+								if(destBeat > newTransitionEnd)
+									newTransitionEnd = destBeat;
+							} else 
+								printf("skip");
 						}
-						printf("destBeat: " + destBeat);
-						if(tossHeight != 0 && (destBeat <= newTransitionEnd || !skippedAll)) {
-							destBeat = newTransition.extendToBeatIndex(destBeat);
-							newTransition.addToss(destBeat, h, tossHeight, curToss.destHand());
-							skippedAll = false;
-							if(destBeat < newTransitionStart)
-								newTransitionStart = destBeat;
-							if(destBeat > newTransitionEnd)
-								newTransitionEnd = destBeat;
-						} else 
-							printf("skip");
 					}
 				}
 			}
 			base += suffixLength;
 		} while(!skippedAll);
 		printf("skipped all; done");
-		return newTransition.subPattern(newTransitionStart, newTransitionEnd);*/
+		NotatedSiteswap ret = null;
+		try {
+			ret = NotatedSiteswap.assemble(newTransition.subPattern(newTransitionStart, newTransitionEnd+1), this.compatibleNotationType);
+		} catch(IncompatibleNotationException e) {
+			System.out.println(e.getMessage());
+			System.exit(1);
+		}
+		printf(ret);
+		return ret;
+		}
 	}
 
 }

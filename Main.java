@@ -2,7 +2,7 @@ package siteswapsuite;
 
 import java.util.List;
 
-public class TransitionFinder {
+public class Main {
 
 	public static void printf(Object input) { System.out.println(input); }
 
@@ -30,7 +30,7 @@ public class TransitionFinder {
 				NotatedSiteswap ss = NotatedSiteswap.parseSingle(args[0]);
 				analyze(ss);
 			} catch(InvalidNotationException e) {
-				printf("invalid notation");
+				printf(e.getMessage());
 			}
 		} else if(args.length == 2) {
 			try {
@@ -43,12 +43,13 @@ public class TransitionFinder {
 					ContextualizedNotatedTransitionList transitions = new ContextualizedNotatedTransitionList(patterns, 0, false, false);
 					printf("General Transition:");
 					printf(transitions.printGeneralTransition());
-					printf(transitions.generalTransition());
-					printf("transitionLength: " + transitions.transitionLength());
+					//printf(transitions.generalTransition());
 					printf("All Transitions:");
 					List<NotatedSiteswap> ts = transitions.transitionList();
+					List<NotatedSiteswap> ts2 = transitions.unUnAntitossifiedTransitionList();
 					for(int i=0; i<ts.size(); i++) {
-						printf(ts.get(i).print());
+						//printf(ts.get(i).print() + "\t" + ts2.get(i).print());
+						printf(ts2.get(i).print());
 					}
 				} catch(ImpossibleTransitionException e) {
 					printf("ERROR: cannot compute transition between non-finite states");

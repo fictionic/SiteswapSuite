@@ -1,5 +1,5 @@
 all: math pure-ss state-based notation
-	javac -d . CompatibleNotatedSiteswapPair.java ContextualizedNotatedTransitionList.java TransitionFinder.java
+	javac -d . CompatibleNotatedSiteswapPair.java ContextualizedNotatedTransitionList.java Main.java
 
 math:
 	javac -d . InfinityType.java ExtendedInteger.java ExtendedFraction.java
@@ -10,8 +10,8 @@ pure-ss: math
 notation: pure-ss
 	javac -d . Notation.java NotatedSiteswap.java
 
-state-based: notation pure-ss
-	javac -d . State.java Transition.java
+state-based: pure-ss
+	javac -d . Notation.java State.java Transition.java
 
 clean:
 	rm -r siteswapsuite
