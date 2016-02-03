@@ -15,6 +15,7 @@ Print all transitions between the two given patterns (within default constraints
 
 
 **SETUP**
+
 `$ git clone https://github.com/seeegma/TransitionFinder`  
 `$ make`
 
@@ -63,6 +64,7 @@ state: [[ 1,  1][ 0,  0][ 0,  1][ 0,  0]]
 ```
 
 **ON GENERALITY OF THE THEORY (IN PROGRESS!)**
+
 When one first learns siteswap, typically one learns the "vanilla" flavor, in which all of the following axioms hold:
 - every beat contains exactly one or zero tosses (i.e. no multiplex)
 - the hands alternate tossing between beats (i.e. no synchronous)
@@ -73,9 +75,9 @@ When one first learns siteswap, typically one learns the "vanilla" flavor, in wh
 Some are common extensions to siteswap, with their own standard notation (multiplex, sync), while others are not.  
 SiteswapSuite casts out each of these. As such, some explanation is needed.
 
-\<explanation1\>
+\<explanation!\>
 
 With these generalizations, the world of possibilities gets much bigger:
 
-**COMPLEX EXMAPLES**
+**COMPLEX EXAPLES**
 - 
