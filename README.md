@@ -1,0 +1,2 @@
+# TransitionFinder
+Renamed to SiteswapSuite
