@@ -127,7 +127,6 @@ public class State {
 										break;
 									default:
 										break;
->>>>>>> testing
 								}
 							} // we don't care about infinite tosses, cuz they don't affect the rest of the state
 							printf("\t\t\tsim: " + simulationState.toString());
@@ -170,7 +169,6 @@ public class State {
 				this.finiteLength++;
 			}
 			curNode = curNode.prev;
->>>>>>> testing
 		}
 		return curNode;
 	}
@@ -232,6 +230,7 @@ public class State {
 					thisCurNode = thisCurNode.prev;
 			}
 		}
+		return true;
 	}
 
 	class DiffSum {
@@ -307,7 +306,6 @@ public class State {
 				signCounter += curNode.getTotalCharge();
 				repeatedPortion += signCounter;
 				curNode = curNode.prev;
->>>>>>> testing
 			}
 			ExtendedInteger numerator;
 			int denominator;
@@ -412,7 +410,6 @@ public class State {
 			}
 			return true;
 		}
->>>>>>> testing
 		public String toString() {
 			return this.handCharges.toString();
 		}
@@ -478,5 +475,4 @@ public class State {
 			System.out.println("finiteLength: " + s1.finiteLength);
 		}
 	}*/
->>>>>>> testing
 }

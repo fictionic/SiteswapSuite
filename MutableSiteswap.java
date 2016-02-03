@@ -192,6 +192,20 @@ public class MutableSiteswap implements Siteswap {
 
 	// manipulating pattern
 	public void starify() {
+		if(this.numHands() != 2)
+			return;
+		int originalPeriod = this.period();
+		for(int b=0; b<originalPeriod; b++) {
+			this.appendEmptyBeat();
+			for(int h=0; h<this.numHands; h++) {
+				for(int t=0; t<this.numTossesAtSite(b, h); t++) {
+					Toss curToss = this.getToss(b, h, t);
+					Toss toAdd = curToss.deepCopy();
+					toAdd.starify();
+					this.addToss(b + originalPeriod, (h + 1) % 2, toAdd);
+				}
+			}
+		}
 	}
 
 	public void infinitize() {
