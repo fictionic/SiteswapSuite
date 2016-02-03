@@ -1,33 +1,81 @@
-TransitionFinder
+SiteswapSuite
 ================
 
 **DESCRIPTION**  
-TransitionFinder finds a direct transition between two given valid juggling patterns in [siteswap](http://en.wikipedia.org/wiki/Siteswap) notation.
-
-As such, it can also do the following tasks:
-- determine whether or not a string is in valid siteswap notation
-- parse a valid siteswap string into a general Siteswap object (and 'deParse' a Siteswap object into a siteswap string (of appropriate brevity))
-- determine whether or not a valid siteswap string represents a valid juggling pattern
-- compute the juggling state of a valid juggling pattern
-- compute a direct transition pattern between two juggling states
-
+SiteswapSuite computes information about juggling patterns as abstracted into [siteswap](http://en.wikipedia.org/wiki/Siteswap) notation, with an emphasis on maximizing the generality of the underlying theory.
 
 **SYNOPSIS**  
-`java TransitionFinder '<siteswap>'` - displays information about the given siteswap (validity, number of balls, juggling state, unabridged notation)
+ Display information about the given siteswap (validity, number of balls, juggling state, unabridged notation):
 
-`java TransitionFinder '<siteswap1>' '<siteswap2>'` - prints a transition pattern between the two given patterns, assuming they are valid
+`java -jar SiteswapSuite <siteswap>`
 
-**EXAMPLES**
+Print all transitions between the two given patterns (within default constraints (for now)), assuming they are valid:
+
+`java -jar SiteswapSuite <siteswap1> <siteswap2>` 
+
+
+**SETUP**
+`$ git clone https://github.com/seeegma/TransitionFinder`  
+`$ make`
+
+**BASIC EXAMPLES**
 - Find a transition between the siteswaps `5` and `91`:
 
-`$ java TransitionFinder 5 91`  
-`678`
-- Display information about the 3-ball box:
+`$ java -jar SiteswapSuite 5 91`  
+```
+parsed: [[[[5, 0]]]]
+de-parsed: 5
+number of balls: 5
+number of hands: 1
+valid: true
+period: 1
+state: [[ 1][ 1][ 1][ 1][ 1]]
+-----
+parsed: [[[[9, 0]]], [[[1, 0]]]]
+de-parsed: 91
+number of balls: 5
+number of hands: 1
+valid: true
+period: 2
+state: [[ 1][ 1][ 0][ 1][ 0][ 1][ 0][ 1]]
+-----
+General Transition:
+&&&{000-&0-&0-&0}
+All Transitions:
+678
+858
+894
+696
+a56
+a74
+```
 
-`$ java TransitionFinder '(4,2x)*'`  
-`parsed: [[[[4, 0]], [[2, 0]]], [[[0, 0]], [[0, 1]]], [[[2, 1]], [[4, 1]]], [[[0, 0]], [[0, 1]]]]`  
-`de-parsed: (4,2x)(2x,4)`  
-`number of balls: 3.0`  
-`valid: true`  
-`period: 4`  
-`state: [ 0  0  1 ,  1  0  1 ]`  
+- Display information about the 3-ball box:
+`$ java -jar SiteswapSuite '(4,2x)*'`
+```
+parsed: [[[[4, 0]], [[2, 0]]], [[[0]], [[0]]], [[[2, 1]], [[4, 1]]], [[[0]], [[0]]]]
+de-parsed: (4,2x)(2x,4)
+number of balls: 3
+number of hands: 2
+valid: true
+period: 4
+state: [[ 1,  1][ 0,  0][ 0,  1][ 0,  0]]
+```
+
+**ON GENERALITY OF THE THEORY (IN PROGRESS!)**
+When one first learns siteswap, typically one learns the "vanilla" flavor, in which all of the following axioms hold:
+- every beat contains exactly one or zero tosses (i.e. no multiplex)
+- the hands alternate tossing between beats (i.e. no synchronous)
+- all tosses have non-negative height (i.e. no negative siteswaps)
+- all tosses have a "charge" of 1 or 0 (i.e. no "antitosses")
+- all tosses have finite height (self-explanatory)
+- only valid siteswaps have an associated juggling state (i.e. no infinite states)
+Some are common extensions to siteswap, with their own standard notation (multiplex, sync), while others are not.  
+SiteswapSuite casts out each of these. As such, some explanation is needed.
+
+\<explanation1\>
+
+With these generalizations, the world of possibilities gets much bigger:
+
+**COMPLEX EXMAPLES**
+- 
