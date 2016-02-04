@@ -210,7 +210,7 @@ abstract class Transition extends MutableSiteswap {
 	}
 
 	@Override // because it needs to take into account eventualPeriod
-	public List<MutableSiteswap> unInfinitize() {
+	public List<MutableSiteswap> unInfinitize(int maxTransitions) {
 		int numTosses = 0;
 		int numAntitosses = 0;
 		// count [anti]tosses
@@ -316,6 +316,8 @@ abstract class Transition extends MutableSiteswap {
 				List<Integer> curAntitossPerm = antiTossPerms.get(t2);
 				int flatAntitossIndex = 0;
 				MutableSiteswap curSS = new MutableSiteswap(numHands);
+				if(maxTransitions <= 0)
+					return ret;
 				for(int b=0; b<eventualPeriod; b++) {
 					curSS.appendEmptyBeat();
 					for(int h=0; h<numHands; h++) {
@@ -338,6 +340,7 @@ abstract class Transition extends MutableSiteswap {
 
 				}
 				ret.add(curSS);
+				maxTransitions--;
 			}
 		}
 		printf(ret);

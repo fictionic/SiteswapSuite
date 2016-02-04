@@ -23,7 +23,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 		}
 	}
 
-	public ContextualizedNotatedTransitionList(CompatibleNotatedSiteswapPair patterns, int minLength, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) throws ImpossibleTransitionException {
+	public ContextualizedNotatedTransitionList(CompatibleNotatedSiteswapPair patterns, int minLength, int maxTransitions, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) throws ImpossibleTransitionException {
 		super(patterns);
 		this.numHands = this.prefix.numHands;
 		// get transition
@@ -34,7 +34,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 			this.generalTransition = Transition.compute(new State(this.prefix), new State(this.suffix), minLength, allowExtraSqueezeCatches, generateBallAntiballPairs);
 			this.transitionLength = generalTransition.eventualPeriod;
 			// then get a list of the specific transitions
-			List<MutableSiteswap> unNotatedTransitionList = this.generalTransition.unInfinitize();
+			List<MutableSiteswap> unNotatedTransitionList = this.generalTransition.unInfinitize(maxTransitions);
 			// then assemble them into notated siteswaps
 			this.unUnAntitossifiedTransitionList = new ArrayList<NotatedSiteswap>();
 			for(int i=0; i<unNotatedTransitionList.size(); i++) {

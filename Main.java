@@ -40,11 +40,12 @@ public class Main {
 				analyze(patterns.suffix());
 				printf("-----");
 				try {
-					ContextualizedNotatedTransitionList transitions = new ContextualizedNotatedTransitionList(patterns, 0, false, false);
+					int maxTransitions = 10;
+					ContextualizedNotatedTransitionList transitions = new ContextualizedNotatedTransitionList(patterns, 0, maxTransitions, false, false);
 					printf("General Transition:");
 					printf(transitions.printGeneralTransition());
 					//printf(transitions.generalTransition());
-					printf("All Transitions:");
+					printf("All Transitions (first " + maxTransitions + "):");
 					List<NotatedSiteswap> ts = transitions.transitionList();
 					List<NotatedSiteswap> ts2 = transitions.unUnAntitossifiedTransitionList();
 					for(int i=0; i<ts.size(); i++) {
