@@ -7,11 +7,11 @@ SiteswapSuite computes information about juggling patterns as abstracted into [s
 **SYNOPSIS**  
  Display information about the given siteswap (validity, number of balls, juggling state, unabridged notation):
 
-`java -jar SiteswapSuite <siteswap>`
+`java -jar SiteswapSuite.jar <siteswap>`
 
 Print all transitions between the two given patterns (within default constraints (for now)), assuming they are valid:
 
-`java -jar SiteswapSuite <siteswap1> <siteswap2>` 
+`java -jar SiteswapSuite.jar <siteswap1> <siteswap2>` 
 
 
 **SETUP**
@@ -22,7 +22,7 @@ Print all transitions between the two given patterns (within default constraints
 **BASIC EXAMPLES**
 - Find a transition between the siteswaps `5` and `91`:
 
-`$ java -jar SiteswapSuite 5 91`  
+`$ java -jar SiteswapSuite.jar 5 91`  
 ```
 parsed: [[[[5, 0]]]]
 de-parsed: 5
@@ -52,7 +52,7 @@ a74
 ```
 
 - Display information about the 3-ball box:
-`$ java -jar SiteswapSuite '(4,2x)*'`
+`$ java -jar SiteswapSuite.jar '(4,2x)*'`
 ```
 parsed: [[[[4, 0]], [[2, 0]]], [[[0]], [[0]]], [[[2, 1]], [[4, 1]]], [[[0]], [[0]]]]
 de-parsed: (4,2x)(2x,4)
