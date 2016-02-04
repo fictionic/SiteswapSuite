@@ -244,7 +244,7 @@ public class MutableSiteswap implements Siteswap {
 		return this;
 	}
 
-	public List<MutableSiteswap> unInfinitize() {
+	public List<MutableSiteswap> unInfinitize(int howMany) {
 		return null;
 	}
 
