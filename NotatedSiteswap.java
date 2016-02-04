@@ -448,6 +448,8 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 								addInfiniteToss(b, curHand, height.infiniteValue());
 						} else {
 							destHand = (curHand + height.finiteValue()) % 2;
+							if(destHand < 0)
+								destHand += 2;
 							if(isAntitoss)
 								addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
 							else
