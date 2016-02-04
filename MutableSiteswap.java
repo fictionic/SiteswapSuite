@@ -109,10 +109,9 @@ public class MutableSiteswap implements Siteswap {
 	}
 
 	Site getSite(int beatIndex, int handIndex) {
+		beatIndex = beatIndex % this.sites.size();
 		if(beatIndex < 0)
 			beatIndex += this.sites.size();
-		else
-			beatIndex = beatIndex % this.sites.size();
 		return this.sites.get(beatIndex).get(handIndex);
 	}
 
@@ -232,7 +231,7 @@ public class MutableSiteswap implements Siteswap {
 						} else {
 							// add an antitoss to the appropriate site
 							Toss newToss = new Toss(-curToss.height().finiteValue(), h, true);
-							ret.addToss(b - curToss.height().finiteValue(), curToss.destHand(), newToss);
+							ret.addToss(b + curToss.height().finiteValue(), curToss.destHand(), newToss);
 						}
 					}
 				}
