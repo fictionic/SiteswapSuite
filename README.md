@@ -16,7 +16,7 @@ Print all transitions between the two given patterns (within default constraints
 
 **SETUP**
 
-`$ git clone https://github.com/seeegma/TransitionFinder`  
+`$ git clone https://github.com/seeegma/SiteswapSuite`  
 `$ make`
 
 **BASIC EXAMPLES**
