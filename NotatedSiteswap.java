@@ -392,6 +392,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 			boolean isAntitoss = false;
 			boolean lookForX = false;
 			char curToken;
+			Toss newToss = null;
 			//
 			while(i < a.length) {
 				curToken = a[i];
@@ -418,7 +419,9 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 						break;
 					case 'x':
 						//toggle destination hand of most recently added toss
-						getToss(period(), curHand, numTossesAtSite(period(), curHand) - 1).starify();
+						System.out.println(getToss(period(), curHand, numTossesAtSite(period(), curHand) - 1));
+						newToss.starify();
+						System.out.println(getToss(period(), curHand, numTossesAtSite(period(), curHand) - 1));
 						break;
 					case '!':
 						//remove last beat
@@ -442,24 +445,26 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 							isNegative = false;
 						}
 						if(height.isInfinite()) {
-							if(isAntitoss)
-								addInfiniteAntitoss(b, curHand, height.infiniteValue());
-							else
-								addInfiniteToss(b, curHand, height.infiniteValue());
+							if(isAntitoss) {
+								newToss = new Toss(height.infiniteValue(), true);
+							} else {
+								newToss = new Toss(height.infiniteValue(), false);
+							}
 						} else {
 							destHand = (curHand + height.finiteValue()) % 2;
 							if(destHand < 0)
 								destHand += 2;
 							if(isAntitoss)
-								addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
+								newToss = new Toss(height.finiteValue(), destHand, true);
 							else
-								addFiniteToss(b, curHand, height.finiteValue(), destHand);
+								newToss = new Toss(height.finiteValue(), destHand, false);
 							isAntitoss = false;
-							break;
 						}
+						addToss(b, curHand, newToss);
 				}
 				i++;
 			}
+			System.out.println(this);
 		}
 
 		public String print() {
