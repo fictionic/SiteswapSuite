@@ -1,7 +1,8 @@
 all: math pure-ss state-based notation main package
 
 package:
-	jar -cfe SiteswapSuite.jar siteswapsuite/Main siteswapsuite/*.class
+	mkdir -p bin
+	jar -cfe bin/SiteswapSuite.jar siteswapsuite/Main siteswapsuite/*.class
 
 main:
 	javac -d . CompatibleNotatedSiteswapPair.java ContextualizedNotatedTransitionList.java Main.java
