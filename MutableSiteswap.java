@@ -74,34 +74,35 @@ public class MutableSiteswap implements Siteswap {
 	}
 
 	public boolean isValid() {
+		MutableSiteswap toRunOn = this.unInfinitize();
 		// reset inDegree of each site
-		for(int b=0; b<this.sites.size(); b++) {
-			for(int h=0; h<this.numHands; h++) {
-				this.getSite(b, h).inDegree = 0;
+		for(int b=0; b<toRunOn.sites.size(); b++) {
+			for(int h=0; h<toRunOn.numHands; h++) {
+				toRunOn.getSite(b, h).inDegree = 0;
 			}
 		}
 		// calculate inDegree of each site
 		Toss curToss;
 		int destBeat;
 		int destHand;
-		for(int b=0; b<this.period(); b++) {
-			for(int h=0; h<this.numHands; h++) {
-				for(int t=0; t<this.numTossesAtSite(b, h); t++) {
-					curToss = this.getToss(b, h, t);
+		for(int b=0; b<toRunOn.period(); b++) {
+			for(int h=0; h<toRunOn.numHands; h++) {
+				for(int t=0; t<toRunOn.numTossesAtSite(b, h); t++) {
+					curToss = toRunOn.getToss(b, h, t);
 					if(curToss.charge() != 0 && !curToss.height().isInfinite()) {
-						destBeat = (b + curToss.height().finiteValue()) % this.period();
+						destBeat = (b + curToss.height().finiteValue()) % toRunOn.period();
 						if(destBeat < 0)
-							destBeat += this.period();
+							destBeat += toRunOn.period();
 						destHand = curToss.destHand();
-						this.getSite(destBeat, destHand).inDegree += curToss.charge();
+						toRunOn.getSite(destBeat, destHand).inDegree += curToss.charge();
 					}
 				}
 			}
 		}
 		// check if each site's inDegree matches its outDegree (numTosses)
-		for(int b=0; b<this.sites.size(); b++) {
-			for(int h=0; h<this.numHands; h++) {
-				if(this.getSite(b, h).inDegree != this.getSite(b, h).outDegree)
+		for(int b=0; b<toRunOn.sites.size(); b++) {
+			for(int h=0; h<toRunOn.numHands; h++) {
+				if(toRunOn.getSite(b, h).inDegree != toRunOn.getSite(b, h).outDegree)
 					return false;
 			}
 		}
@@ -153,6 +154,11 @@ public class MutableSiteswap implements Siteswap {
 	}
 
 	// removing tosses
+
+	public Toss removeToss(int beatIndex, int handIndex, int tossIndex) {
+		return this.getSite(beatIndex, handIndex).removeToss(tossIndex);
+	}
+
 	public void removeBeat(int beatIndex) {
 		this.sites.remove(beatIndex);
 	}
@@ -185,7 +191,7 @@ public class MutableSiteswap implements Siteswap {
 		return beatIndex;
 	}
 
-	public void appendSiteswap(MutableSiteswap toApppend) {
+	public void appendSiteswap(MutableSiteswap toAppend) {
 		return;
 	}
 
@@ -208,6 +214,60 @@ public class MutableSiteswap implements Siteswap {
 	}
 
 	public void infinitize() {
+	}
+
+	public MutableSiteswap unInfinitize() {
+		MutableSiteswap ret = this.deepCopy();
+		// look for tosses/antitosses of height &
+		for(int b=0; b<ret.period(); b++) {
+			for(int h=0; h<ret.numHands(); h++) {
+				for(int t=0; t<ret.numTossesAtSite(b, h); t++) {
+					Toss curToss = ret.getToss(b, h, t);
+					if(curToss.height().isInfinite() && curToss.height().infiniteValue() == InfinityType.POSITIVE_INFINITY) {
+						if(curToss.charge() > 0) {
+							searchForCatch:
+							for(int b2=b+1; b2<b+1+ret.period(); b2++) {
+								for(int h2=0; h2<ret.numHands(); h2++) {
+									for(int t2=0; t2<ret.numTossesAtSite(b2, h2); t2++) {
+										Toss curCatch = ret.getToss(b2, h2, t2);
+										if(curCatch.charge() > 0 &&
+												curCatch.height().isInfinite() &&
+												curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
+											ret.removeToss(b, h, t);
+											if(b == b2 % ret.period() && h == h2 && t2 > 0)
+												t2--;
+											ret.removeToss(b2, h2, t2);
+											ret.addFiniteToss(b, h, b2 - b, h2);
+											break searchForCatch;
+										}
+									}
+								}
+							}
+						} else if(curToss.charge() < 0) {
+							searchForAnticatch:
+							for(int b2=b+1; b2<b+1+ret.period(); b2++) {
+								for(int h2=0; h2<ret.numHands(); h2++) {
+									for(int t2=0; t2<ret.numTossesAtSite(b2, h2); t2++) {
+										Toss curCatch = ret.getToss(b2, h2, t2);
+										if(curCatch.charge() < 0 &&
+												curCatch.height().isInfinite() &&
+												curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
+											ret.removeToss(b, h, t);
+											if(b == b2 % ret.period() && h == h2 && t2 > 0)
+												t2--;
+											ret.removeToss(b2, h2, t2);
+											ret.addFiniteAntitoss(b, h, b2 - b, h2);
+											break searchForAnticatch;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return ret;
 	}
 
 	// misc
@@ -242,10 +302,6 @@ public class MutableSiteswap implements Siteswap {
 
 	public MutableSiteswap unAntitossify() {
 		return this;
-	}
-
-	public List<MutableSiteswap> unInfinitize(int howMany) {
-		return null;
 	}
 
 	public final MutableSiteswap getSprungPattern() {
@@ -349,6 +405,22 @@ public class MutableSiteswap implements Siteswap {
 
 		public String toString() {
 			return this.tosses.toString();
+		}
+	}
+
+	public static void main(String[] args) {
+		try {
+		NotatedSiteswap ss = NotatedSiteswap.parseSingle(args[0]);
+		System.out.println(ss.print());
+		System.out.println(ss.unInfinitize());
+		try {
+			NotatedSiteswap ss2 = NotatedSiteswap.assemble(ss.unInfinitize(), ss.notationType());
+			System.out.println(ss2.print());
+		} catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
+		} catch(Exception e) {
+			System.out.println(e.getMessage());
 		}
 	}
 }

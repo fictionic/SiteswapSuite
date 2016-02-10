@@ -209,7 +209,6 @@ abstract class Transition extends MutableSiteswap {
 		}
 	}
 
-	@Override // because it needs to take into account eventualPeriod
 	public List<MutableSiteswap> unInfinitize(int maxTransitions) {
 		int numTosses = 0;
 		int numAntitosses = 0;
