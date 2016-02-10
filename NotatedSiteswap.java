@@ -419,13 +419,11 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 						break;
 					case 'x':
 						//toggle destination hand of most recently added toss
-						System.out.println(getToss(period(), curHand, numTossesAtSite(period(), curHand) - 1));
 						newToss.starify();
-						System.out.println(getToss(period(), curHand, numTossesAtSite(period(), curHand) - 1));
 						break;
 					case '!':
 						//remove last beat
-						removeLastBeat();
+						removeLastBeat();TyBp21IpulBA
 						//decrement beat index
 						b--;
 						break;
