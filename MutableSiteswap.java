@@ -153,6 +153,12 @@ public class MutableSiteswap implements Siteswap {
 		this.getSite(atBeat, fromHand).addToss(new Toss(height, true));
 	}
 
+	// editing tosses
+
+	public void exchangeToss(int atBeat, int fromHand, int tossIndex, Toss newToss) {
+		this.getSite(atBeat, fromHand).exchangeToss(tossIndex, newToss);
+	}
+
 	// removing tosses
 
 	public Toss removeToss(int beatIndex, int handIndex, int tossIndex) {
@@ -224,40 +230,29 @@ public class MutableSiteswap implements Siteswap {
 				for(int t=0; t<ret.numTossesAtSite(b, h); t++) {
 					Toss curToss = ret.getToss(b, h, t);
 					if(curToss.height().isInfinite() && curToss.height().infiniteValue() == InfinityType.POSITIVE_INFINITY) {
-						if(curToss.charge() > 0) {
-							searchForCatch:
-							for(int b2=b+1; b2<b+1+ret.period(); b2++) {
-								for(int h2=0; h2<ret.numHands(); h2++) {
-									for(int t2=0; t2<ret.numTossesAtSite(b2, h2); t2++) {
-										Toss curCatch = ret.getToss(b2, h2, t2);
-										if(curCatch.charge() > 0 &&
-												curCatch.height().isInfinite() &&
-												curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
-											ret.removeToss(b, h, t);
-											if(b == b2 % ret.period() && h == h2 && t2 > 0)
-												t2--;
-											ret.removeToss(b2, h2, t2);
-											ret.addFiniteToss(b, h, b2 - b, h2);
-											break searchForCatch;
-										}
-									}
+						search: {
+							// first search this site to see if we can make zero-tosses
+							for(int t2=0; t2<ret.numTossesAtSite(b, h); t2++) {
+								Toss curCatch = ret.getToss(b, h, t2);
+								if(curCatch.charge() == curToss.charge() &&
+										curCatch.height().isInfinite() &&
+										curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
+									ret.removeToss(b, h, t2);
+									ret.exchangeToss(b, h, t, new Toss(h));
+									break search;
 								}
 							}
-						} else if(curToss.charge() < 0) {
-							searchForAnticatch:
+							// now search for positive tosses
 							for(int b2=b+1; b2<b+1+ret.period(); b2++) {
 								for(int h2=0; h2<ret.numHands(); h2++) {
 									for(int t2=0; t2<ret.numTossesAtSite(b2, h2); t2++) {
 										Toss curCatch = ret.getToss(b2, h2, t2);
-										if(curCatch.charge() < 0 &&
+										if(curCatch.charge() == curToss.charge() &&
 												curCatch.height().isInfinite() &&
 												curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
-											ret.removeToss(b, h, t);
-											if(b == b2 % ret.period() && h == h2 && t2 > 0)
-												t2--;
 											ret.removeToss(b2, h2, t2);
-											ret.addFiniteAntitoss(b, h, b2 - b, h2);
-											break searchForAnticatch;
+											ret.exchangeToss(b, h, t, new Toss(b2 - b, h2, curToss.charge() == 1));
+											break search;
 										}
 									}
 								}
@@ -282,16 +277,15 @@ public class MutableSiteswap implements Siteswap {
 					Toss curToss = ret.getToss(b, h, t);
 					// check if it's a negative toss
 					if(curToss.height().sign() < 0) {
-						ret.getSite(b, h).removeToss(t);
 						// check if it's infinite
 						if(curToss.height().isInfinite()) {
 							// replace the negative toss with an antitoss in the same site
 							Toss newToss = new Toss(InfinityType.POSITIVE_INFINITY, true);
-							ret.addToss(b, h, newToss);
+							ret.exchangeToss(b, h, t, newToss);
 						} else {
 							// add an antitoss to the appropriate site
 							Toss newToss = new Toss(-curToss.height().finiteValue(), h, true);
-							ret.addToss(b + curToss.height().finiteValue(), curToss.destHand(), newToss);
+							ret.exchangeToss(b + curToss.height().finiteValue(), curToss.destHand(), t, newToss);
 						}
 					}
 				}
@@ -386,6 +380,11 @@ public class MutableSiteswap implements Siteswap {
 				this.tosses.add(toss);
 				this.outDegree += toss.charge();
 			}
+		}
+
+		void exchangeToss(int tossIndex, Toss newToss) {
+			this.outDegree += newToss.charge() - this.tosses.get(tossIndex).charge();
+			this.tosses.set(tossIndex, newToss);
 		}
 
 		private boolean isEmpty() {

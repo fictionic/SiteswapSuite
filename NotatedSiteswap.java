@@ -390,7 +390,6 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 			int destHand;
 			boolean isNegative = false;
 			boolean isAntitoss = false;
-			boolean lookForX = false;
 			char curToken;
 			Toss newToss = null;
 			//
