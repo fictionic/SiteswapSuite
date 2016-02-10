@@ -423,7 +423,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 						break;
 					case '!':
 						//remove last beat
-						removeLastBeat();TyBp21IpulBA
+						removeLastBeat();
 						//decrement beat index
 						b--;
 						break;
@@ -462,7 +462,6 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 				}
 				i++;
 			}
-			System.out.println(this);
 		}
 
 		public String print() {
