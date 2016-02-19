@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 class ImpossibleTransitionException extends Exception {}
 
-abstract class Transition extends MutableSiteswap {
+abstract class Transition extends Siteswap {
 
 	private static final boolean debug = false;
 
@@ -209,7 +209,7 @@ abstract class Transition extends MutableSiteswap {
 		}
 	}
 
-	public List<MutableSiteswap> unInfinitize(int maxTransitions) {
+	public List<Siteswap> unInfinitize(int maxTransitions) {
 		int numTosses = 0;
 		int numAntitosses = 0;
 		// count [anti]tosses
@@ -306,7 +306,7 @@ abstract class Transition extends MutableSiteswap {
 		List<List<Integer>> tossPerms = findAllPermutations(numCatches + extraTosses);
 		List<List<Integer>> antiTossPerms = findAllPermutations(numAnticatches + extraAntitosses);
 		// combine into final list of transitions! (to be processed by a different class shortly...)
-		List<MutableSiteswap> ret = new ArrayList<MutableSiteswap>();
+		List<Siteswap> ret = new ArrayList<Siteswap>();
 		for(int t1=0; t1<tossPerms.size(); t1++) {
 			for(int t2=0; t2<antiTossPerms.size(); t2++) {
 				int totalFlatAnyTossIndex = 0;
@@ -314,7 +314,7 @@ abstract class Transition extends MutableSiteswap {
 				int flatTossIndex = 0;
 				List<Integer> curAntitossPerm = antiTossPerms.get(t2);
 				int flatAntitossIndex = 0;
-				MutableSiteswap curSS = new MutableSiteswap(numHands);
+				Siteswap curSS = new Siteswap(numHands);
 				if(maxTransitions <= 0)
 					return ret;
 				for(int b=0; b<eventualPeriod; b++) {

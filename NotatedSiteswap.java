@@ -29,7 +29,7 @@ class IncompatibleNotationException extends Exception {
 	}
 }
 
-public abstract class NotatedSiteswap extends MutableSiteswap {
+public abstract class NotatedSiteswap extends Siteswap {
 
 	private static boolean debug = false;
 	private static void printf(Object o) {
@@ -48,12 +48,12 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 	/* PARSING */
 	/* ------- */
 
-	// link to MutableSiteswap() constructor for subclasses
+	// link to Siteswap() constructor for subclasses
 	private NotatedSiteswap(int numHands) {
 		super(numHands);
 	}
 
-	public static NotatedSiteswap assemble(MutableSiteswap ss) throws IncompatibleNotationException {
+	public static NotatedSiteswap assemble(Siteswap ss) throws IncompatibleNotationException {
 		try {
 			return assemble(ss, Notation.defaultNotationType(ss.numHands()));
 		} catch(IncompatibleNotationException e) {
@@ -61,7 +61,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 		}
 	}
 
-	public static NotatedSiteswap assemble(MutableSiteswap ss, Notation notationType) throws IncompatibleNotationException {
+	public static NotatedSiteswap assemble(Siteswap ss, Notation notationType) throws IncompatibleNotationException {
 		switch(notationType) {
 			case EMPTY:
 				if(ss.period() == 0)
@@ -94,7 +94,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 	}
 
 	// construct a NotatedSiteswap out of a siteswap and a notationtype
-	private NotatedSiteswap(MutableSiteswap ss, Notation notationType) {
+	private NotatedSiteswap(Siteswap ss, Notation notationType) {
 		super(ss.numHands, ss.sites);
 		this.notationType = notationType;
 		// (no compatibility checking is done because it's only called by inner classes
@@ -102,7 +102,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 	}
 
 	// construct a NotatedSiteswap out of a siteswap, guessing a good notationtype
-	public NotatedSiteswap(MutableSiteswap ss) {
+	public NotatedSiteswap(Siteswap ss) {
 		this(ss, Notation.defaultNotationType(ss.numHands()));
 	}
 
@@ -134,7 +134,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 	public abstract String print();
 
 	// de-parse a Siteswap
-	public String notate(MutableSiteswap ss) {
+	public String notate(Siteswap ss) {
 		if(ss.period() == 0 || ss.numHands() == 0)
 			return (new EmptyNotatedSiteswap(ss)).print();
 		switch(this.numHands) {
@@ -154,7 +154,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 	/* -------------- */
 
 	static class EmptyNotatedSiteswap extends NotatedSiteswap {
-		EmptyNotatedSiteswap(MutableSiteswap ss) {
+		EmptyNotatedSiteswap(Siteswap ss) {
 			super(ss, Notation.EMPTY);
 		}
 
@@ -169,7 +169,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 
 	static class OneHandedNotatedSiteswap extends NotatedSiteswap {
 
-		OneHandedNotatedSiteswap(MutableSiteswap ss) {
+		OneHandedNotatedSiteswap(Siteswap ss) {
 			super(ss, Notation.ASYNCHRONOUS);
 		}
 
@@ -251,7 +251,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 
 	static class TwoHandedAsyncNotatedSiteswap extends NotatedSiteswap {
 
-		TwoHandedAsyncNotatedSiteswap(MutableSiteswap ss) {
+		TwoHandedAsyncNotatedSiteswap(Siteswap ss) {
 			super(ss, Notation.ASYNCHRONOUS);
 		}
 
@@ -373,7 +373,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 
 	static class TwoHandedSyncNotatedSiteswap extends NotatedSiteswap {
 
-		TwoHandedSyncNotatedSiteswap(MutableSiteswap ss) {
+		TwoHandedSyncNotatedSiteswap(Siteswap ss) {
 			super(ss, Notation.SYNCHRONOUS);
 		}
 
@@ -537,7 +537,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 
 	static class TwoHandedMixedNotatedSiteswap extends NotatedSiteswap {
 
-		TwoHandedMixedNotatedSiteswap(MutableSiteswap ss) {
+		TwoHandedMixedNotatedSiteswap(Siteswap ss) {
 			super(ss, Notation.MIXED);
 		}
 
@@ -556,7 +556,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 
 	static class NotatedPassingSiteswap extends NotatedSiteswap {
 
-		NotatedPassingSiteswap(MutableSiteswap ss) {
+		NotatedPassingSiteswap(Siteswap ss) {
 			super(ss, Notation.PASSING);
 		}
 
@@ -581,7 +581,7 @@ public abstract class NotatedSiteswap extends MutableSiteswap {
 				String s = nss.print();
 				System.out.println("de-parsed: " + s);
 				//
-				//MutableSiteswap mss = nss;
+				//Siteswap mss = nss;
 				//NotatedSiteswap blah = NotatedSiteswap.assemble(mss, Notation.SYNCHRONOUS);
 				//System.out.println(blah.print());
 			} catch(InvalidNotationException e) {

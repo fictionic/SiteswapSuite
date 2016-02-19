@@ -34,7 +34,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 			this.generalTransition = Transition.compute(new State(this.prefix), new State(this.suffix), minLength, allowExtraSqueezeCatches, generateBallAntiballPairs);
 			this.transitionLength = generalTransition.eventualPeriod;
 			// then get a list of the specific transitions
-			List<MutableSiteswap> unNotatedTransitionList = this.generalTransition.unInfinitize(maxTransitions);
+			List<Siteswap> unNotatedTransitionList = this.generalTransition.unInfinitize(maxTransitions);
 			// then assemble them into notated siteswaps
 			this.unUnAntitossifiedTransitionList = new ArrayList<NotatedSiteswap>();
 			for(int i=0; i<unNotatedTransitionList.size(); i++) {
@@ -102,10 +102,10 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 			return this.unUnAntitossifiedTransitionList.get(transitionIndex); // don't actually do anything until we figure out the alg!
 		else {
 		////////
-		MutableSiteswap oldTransition = this.unUnAntitossifiedTransitionList.get(transitionIndex);
+		Siteswap oldTransition = this.unUnAntitossifiedTransitionList.get(transitionIndex);
 		printf("oldTransition:");
 		printf(oldTransition);
-		MutableSiteswap newTransition = oldTransition.deepCopy();
+		Siteswap newTransition = oldTransition.deepCopy();
 		Integer newTransitionStart = null, newTransitionEnd = null;
 		int destBeat, destHand;
 		Toss curToss;
