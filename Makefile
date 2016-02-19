@@ -11,7 +11,7 @@ math:
 	javac -d . InfinityType.java ExtendedInteger.java ExtendedFraction.java
 
 pure-ss:
-	javac -d . Toss.java Siteswap.java MutableSiteswap.java 
+	javac -d . Toss.java Siteswap.java Siteswap.java 
 
 notation:
 	javac -d . Notation.java NotatedSiteswap.java
