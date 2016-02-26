@@ -74,7 +74,8 @@ public class Siteswap {
 	}
 
 	public boolean isValid() {
-		Siteswap toRunOn = this.unInfinitize();
+		Siteswap toRunOn = this.deepCopy();
+		toRunOn.unInfinitize();
 		// reset inDegree of each site
 		for(int b=0; b<toRunOn.sites.size(); b++) {
 			for(int h=0; h<toRunOn.numHands; h++) {
@@ -108,6 +109,25 @@ public class Siteswap {
 		}
 		return true;
 	}
+
+	public boolean isPrime() {
+		System.out.println("WARNING: primality testing not yet implemented");
+		return false;
+	}
+
+	public ExtendedFraction difficulty() {
+		System.out.println("WARNING: difficulty calculation not yet implemented");
+		ExtendedFraction b = this.numBalls();
+		int h = this.numHands;
+		int bottom;
+		if(b.numerator().isInfinite())
+			bottom = (h > 0 ? 1 : 0);
+		else {
+		}
+		return new ExtendedFraction(new ExtendedInteger(0), 1);
+	}
+
+	// querying tosses
 
 	Site getSite(int beatIndex, int handIndex) {
 		beatIndex = beatIndex % this.sites.size();
@@ -222,36 +242,35 @@ public class Siteswap {
 	public void infinitize() {
 	}
 
-	public Siteswap unInfinitize() {
-		Siteswap ret = this.deepCopy();
+	public void unInfinitize() {
 		// look for tosses/antitosses of height &
-		for(int b=0; b<ret.period(); b++) {
-			for(int h=0; h<ret.numHands(); h++) {
-				for(int t=0; t<ret.numTossesAtSite(b, h); t++) {
-					Toss curToss = ret.getToss(b, h, t);
+		for(int b=0; b<this.period(); b++) {
+			for(int h=0; h<this.numHands(); h++) {
+				for(int t=0; t<this.numTossesAtSite(b, h); t++) {
+					Toss curToss = this.getToss(b, h, t);
 					if(curToss.height().isInfinite() && curToss.height().infiniteValue() == InfinityType.POSITIVE_INFINITY) {
 						search: {
 							// first search this site to see if we can make zero-tosses
-							for(int t2=0; t2<ret.numTossesAtSite(b, h); t2++) {
-								Toss curCatch = ret.getToss(b, h, t2);
+							for(int t2=0; t2<this.numTossesAtSite(b, h); t2++) {
+								Toss curCatch = this.getToss(b, h, t2);
 								if(curCatch.charge() == curToss.charge() &&
 										curCatch.height().isInfinite() &&
 										curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
-									ret.removeToss(b, h, t2);
-									ret.exchangeToss(b, h, t, new Toss(h));
+									this.removeToss(b, h, t2);
+									this.exchangeToss(b, h, t, new Toss(h));
 									break search;
 								}
 							}
 							// now search for positive tosses
-							for(int b2=b+1; b2<b+1+ret.period(); b2++) {
-								for(int h2=0; h2<ret.numHands(); h2++) {
-									for(int t2=0; t2<ret.numTossesAtSite(b2, h2); t2++) {
-										Toss curCatch = ret.getToss(b2, h2, t2);
+							for(int b2=b+1; b2<b+1+this.period(); b2++) {
+								for(int h2=0; h2<this.numHands(); h2++) {
+									for(int t2=0; t2<this.numTossesAtSite(b2, h2); t2++) {
+										Toss curCatch = this.getToss(b2, h2, t2);
 										if(curCatch.charge() == curToss.charge() &&
 												curCatch.height().isInfinite() &&
 												curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
-											ret.removeToss(b2, h2, t2);
-											ret.exchangeToss(b, h, t, new Toss(b2 - b, h2, curToss.charge() == 1));
+											this.removeToss(b2, h2, t2);
+											this.exchangeToss(b, h, t, new Toss(b2 - b, h2, curToss.charge() == 1));
 											break search;
 										}
 									}
@@ -262,48 +281,46 @@ public class Siteswap {
 				}
 			}
 		}
-		return ret;
 	}
 
-	// misc
-	public Siteswap antitossify() {
-		Siteswap ret = this.deepCopy();
+	public void antitossify() {
+		Siteswap temp = this.deepCopy();
 		// loop through beats
-		for(int b=0; b<ret.period(); b++) {
+		for(int b=0; b<this.period(); b++) {
 			// loop through hands
-			for(int h=0; h<ret.numHands(); h++) {
+			for(int h=0; h<this.numHands(); h++) {
 				// loop through tosses
-				for(int t=0; t<ret.numTossesAtSite(b, h); t++) {
-					Toss curToss = ret.getToss(b, h, t);
+				for(int t=0; t<this.numTossesAtSite(b, h); t++) {
+					Toss curToss = this.getToss(b, h, t);
 					// check if it's a negative toss
 					if(curToss.height().sign() < 0) {
 						// check if it's infinite
 						if(curToss.height().isInfinite()) {
 							// replace the negative toss with an antitoss in the same site
 							Toss newToss = new Toss(InfinityType.POSITIVE_INFINITY, true);
-							ret.exchangeToss(b, h, t, newToss);
+							temp.exchangeToss(b, h, t, newToss);
 						} else {
 							// add an antitoss to the appropriate site
 							Toss newToss = new Toss(-curToss.height().finiteValue(), h, true);
-							ret.exchangeToss(b + curToss.height().finiteValue(), curToss.destHand(), t, newToss);
+							temp.exchangeToss(b + curToss.height().finiteValue(), curToss.destHand(), t, newToss);
 						}
 					}
 				}
 			}
 		}
-		return ret;
+		this.sites = temp.sites;
 	}
 
-	public Siteswap unAntitossify() {
-		return this;
+	public void unAntitossify() {
 	}
 
-	public final Siteswap getSprungPattern() {
-		return null;
+	public void spring() {
 	}
 
-	public final Siteswap getInverse() {
-		return null;
+	public void invert() {
+	}
+
+	public void antiNegate() {
 	}
 
 	public Siteswap subPattern(int startBeat, int endBeat) {
@@ -407,19 +424,4 @@ public class Siteswap {
 		}
 	}
 
-	public static void main(String[] args) {
-		try {
-		NotatedSiteswap ss = NotatedSiteswap.parseSingle(args[0]);
-		System.out.println(ss.print());
-		System.out.println(ss.unInfinitize());
-		try {
-			NotatedSiteswap ss2 = NotatedSiteswap.assemble(ss.unInfinitize(), ss.notationType());
-			System.out.println(ss2.print());
-		} catch(Exception e) {
-			System.out.println(e.getMessage());
-		}
-		} catch(Exception e) {
-			System.out.println(e.getMessage());
-		}
-	}
 }

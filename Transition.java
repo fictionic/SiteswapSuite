@@ -3,7 +3,12 @@ package siteswapsuite;
 import java.util.List;
 import java.util.ArrayList;
 
-class ImpossibleTransitionException extends Exception {}
+class ImpossibleTransitionException extends Exception {
+	String message = "ERROR: cannot compute transition between non-finite states";
+	public String getMessage() {
+		return this.message;
+	}
+}
 
 abstract class Transition extends Siteswap {
 
@@ -315,7 +320,7 @@ abstract class Transition extends Siteswap {
 				List<Integer> curAntitossPerm = antiTossPerms.get(t2);
 				int flatAntitossIndex = 0;
 				Siteswap curSS = new Siteswap(numHands);
-				if(maxTransitions <= 0)
+				if(maxTransitions != -1 && maxTransitions <= 0)
 					return ret;
 				for(int b=0; b<eventualPeriod; b++) {
 					curSS.appendEmptyBeat();
@@ -339,7 +344,8 @@ abstract class Transition extends Siteswap {
 
 				}
 				ret.add(curSS);
-				maxTransitions--;
+				if(maxTransitions != -1)
+					maxTransitions--;
 			}
 		}
 		printf(ret);

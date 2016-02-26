@@ -7,7 +7,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 
 	private Transition generalTransition;
 	private List<NotatedSiteswap> transitionList;
-	private List<NotatedSiteswap> unUnAntitossifiedTransitionList;
+	private List<NotatedSiteswap> unAntitossifiedTransitionList;
 	private int prefixLength, transitionLength, suffixLength;
 	private int numHands;
 
@@ -36,35 +36,19 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 			// then get a list of the specific transitions
 			List<Siteswap> unNotatedTransitionList = this.generalTransition.unInfinitize(maxTransitions);
 			// then assemble them into notated siteswaps
-			this.unUnAntitossifiedTransitionList = new ArrayList<NotatedSiteswap>();
+			this.transitionList = new ArrayList<NotatedSiteswap>();
 			for(int i=0; i<unNotatedTransitionList.size(); i++) {
 				try {
-					this.unUnAntitossifiedTransitionList.add(NotatedSiteswap.assemble(unNotatedTransitionList.get(i), this.compatibleNotationType));
+					this.transitionList.add(NotatedSiteswap.assemble(unNotatedTransitionList.get(i), this.compatibleNotationType));
 				} catch(IncompatibleNotationException e) {
-					System.out.println("ERROR: incompatible notations within ContextualizedNotatedTransitionList constructor, somehow...");
+					System.out.println("incompatible notations within ContextualizedNotatedTransitionList constructor, somehow...");
 					System.exit(1);
 				}
 			}
-			// then unAntitossify them
-			this.transitionList = new ArrayList<NotatedSiteswap>();
-			for(int i=0; i<unUnAntitossifiedTransitionList.size(); i++) {
-				this.transitionList.add(this.getUnAntitossifiedTransition(i));
-			}
-			printf("transitionList");
-			printf(this.transitionList);
 		} catch(ImpossibleTransitionException e) {
 			throw e;
 		}
 	}
-
-	/*private ContextualizedNotatedTransitionList(NotatedSiteswap from, NotatedSiteswap via, NotatedSiteswap to) {
-		this.prefix = from;
-		this.prefixLength = from.period();
-		this.generalTransition = via;
-		this.transitionLength = via.period();
-		this.suffix = to;
-		this.suffixLength = to.period();
-	}*/
 
 	public Siteswap generalTransition() {
 		return this.generalTransition;
@@ -93,16 +77,23 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 		return this.transitionList;
 	}
 
-	public List<NotatedSiteswap> unUnAntitossifiedTransitionList() {
-		return this.unUnAntitossifiedTransitionList;
+	public List<NotatedSiteswap> unAntitossifiedTransitionList() {
+		if(this.unAntitossifiedTransitionList == null) {
+			// then unAntitossify them
+			this.unAntitossifiedTransitionList = new ArrayList<NotatedSiteswap>();
+			for(int i=0; i<transitionList.size(); i++) {
+				this.unAntitossifiedTransitionList.add(this.getUnAntitossifiedTransition(i));
+			}
+		}
+		return this.unAntitossifiedTransitionList;
 	}
 
 	private NotatedSiteswap getUnAntitossifiedTransition(int transitionIndex) {
 		if(true)
-			return this.unUnAntitossifiedTransitionList.get(transitionIndex); // don't actually do anything until we figure out the alg!
+			return this.transitionList.get(transitionIndex); // don't actually do anything until we figure out the alg!
 		else {
 		////////
-		Siteswap oldTransition = this.unUnAntitossifiedTransitionList.get(transitionIndex);
+		Siteswap oldTransition = this.transitionList.get(transitionIndex);
 		printf("oldTransition:");
 		printf(oldTransition);
 		Siteswap newTransition = oldTransition.deepCopy();

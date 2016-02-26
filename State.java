@@ -38,7 +38,8 @@ public class State {
 	public State(Siteswap ss) {
 		this(ss.numHands());
 
-		ss = ss.antitossify();
+		ss = ss.deepCopy();
+		ss.antitossify();
 		printf(ss);
 
 		if(ss.period() > 0) {

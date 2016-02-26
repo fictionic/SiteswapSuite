@@ -39,6 +39,27 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 	protected Notation notationType;
 
+	// abstract methods
+	public abstract String print();
+
+	public NotatedSiteswap deepCopy() {
+		switch(this.notationType) {
+			case EMPTY:
+				return new EmptyNotatedSiteswap(super.deepCopy());
+			case ASYNCHRONOUS:
+				if(this.numHands == 1)
+					return new OneHandedNotatedSiteswap(super.deepCopy());
+				else
+					return new TwoHandedAsyncNotatedSiteswap(super.deepCopy());
+			case SYNCHRONOUS:
+				return new TwoHandedSyncNotatedSiteswap(super.deepCopy());
+			case MIXED:
+				return new TwoHandedMixedNotatedSiteswap(super.deepCopy());
+			default:
+				return new NotatedPassingSiteswap(super.deepCopy());
+		}
+	}
+
 	// querying basic info
 	public Notation notationType() {
 		return this.notationType;
@@ -131,8 +152,6 @@ public abstract class NotatedSiteswap extends Siteswap {
 	/* DE-PARSING */
 	/* ---------- */
 
-	public abstract String print();
-
 	// de-parse a Siteswap
 	public String notate(Siteswap ss) {
 		if(ss.period() == 0 || ss.numHands() == 0)
@@ -164,6 +183,10 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 		public String print() {
 			return Notation.emptyNotation;
+		}
+
+		public EmptyNotatedSiteswap deepCopy() {
+			return new EmptyNotatedSiteswap(((Siteswap)this).deepCopy());
 		}
 	}
 
@@ -247,6 +270,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 			}
 			return out;
 		}
+
 	}
 
 	static class TwoHandedAsyncNotatedSiteswap extends NotatedSiteswap {
@@ -369,6 +393,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 			}
 			return out;
 		}
+
 	}
 
 	static class TwoHandedSyncNotatedSiteswap extends NotatedSiteswap {
@@ -533,6 +558,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 			}
 			return out;
 		}
+
 	}
 
 	static class TwoHandedMixedNotatedSiteswap extends NotatedSiteswap {
@@ -552,6 +578,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 			System.exit(1);
 			return null;
 		}
+
 	}
 
 	static class NotatedPassingSiteswap extends NotatedSiteswap {
@@ -571,6 +598,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 			System.exit(1);
 			return null;
 		}
+
 	}
 
 	public static void main(String[] args) {

@@ -41,6 +41,14 @@ public class ExtendedFraction {
 		}
 	}
 
+	public ExtendedInteger numerator() {
+		return this.numerator;
+	}
+	
+	public int denominator() {
+		return this.denominator;
+	}
+
 	public Float floatValue() {
 		if(this.denominator == 0)
 			return Float.NaN;

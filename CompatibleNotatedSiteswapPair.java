@@ -32,7 +32,6 @@ class CompatibleNotatedSiteswapPair {
 			this.prefix = NotatedSiteswap.parseSingle(s1);
 			this.suffix = new NotatedSiteswap.EmptyNotatedSiteswap(numHands);
 			this.compatibleNotationType = Notation.EMPTY;
-			System.out.println("BBBBB");
 		} else if(n1 == Notation.ASYNCHRONOUS) {
 			if(n2 == Notation.ASYNCHRONOUS) {
 				numHands = 1;
