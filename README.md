@@ -4,14 +4,23 @@ SiteswapSuite
 **DESCRIPTION**  
 SiteswapSuite computes information about juggling patterns as abstracted into [siteswap](http://en.wikipedia.org/wiki/Siteswap) notation, with an emphasis on maximizing the generality of the underlying theory.
 
-**SYNOPSIS**  
- Display information about the given siteswap (validity, number of balls, juggling state, unabridged notation):
+**SYNOPSIS**
+to simply display requested information about a siteswap or state:
 
-`java -jar SiteswapSuite.jar <siteswap>`
+`siteswapsuite <input>`
 
-Print all transitions between the two given patterns (within default constraints (for now)), assuming they are valid:
+to compute a transition between two inputs:
 
-`java -jar SiteswapSuite.jar <siteswap1> <siteswap2>` 
+`siteswapsuite <t_opts> <input1> <input2>`
+
+an `<input>` is of the form
+
+`-i <siteswap_notation> <i_opts>`
+
+|short form|long form|effect|
+|----------|---------|------|
+
+ 
 
 
 **SETUP**
