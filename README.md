@@ -84,7 +84,7 @@ After parsing the input into a siteswap pattern, a sequence of modifications may
 
 ###BASIC EXAMPLES
 - Find a transition between the siteswaps `5` and `91`:
-- 
+
 `$ ./SiteswapSuite -i 5 -i 91`  
 This displays:
 ```
