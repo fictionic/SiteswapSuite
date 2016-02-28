@@ -47,8 +47,8 @@ These only apply when the input notation is in vanilla siteswap notation.
 
 |option |effect|
 |:-----:|:-----|
-|`-h<x>`| Force parsing the input notation as having <x> hands. This is only useful when giving single inputs to the program, because an appropriate number of hands is inferred for each input pattern given the other pattern. For example, if given the single input `-i 3`, the program will take '3' to represent a one-handed pattern; but `-i 3 -h2` will produce the pattern '(3,0)!(0,3)!'.|
-|`-H<x>` | Force parsing the input notation as starting with hand <x>. Default is 0. For example: `-i 3 -h2 -H0` produces '(3,0)!(0,3)!', whereas `-i 3 -h2 -H1` produces '(0,3)!(3,0)!'.|
+|`-h<x>`| Force parsing the input notation as having \<x\> hands. This is only useful when giving single inputs to the program, because an appropriate number of hands is inferred for each input pattern given the other pattern. For example, if given the single input `-i 3`, the program will take '3' to represent a one-handed pattern; but `-i 3 -h2` will produce the pattern '(3,0)!(0,3)!'.|
+|`-H<x>` | Force parsing the input notation as starting with hand \<x\>. Default is 0. For example: `-i 3 -h2 -H0` produces '(3,0)!(0,3)!', whereas `-i 3 -h2 -H1` produces '(0,3)!(3,0)!'.|
 
 **Modification sequence specification**
 
@@ -69,8 +69,8 @@ After parsing the input into a siteswap pattern, a sequence of modifications may
 
 |option |effect|
 |:-----:|:-----|
-|`-l<x>` |Minimum length of computed transitions. If no transition is needed to get from one input to the other, this option can be used to force a nonempty transition to be computed.|
-|`-m<x>`|Maximum number of transitions to compute. By default, all transitions are computed (obviously not all, since there are infinite. I still need to figure out the details here.)|
+|`-l<x>` |Require transitions to be at least \<x\> beats long. If no transition is needed to get from one input to the other, this option can be used to force a nonempty transition to be computed.|
+|`-m<x>`|Compute at most \<x\> transitions. By default, all transitions are computed (obviously not all, since there are infinite. I still need to figure out the details here.)|
 |`-q`   |Allow extra squeeze catches in transitions. By default, if additional balls need to be caught from infinity in order to transition to the destination transition, they will only be caught by empty hands. With this flag set, all additional balls will be caught on the first beat.|
 |`-g`   |Generate ball/antiball pairs in transitions. By default, tosses will only be made from hands that have balls to throw, and antitosses will only be made from hands that have antiballs to throw. With this flag set, the transition may generate pairs of one ball and one antiball to be thrown together, reducing the length of the transition. With both `-g` and `-q` set, the transitions will all be one beat in length or less.|
 |`-A`   |Un-antitossify transitions. By default, transitions may contain antitosses. With this flag set, antitosses will be converted to regular tosses.|
