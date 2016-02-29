@@ -11,13 +11,10 @@ math:
 	javac -d . InfinityType.java ExtendedInteger.java ExtendedFraction.java
 
 pure-ss:
-	javac -d . Toss.java Siteswap.java Siteswap.java 
+	javac -d . Toss.java Siteswap.java Notation.java State.java Transition.java
 
 notation:
 	javac -d . Notation.java NotatedSiteswap.java
-
-state-based:
-	javac -d . Notation.java State.java Transition.java
 
 clean:
 	rm -r siteswapsuite
