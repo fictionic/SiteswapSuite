@@ -111,8 +111,48 @@ public class Siteswap {
 	}
 
 	public boolean isPrime() {
-		System.out.println("WARNING: primality testing not yet implemented");
-		return false;
+		State curState = new State(this);
+		State[] prevStates = new State[this.period()];
+		prevStates[0] = curState.deepCopy();
+		for(int b=0; b<this.period()-1; b++) {
+			for(int h=0; h<this.numHands(); h++) {
+				for(int t=0; t<this.numTossesAtSite(b, h); t++) {
+					Toss toss = this.getToss(b, h, t);
+					if(toss.charge() == 0)
+						continue;
+					if(toss.height().isInfinite()) {
+						if(toss.height().infiniteValue() == InfinityType.POSITIVE_INFINITY) {
+							if(toss.charge() == 1)
+								curState.decChargeOfNowNodeAtHand(h);
+							else
+								curState.incChargeOfNowNodeAtHand(h);
+						} else {
+							if(toss.charge() == 1)
+								curState.incChargeOfNowNodeAtHand(h);
+							else
+								curState.decChargeOfNowNodeAtHand(h);
+						}
+					} else {
+						if(toss.charge() == 1) {
+							curState.decChargeOfNowNodeAtHand(h);
+							curState.incChargeOfNodeAtHand(toss.height().finiteValue(), toss.destHand());
+						} else {
+							curState.incChargeOfNowNodeAtHand(h);
+							curState.decChargeOfNodeAtHand(toss.height().finiteValue(), toss.destHand());
+						}
+					}
+				}
+			}
+			curState.advanceTime();
+			// check if the new state is the same as any of the previous ones
+			for(int i=0; i<=b; i++) {
+				if(curState.equals(prevStates[i])) {
+					return false;
+				}
+			}
+			prevStates[b+1] = curState.deepCopy();
+		}
+		return true;
 	}
 
 	public ExtendedFraction difficulty() {

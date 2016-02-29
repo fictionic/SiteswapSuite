@@ -174,6 +174,14 @@ public class State {
 		return curNode;
 	}
 
+	void incChargeOfNodeAtHand(int b, int h) {
+		this.getFiniteNode(b).incChargeAtHand(h);
+	}
+
+	void decChargeOfNodeAtHand(int b, int h) {
+		this.getFiniteNode(b).decChargeAtHand(h);
+	}
+
 	void incChargeOfNowNodeAtHand(int h) {
 		this.nowNode.incChargeAtHand(h);
 	}
@@ -448,32 +456,4 @@ public class State {
 		}
 	}
 
-	/*public static void main(String[] args) {
-		if(args.length == 1) {
-			try {
-				Siteswap ss = NotatedSiteswap.parseSingle(args[0]);
-				State s = new State(ss);
-				System.out.println(s);
-				System.out.println(s.numBalls());
-			} catch(InvalidNotationException e) {
-				System.out.println("invalid notation");
-			}
-		} else if(args.length == 0) {
-			State s1 = new State(1);
-			System.out.println(s1);
-			System.out.println("finiteLength: " + s1.finiteLength + "\n");
-			System.out.println("extend to beat 4");
-			s1.getFiniteNode(4).incChargeAtHand(0);
-			System.out.println(s1);
-			System.out.println("finiteLength: " + s1.finiteLength + "\n");
-			System.out.println("extend to beat 3");
-			s1.getFiniteNode(3).incChargeAtHand(0);
-			System.out.println(s1);
-			System.out.println("finiteLength: " + s1.finiteLength + "\n");
-			System.out.println("extend to beat 2");
-			s1.getFiniteNode(2).incChargeAtHand(0);
-			System.out.println(s1);
-			System.out.println("finiteLength: " + s1.finiteLength);
-		}
-	}*/
 }
