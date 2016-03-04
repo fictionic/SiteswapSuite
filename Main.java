@@ -1,14 +1,14 @@
 package siteswapsuite;
 
 import java.util.List;
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class Main {
 
 	static void printf(Object input) { System.out.println(input); }
 
 
-	static class ParseError extends Exception {
+	static class ParseError extends SiteswapException {
 		String message;
 		ParseError(String message) {
 			this.message = "ERROR: " + message;
@@ -45,6 +45,7 @@ public class Main {
 	static class InputObject {
 		String inputNotation;
 		NotatedSiteswap siteswap;
+		NotatedSiteswap modifiedSiteswap;
 		State state;
 		boolean isState;
 		// hand specification
@@ -80,7 +81,7 @@ public class Main {
 					}
 				}
 			}
-			this.operations = new ArrayList<SiteswapOperation>();
+			this.operations = new LinkedList<SiteswapOperation>();
 			this.parseInputShortOptionsFromIndex(arg, c);
 		}
 
@@ -172,44 +173,66 @@ public class Main {
 			this.parseInputShortOptionsFromIndex(arg, 1);
 		}
 
+		void parseNotation() throws InvalidNotationException, IncompatibleNumberOfHandsException {
+			try {
+				this.siteswap = NotatedSiteswap.parseSingle(this.inputNotation, this.numHands, this.startHand);
+			} catch(InvalidNotationException e) {
+				throw e;
+			}
+		}
+
+		void runModifications() {
+			for(SiteswapOperation m : this.operations) {
+				switch(m) {
+					case ANTITOSSIFY:
+						this.siteswap.antitossify();
+						break;
+					case SPRUNG:
+						try {
+							this.siteswap = this.siteswap.spring(this.startHand);
+						} catch(SprungException e) {
+							printf(e.getMessage());
+						}
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		
+		void computeState() {
+			this.state = new State(this.siteswap);
+		}
+
 		void displayInfo(int i) {
 			printf("INPUT " + i + ":   '" + this.inputNotation + "'");
 			if(!this.operations.isEmpty()) {
 				String ops = "";
-				this.siteswap = this.siteswap.deepCopy();
 				for(SiteswapOperation o : operations) {
 					switch(o) {
 						case INVERSE:
-							this.siteswap.invert();
 							ops += "inverse, ";
 							break;
 						case SPRUNG:
-							this.siteswap.spring();
 							ops += "sprung, ";
 							break;
 						case INFINITIZE:
-							this.siteswap.infinitize();
 							ops += "infinitize, ";
 							break;
 						case UNINFINITIZE:
-							this.siteswap.unInfinitize();
 							ops += "un-infinitize, ";
 							break;
 						case ANTITOSSIFY:
-							this.siteswap.antitossify();
 							ops += "antitossify, ";
 							break;
 						case UNANTITOSSIFY:
-							this.siteswap.unAntitossify();
 							ops += "un-antitossify, ";
 							break;
 						case ANTINEGATE:
-							this.siteswap.antiNegate();
 							ops += "anti-negate, ";
 							break;
 					}
 				}
-				this.state = new State(this.siteswap);
 				printf("Modification Sequence: " + ops);
 			}
 			printf("---------");
@@ -294,8 +317,9 @@ public class Main {
 					break;
 				case 1:
 					try {
-						this.inputs[0].siteswap = NotatedSiteswap.parseSingle(this.inputs[0].inputNotation, this.inputs[0].numHands, this.inputs[0].startHand);
-						this.inputs[0].state = new State(this.inputs[0].siteswap);
+						this.inputs[0].parseNotation();
+						this.inputs[0].runModifications();
+						this.inputs[0].computeState();
 					} catch(InvalidNotationException | IncompatibleNumberOfHandsException e) {
 						throw e;
 					}
@@ -307,9 +331,11 @@ public class Main {
 						throw e;
 					}
 					this.inputs[0].siteswap = this.inputPatterns.prefix;
-					this.inputs[0].state = new State(this.inputs[0].siteswap);
+					this.inputs[0].runModifications();
+					this.inputs[0].computeState();
 					this.inputs[1].siteswap = this.inputPatterns.suffix;
-					this.inputs[1].state = new State(this.inputs[1].siteswap);
+					this.inputs[1].runModifications();
+					this.inputs[1].computeState();
 					break;
 			}
 		}
@@ -410,7 +436,7 @@ public class Main {
 		try {
 			CommandObject command = new CommandObject(args);
 			command.displayOutput();
-		} catch(Exception e) {
+		} catch(SiteswapException e) {
 			printf(e.getMessage());
 		}
 	}

@@ -354,9 +354,6 @@ public class Siteswap {
 	public void unAntitossify() {
 	}
 
-	public void spring() {
-	}
-
 	public void invert() {
 	}
 

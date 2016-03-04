@@ -3,7 +3,7 @@ package siteswapsuite;
 import java.util.List;
 import java.util.ArrayList;
 
-class ImpossibleTransitionException extends Exception {
+class ImpossibleTransitionException extends SiteswapException {
 	String message = "ERROR: cannot compute transition between non-finite states";
 	public String getMessage() {
 		return this.message;

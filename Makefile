@@ -1,4 +1,4 @@
-all: math pure-ss transition notation main package
+all: exception math pure-ss transition notation main package
 
 package:
 	mkdir -p bin
@@ -18,6 +18,9 @@ transition:
 
 notation:
 	javac -d . Notation.java NotatedSiteswap.java CompatibleNotatedSiteswapPair.java
+
+exception:
+	javac -d . SiteswapException.java
 
 clean:
 	rm -r siteswapsuite
