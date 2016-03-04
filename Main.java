@@ -18,18 +18,6 @@ public class Main {
 		}
 	}
 
-	/*
-
-	   <cmd> = <info_opts> <input> | <t_opts> <input> <input>
-	   <input> = <siteswap_input> | <state_input>
-	   <siteswap_input> = "-i"<input_opts_short> <siteswap_notation>( <input_opts>)*
-	   <state_input> = "-I"<num><input_opts_short> <state_notation>( <input_opts>)*
-	   <input_opts> = <input_opts_short> | <input_opts_long>
-	   <input_opts_short> = <numHands_short> | <startHand_short> | <ss_operation_short>
-	   <ss_operation_short> = 
-
-	 */
-
 	static String parseIntFromArg(String arg, int c) {
 		int startIndex = c;
 		scan:
@@ -240,6 +228,7 @@ public class Main {
 			if(this.printPrimality)
 				printf("primality:  " + this.siteswap.isPrime());
 		}
+
 	}
 	
 	static class CommandObject {
@@ -259,7 +248,7 @@ public class Main {
 		CompatibleNotatedSiteswapPair inputPatterns;
 		ContextualizedNotatedTransitionList transitions;
 
-		CommandObject(String[] args) throws ParseError, InvalidNotationException, IncompatibleNotationException, ImpossibleTransitionException {
+		CommandObject(String[] args) throws ParseError, InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
 			this.numInputs = 0;
 			// parse args
 			int i = 0;
@@ -268,9 +257,7 @@ public class Main {
 				if(arg.charAt(0) == '-') {
 					switch(arg.charAt(1)) {
 						case '-':
-							printf("long options not yet supported");
-							System.exit(1);
-							break;
+							throw new ParseError("long options not yet supported");
 						case 'i':
 						case 'I':
 							if(i+1 < args.length) {
@@ -307,16 +294,16 @@ public class Main {
 					break;
 				case 1:
 					try {
-						this.inputs[0].siteswap = NotatedSiteswap.parseSingle(this.inputs[0].inputNotation);
+						this.inputs[0].siteswap = NotatedSiteswap.parseSingle(this.inputs[0].inputNotation, this.inputs[0].numHands, this.inputs[0].startHand);
 						this.inputs[0].state = new State(this.inputs[0].siteswap);
-					} catch(InvalidNotationException e) {
+					} catch(InvalidNotationException | IncompatibleNumberOfHandsException e) {
 						throw e;
 					}
 					break;
 				case 2:
 					try {
-						this.inputPatterns = new CompatibleNotatedSiteswapPair(this.inputs[0].inputNotation, this.inputs[1].inputNotation);
-					} catch(InvalidNotationException | IncompatibleNotationException e) {
+						this.inputPatterns = new CompatibleNotatedSiteswapPair(this.inputs[0].inputNotation, this.inputs[0].startHand, this.inputs[1].inputNotation, this.inputs[1].startHand);
+					} catch(InvalidNotationException | IncompatibleNotationException | IncompatibleNumberOfHandsException e) {
 						throw e;
 					}
 					this.inputs[0].siteswap = this.inputPatterns.prefix;

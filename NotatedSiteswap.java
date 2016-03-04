@@ -29,6 +29,24 @@ class IncompatibleNotationException extends Exception {
 	}
 }
 
+class IncompatibleNumberOfHandsException extends Exception {
+	String inputNotation;
+	int numHands;
+	IncompatibleNumberOfHandsException(String inputNotation, int numHands) {
+		this.inputNotation = inputNotation;
+		this.numHands = numHands;
+	}
+	IncompatibleNumberOfHandsException() {
+		this.inputNotation = null;
+	}
+	public String getMessage() {
+		if(this.inputNotation != null)
+			return "ERROR: cannot parse input string '" + this.inputNotation + " as having " + this.numHands + " hands";
+		else
+			return "ERROR: incompatible number of hands";
+	}
+}
+
 public abstract class NotatedSiteswap extends Siteswap {
 
 	private static boolean debug = false;
@@ -127,7 +145,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 		this(ss, Notation.defaultNotationType(ss.numHands()));
 	}
 
-	public static NotatedSiteswap parseSingle(String inputNotation) throws InvalidNotationException {
+	public static NotatedSiteswap parseSingle(String inputNotation, int numHands, int startHand) throws InvalidNotationException, IncompatibleNumberOfHandsException {
 		Notation n;
 		try {
 			n = Notation.analyze(inputNotation);
@@ -136,16 +154,30 @@ public abstract class NotatedSiteswap extends Siteswap {
 		}
 		switch(n) {
 			case EMPTY:
-				return new EmptyNotatedSiteswap(0);
+				if(numHands == -1)
+					numHands = 0;
+				return new EmptyNotatedSiteswap(numHands);
 			case ASYNCHRONOUS:
-				return new OneHandedNotatedSiteswap(inputNotation);
+				if(numHands == -1 || numHands == 1)
+					return new OneHandedNotatedSiteswap(inputNotation);
+				else if(numHands == 2)
+					return new TwoHandedAsyncNotatedSiteswap(inputNotation, startHand);
+				else
+					break;
 			case SYNCHRONOUS:
-				return new TwoHandedSyncNotatedSiteswap(inputNotation);
+				if(numHands == -1 || numHands == 2)
+					return new TwoHandedSyncNotatedSiteswap(inputNotation);
+				else
+					break;
 			case MIXED:
-				return new TwoHandedMixedNotatedSiteswap(inputNotation);
+				if(numHands == -1 || numHands == 2)
+					return new TwoHandedMixedNotatedSiteswap(inputNotation);
+				else
+					break;
 			default: // case PASSING
 				return new NotatedPassingSiteswap(inputNotation);
 		}
+		throw new IncompatibleNumberOfHandsException(inputNotation, numHands);
 	}
 
 	/* ---------- */
@@ -279,13 +311,13 @@ public abstract class NotatedSiteswap extends Siteswap {
 			super(ss, Notation.ASYNCHRONOUS);
 		}
 
-		TwoHandedAsyncNotatedSiteswap(String s) {
+		TwoHandedAsyncNotatedSiteswap(String s, int startHand) {
 			super(2);
 			this.notationType = Notation.ASYNCHRONOUS;
 			char[] a = s.toCharArray();
 			char curToken;
 			int b = 0; //index (beat) in output siteswap
-			int curHand = 0; // which hand's turn it is to throw
+			int curHand = startHand; // which hand's turn it is to throw
 			ExtendedInteger height;
 			int destHand;
 			boolean multi = false; //whether or not we're currently in a multiplex throw
@@ -296,7 +328,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 				while(i < a.length) {
 					curToken = a[i];
 					//update current hand
-					curHand = b % 2;
+					curHand = (b + startHand) % 2;
 					//System.out.println(curToken);
 					switch(curToken) {
 						//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
@@ -601,23 +633,4 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 	}
 
-	public static void main(String[] args) {
-		if(args.length == 1) {
-			try {
-				NotatedSiteswap nss = NotatedSiteswap.parseSingle(args[0]);
-				System.out.println("parsed: " + nss.toString());
-				String s = nss.print();
-				System.out.println("de-parsed: " + s);
-				//
-				//Siteswap mss = nss;
-				//NotatedSiteswap blah = NotatedSiteswap.assemble(mss, Notation.SYNCHRONOUS);
-				//System.out.println(blah.print());
-			} catch(InvalidNotationException e) {
-				System.out.println("invalid notation");
-			}/* catch(IncompatibleNotationException e) {
-				System.out.println("notation type incompatible with given number of hands");
-			}*/
-		}
-	}
 }
-
