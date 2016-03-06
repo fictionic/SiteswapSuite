@@ -45,8 +45,9 @@ public class Main {
 	static class InputObject {
 		String inputNotation;
 		NotatedSiteswap siteswap;
-		NotatedSiteswap modifiedSiteswap;
 		State state;
+		NotatedSiteswap modifiedSiteswap;
+		State modifiedState;
 		boolean isState;
 		// hand specification
 		int minSSLength = 1;
@@ -182,14 +183,15 @@ public class Main {
 		}
 
 		void runModifications() {
+			this.modifiedSiteswap = this.siteswap.deepCopy();
 			for(SiteswapOperation m : this.operations) {
 				switch(m) {
 					case ANTITOSSIFY:
-						this.siteswap.antitossify();
+						this.modifiedSiteswap.antitossify();
 						break;
 					case SPRUNG:
 						try {
-							this.siteswap = this.siteswap.spring(this.startHand);
+							this.modifiedSiteswap = this.modifiedSiteswap.spring();
 						} catch(SprungException e) {
 							printf(e.getMessage());
 						}
@@ -202,54 +204,66 @@ public class Main {
 		
 		void computeState() {
 			this.state = new State(this.siteswap);
+			if(this.operations.size() > 0)
+				this.modifiedState = new State(this.modifiedSiteswap);
+			else
+				this.modifiedState = this.state;
 		}
 
 		void displayInfo(int i) {
 			printf("INPUT " + i + ":   '" + this.inputNotation + "'");
+			// generate string representing operation sequence
 			if(!this.operations.isEmpty()) {
+				printf(" parsed:     " + this.siteswap.toString());
+				printf(" de-parsed:  " + this.siteswap.print());
+				printf("---------");
 				String ops = "";
+				int c = 0;
 				for(SiteswapOperation o : operations) {
 					switch(o) {
 						case INVERSE:
-							ops += "inverse, ";
+							ops += "inverse";
 							break;
 						case SPRUNG:
-							ops += "sprung, ";
+							ops += "sprung";
 							break;
 						case INFINITIZE:
-							ops += "infinitize, ";
+							ops += "infinitize";
 							break;
 						case UNINFINITIZE:
-							ops += "un-infinitize, ";
+							ops += "un-infinitize";
 							break;
 						case ANTITOSSIFY:
-							ops += "antitossify, ";
+							ops += "antitossify";
 							break;
 						case UNANTITOSSIFY:
-							ops += "un-antitossify, ";
+							ops += "un-antitossify";
 							break;
 						case ANTINEGATE:
-							ops += "anti-negate, ";
+							ops += "anti-negate";
 							break;
 					}
+					if(++c < operations.size())
+						ops += ", ";
 				}
-				printf("Modification Sequence: " + ops);
+				printf(" Modification Sequence: " + ops);
+				printf("---------");
+				printf("OUTPUT " + i + ":");
 			}
-			printf("---------");
-			printf("parsed:     " + this.siteswap.toString());
-			printf("de-parsed:  " + this.siteswap.print());
-			printf("numHands:   " + this.siteswap.numHands());
-			printf("period:     " + this.siteswap.period());
+			printf(" parsed:     " + this.modifiedSiteswap.toString());
+			printf(" de-parsed:  " + this.modifiedSiteswap.print());
+			printf(" numHands:   " + this.modifiedSiteswap.numHands());
+			printf(" period:     " + this.modifiedSiteswap.period());
 			if(this.printNumBalls)
-				printf("numBalls:   " + this.siteswap.numBalls());
+				printf(" numBalls:   " + this.modifiedSiteswap.numBalls());
 			if(this.printValidity)
-				printf("validity:   " + this.siteswap.isValid());
+				printf(" validity:   " + this.modifiedSiteswap.isValid());
 			if(this.printState)
-				printf("state:      " + this.state);
+				printf(" state:      " + this.state);
 			if(this.printDifficulty)
-				printf("difficulty: " + this.siteswap.difficulty());
+				printf(" difficulty: " + this.modifiedSiteswap.difficulty());
 			if(this.printPrimality)
-				printf("primality:  " + this.siteswap.isPrime());
+				printf(" primality:  " + this.modifiedSiteswap.isPrime());
 		}
 
 	}
@@ -268,7 +282,8 @@ public class Main {
 		boolean unAntitossifyTransitions = false;
 
 		// output objects
-		CompatibleNotatedSiteswapPair inputPatterns;
+		CompatibleNotatedSiteswapPair inputPatterns; // for parsing inputs
+		CompatibleNotatedSiteswapPair modifiedInputPatterns; // for computing transition
 		ContextualizedNotatedTransitionList transitions;
 
 		CommandObject(String[] args) throws ParseError, InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
@@ -326,7 +341,7 @@ public class Main {
 					break;
 				case 2:
 					try {
-						this.inputPatterns = new CompatibleNotatedSiteswapPair(this.inputs[0].inputNotation, this.inputs[0].startHand, this.inputs[1].inputNotation, this.inputs[1].startHand);
+						this.inputPatterns = new CompatibleNotatedSiteswapPair(this.inputs[0].inputNotation, this.inputs[0].numHands, this.inputs[0].startHand, this.inputs[1].inputNotation, this.inputs[1].numHands, this.inputs[1].startHand);
 					} catch(InvalidNotationException | IncompatibleNotationException | IncompatibleNumberOfHandsException e) {
 						throw e;
 					}
@@ -336,6 +351,11 @@ public class Main {
 					this.inputs[1].siteswap = this.inputPatterns.suffix;
 					this.inputs[1].runModifications();
 					this.inputs[1].computeState();
+					try {
+						this.modifiedInputPatterns = new CompatibleNotatedSiteswapPair(this.inputs[0].modifiedSiteswap, this.inputs[1].modifiedSiteswap);
+					} catch(IncompatibleNumberOfHandsException e) {
+						throw e;
+					}
 					break;
 			}
 		}
@@ -396,13 +416,11 @@ public class Main {
 			}
 			switch(this.numInputs) {
 				case 0:
-					break;
 				case 1:
-					// print info based on info flags
 					break;
 				case 2:
 					try {
-						this.transitions = new ContextualizedNotatedTransitionList(this.inputPatterns, this.minTransitionLength, this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
+						this.transitions = new ContextualizedNotatedTransitionList(this.modifiedInputPatterns, this.minTransitionLength, this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
 						if(this.displayGeneralTransition) {
 							printf("General Form of Transition:");
 							printf(transitions.printGeneralTransition());

@@ -42,6 +42,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 					this.transitionList.add(NotatedSiteswap.assemble(unNotatedTransitionList.get(i), this.compatibleNotationType));
 				} catch(IncompatibleNotationException e) {
 					System.out.println("incompatible notations within ContextualizedNotatedTransitionList constructor, somehow...");
+					System.out.println(e);
 					System.exit(1);
 				}
 			}

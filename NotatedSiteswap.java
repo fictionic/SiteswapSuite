@@ -69,25 +69,9 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 	// abstract methods
 	public abstract String print();
-	public abstract TwoHandedSyncNotatedSiteswap spring(int startHand) throws SprungException;
-
-	public NotatedSiteswap deepCopy() {
-		switch(this.notationType) {
-			case EMPTY:
-				return new EmptyNotatedSiteswap(super.deepCopy());
-			case ASYNCHRONOUS:
-				if(this.numHands == 1)
-					return new OneHandedNotatedSiteswap(super.deepCopy());
-				else
-					return new TwoHandedAsyncNotatedSiteswap(super.deepCopy());
-			case SYNCHRONOUS:
-				return new TwoHandedSyncNotatedSiteswap(super.deepCopy());
-			case MIXED:
-				return new TwoHandedMixedNotatedSiteswap(super.deepCopy());
-			default:
-				return new NotatedPassingSiteswap(super.deepCopy());
-		}
-	}
+	public abstract TwoHandedSyncNotatedSiteswap spring() throws SprungException;
+	
+	public abstract NotatedSiteswap deepCopy();
 
 	// querying basic info
 	public Notation notationType() {
@@ -122,7 +106,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 				if(ss.numHands() == 1)
 					return new OneHandedNotatedSiteswap(ss);
 				if(ss.numHands() == 2)
-					return new TwoHandedAsyncNotatedSiteswap(ss);
+					return new TwoHandedAsyncNotatedSiteswap(ss); // figure out what to do here regarding startHand
 				else
 					throw new IncompatibleNotationException(Notation.ASYNCHRONOUS, ss.numHands());
 			case SYNCHRONOUS:
@@ -224,7 +208,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 			super(numHands);
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring(int startHand) throws SprungException {
+		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
@@ -233,7 +217,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 		}
 
 		public EmptyNotatedSiteswap deepCopy() {
-			return new EmptyNotatedSiteswap(((Siteswap)this).deepCopy());
+			return new EmptyNotatedSiteswap(this);
 		}
 	}
 
@@ -302,8 +286,12 @@ public abstract class NotatedSiteswap extends Siteswap {
 			}
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring(int startHand) throws SprungException {
+		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
+		}
+
+		public OneHandedNotatedSiteswap deepCopy() {
+			return new OneHandedNotatedSiteswap(this);
 		}
 
 		public String print() {
@@ -325,13 +313,21 @@ public abstract class NotatedSiteswap extends Siteswap {
 	}
 
 	static class TwoHandedAsyncNotatedSiteswap extends NotatedSiteswap {
+		
+		private int startHand;
 
 		TwoHandedAsyncNotatedSiteswap(Siteswap ss) {
 			super(ss, Notation.ASYNCHRONOUS);
 		}
 
+		TwoHandedAsyncNotatedSiteswap(TwoHandedAsyncNotatedSiteswap ss) {
+			super(ss, Notation.ASYNCHRONOUS);
+			this.startHand = ss.startHand;
+		}
+
 		TwoHandedAsyncNotatedSiteswap(String s, int startHand) {
 			super(2);
+			this.startHand = startHand;
 			this.notationType = Notation.ASYNCHRONOUS;
 			char[] a = s.toCharArray();
 			char curToken;
@@ -347,7 +343,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 				while(i < a.length) {
 					curToken = a[i];
 					//update current hand
-					curHand = (b + startHand) % 2;
+					curHand = (b + this.startHand) % 2;
 					//System.out.println(curToken);
 					switch(curToken) {
 						//if curToken is "[", we're now in a multiplex throw, so add all subsequent tosses to the same hand until "]"
@@ -416,9 +412,13 @@ public abstract class NotatedSiteswap extends Siteswap {
 			} while(this.period() % 2 == 1);
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring(int startHand) throws SprungException {
+		public TwoHandedAsyncNotatedSiteswap deepCopy() {
+			return new TwoHandedAsyncNotatedSiteswap(this);
+		}
+
+		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
 			TwoHandedSyncNotatedSiteswap newSiteswap = new TwoHandedSyncNotatedSiteswap();
-			int sprungHand = (startHand + 1) % 2;
+			int sprungHand = (this.startHand + 1) % 2;
 			for(int b=0; b<this.period(); b++) {
 				newSiteswap.appendEmptyBeat();
 				for(int h=0; h<2; h++) {
@@ -426,13 +426,15 @@ public abstract class NotatedSiteswap extends Siteswap {
 						Toss newToss = new Toss(2, (h + 1) % 2, false);
 						newSiteswap.addToss(b * 2, h, newToss);
 					} else {
-						for(int t=0; t<this.numTossesAtSite(b, 0); t++) {
-							Toss curToss = this.getToss(b, 0, t);
+						if(this.siteIsEmpty(b, h))
+							continue;
+						for(int t=0; t<this.numTossesAtSite(b, h); t++) {
+							Toss curToss = this.getToss(b, h, t);
 							Toss newToss;
 							if(curToss.height().isInfinite() || curToss.charge() == 0)
 								newToss = curToss.deepCopy();
 							else
-								newToss = new Toss(curToss.height().finiteValue() * 2, (sprungHand + 1) % 2, curToss.isAntitoss());
+								newToss = new Toss(curToss.height().finiteValue() * 2, curToss.destHand(), curToss.isAntitoss());
 							newSiteswap.addToss(b * 2, h, newToss);
 						}
 					}
@@ -445,13 +447,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 		public String print() {
 			String out = "";
-			int curHandIndex;
-			//determine which hand throws first
-			if(this.siteIsEmpty(0, 0)) {
-				curHandIndex = 1;
-			} else {
-				curHandIndex = 0;
-			}
+			int curHandIndex = this.startHand;
 			//loop through beats of siteswap
 			for(int b=0; b<this.period(); b++) {
 				//see if we need to use multiplex notation
@@ -570,8 +566,12 @@ public abstract class NotatedSiteswap extends Siteswap {
 			}
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring(int startHand) throws SprungException {
+		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
+		}
+
+		public TwoHandedSyncNotatedSiteswap deepCopy() {
+			return new TwoHandedSyncNotatedSiteswap(this);
 		}
 
 		public String print() {
@@ -659,8 +659,12 @@ public abstract class NotatedSiteswap extends Siteswap {
 			System.exit(1);
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring(int startHand) throws SprungException {
+		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
+		}
+
+		public TwoHandedMixedNotatedSiteswap deepCopy() {
+			return new TwoHandedMixedNotatedSiteswap(this);
 		}
 
 		public String print() {
@@ -683,10 +687,14 @@ public abstract class NotatedSiteswap extends Siteswap {
 			System.exit(1);
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring(int startHand) throws SprungException {
+		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
+		public NotatedPassingSiteswap deepCopy() {
+			return new NotatedPassingSiteswap(this);
+		}
+		
 		public String print() {
 			System.out.println("de-parsing of passing notation not yet implemented...");
 			System.exit(1);
