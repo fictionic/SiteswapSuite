@@ -92,6 +92,8 @@ abstract class Transition extends Siteswap {
 
 			int ballNumDiff = (diffs.catches - diffs.antiCatches) - (diffs.tosses - diffs.antiTosses);
 			printf("ballNumDiff: " + ballNumDiff);
+			int ballNumDiffPositive = (ballNumDiff > 0 ? ballNumDiff : 0);
+			int ballNumDiffNegative = (ballNumDiff < 0 ? ballNumDiff : 0);
 
 			printf("this: ");
 			printf(this);
@@ -100,7 +102,7 @@ abstract class Transition extends Siteswap {
 			int debugCounter = 20;
 
 			// find the transition!
-			while(b < minLength || diffs.tosses != 0 || diffs.antiTosses != 0 || futureCatches != diffs.catches || futureAnticatches != diffs.antiCatches) {
+			while(b < minLength || diffs.tosses != 0 || diffs.antiTosses != 0 || futureCatches + ballNumDiffNegative != diffs.catches || futureAnticatches + ballNumDiffPositive != diffs.antiCatches) {
 
 				printf(">>>>>  b: " + b);
 				this.appendEmptyBeat();
@@ -124,6 +126,8 @@ abstract class Transition extends Siteswap {
 				printf("shifting");
 				to.shiftBackward();
 				from.getFiniteNode(to.finiteLength() - 1);
+				printf("s1: " + from.toString());
+				printf("s2: " + to.toString());
 
 				// make tosses to match charges in nodes between states
 				for(int h=0; h<numHands; h++) {
