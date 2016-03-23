@@ -103,22 +103,22 @@ abstract class Transition extends Siteswap {
 
 			// find the transition!
 			while(b < minLength || diffs.tosses != 0 || diffs.antiTosses != 0 || futureCatches + ballNumDiffNegative != diffs.catches || futureAnticatches + ballNumDiffPositive != diffs.antiCatches) {
-
 				printf(">>>>>  b: " + b);
 				this.appendEmptyBeat();
 				// see if we can catch new balls/antiballs
 				for(int h=0; h<numHands; h++) {
 					if(from.getChargeAtBeatAtHand(0,h) == 0) {
-						if(ballNumDiff < 0 && to.getChargeAtBeatAtHand(0,h) < 0) {
+						printf(to.getChargeAtBeatAtHand(0,h));
+						if(ballNumDiffNegative < 0 && to.getChargeAtBeatAtHand(0,h) < 0) {
 							printf("catching new antiball at beat " + b);
 							this.addInfiniteAntitoss(b, h, InfinityType.NEGATIVE_INFINITY);
 							from.decChargeOfNowNodeAtHand(h);
-							ballNumDiff++;
-						} else if(ballNumDiff > 0 && to.getChargeAtBeatAtHand(0,h) > 0) {
+							ballNumDiffNegative++;
+						} else if(ballNumDiffPositive > 0 && to.getChargeAtBeatAtHand(0,h) > 0) {
 							printf("catching new ball at beat " + b);
 							this.addInfiniteToss(b, h, InfinityType.NEGATIVE_INFINITY);
 							from.incChargeOfNowNodeAtHand(h);
-							ballNumDiff--;
+							ballNumDiffPositive--;
 						}
 					}
 				}
@@ -136,8 +136,8 @@ abstract class Transition extends Siteswap {
 						printf("performing toss at beat " + b);
 						this.addInfiniteToss(b, h, InfinityType.POSITIVE_INFINITY);
 						chargeAtHand--;
-						if(ballNumDiff < 0 && diffs.catches == 0)
-							ballNumDiff++;
+						if(ballNumDiffNegative < 0 && diffs.catches == 0)
+							ballNumDiffNegative++;
 						else
 							futureCatches++;
 					}
@@ -145,8 +145,8 @@ abstract class Transition extends Siteswap {
 						printf("performing antitoss at beat " + b);
 						this.addInfiniteAntitoss(b, h, InfinityType.POSITIVE_INFINITY);
 						chargeAtHand++;
-						if(ballNumDiff > 0 && diffs.antiCatches == 0)
-							ballNumDiff--;
+						if(ballNumDiffPositive > 0 && diffs.antiCatches == 0)
+							ballNumDiffPositive--;
 						else
 							futureAnticatches++;
 					}
@@ -162,7 +162,8 @@ abstract class Transition extends Siteswap {
 				printf(diffs);
 				printf("futureCatches: " + futureCatches);
 				printf("futureAnticatches: " + futureAnticatches);
-				printf("ballNumDiff: " + ballNumDiff);
+				printf("ballNumDiffPositive: " + ballNumDiffPositive);
+				printf("ballNumDiffNegative: " + ballNumDiffNegative);
 				printf(this);
 				debugCounter--;
 				if(debugCounter == 0) {
