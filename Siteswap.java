@@ -155,6 +155,68 @@ public class Siteswap {
 		return true;
 	}
 
+	public List<Siteswap> getOrbits() {
+		if(this.numBalls().numerator().isInfinite()) {
+			return null;
+		}
+		List<Siteswap> orbits = new ArrayList<Siteswap>();
+		Siteswap copy = this.deepCopy();
+		boolean allZero;
+		Toss toss;
+		while(true) {
+			allZero = true;
+			// find next orbit
+			for(int b=0; b<copy.period(); b++) {
+				for(int h=0; h<copy.numHands(); h++) {
+					for(int t=0; t<copy.numTossesAtSite(b,h); t++) {
+						System.out.println("b: " + b + ", h: " + h + ", t: " + t);
+						toss = copy.getToss(b,h,t);
+						if(toss.charge() != 0) {
+							allZero = false;
+						} else {
+							continue;
+						}
+						// create new orbit
+						Siteswap curOrbit = new Siteswap(this.numHands());
+						for(int i=0; i<this.period(); i++) {
+							curOrbit.appendEmptyBeat();
+						}
+						// set up adding of first toss
+						Toss curToss = toss;
+						int b2 = 0, h2 = 0, t2 = 0;
+						do {
+							// TODO: fix this algorithm
+							System.out.println("b2: " + b2 + ", h2: " + h2 + ", t2: " + t2);
+							System.out.println(copy);
+							System.out.println(curOrbit);
+							System.out.println();
+							// add next toss to orbit
+							curToss = copy.getToss(b2, h2, t2);
+							curOrbit.addToss(b, h, curToss);
+							if(curToss.height().isInfinite()) {
+								System.out.println("DON'T KNOW WHAT TO DO WITH INFINITE TOSS WHEN FINDING ORBITS");
+								continue;
+							}
+							// remove toss from copy
+							copy.removeToss(b2,h2,t2);
+							// advance through siteswap 
+							b2 = (b2 + toss.height().finiteValue()) % this.period();
+							if(b2 < 0) b2 += this.period();
+							h2 = curToss.destHand();
+							if(b2 == b && h2 == h) t2 = t; else t2 = 0;
+						} while(b2 != b || h2 != h || t2 != t);
+						// add orbit to list
+						orbits.add(curOrbit);
+					}
+				}
+			}
+			if(allZero) {
+				break;
+			}
+		}
+		return orbits;
+	}
+
 	public ExtendedFraction difficulty() {
 		System.out.println("WARNING: difficulty calculation not yet implemented");
 		ExtendedFraction b = this.numBalls();

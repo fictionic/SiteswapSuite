@@ -56,6 +56,7 @@ public class Main {
 		// info printing options
 		boolean printNumBalls = false;
 		boolean printState = false;
+		boolean printOrbits;
 		boolean printDifficulty = false;
 		boolean printValidity = false;
 		boolean printPrimality = false;
@@ -150,6 +151,10 @@ public class Main {
 						break;
 					case 's':
 						this.printState = true;
+						c++;
+						break;
+					case 'o':
+						this.printOrbits = true;
 						c++;
 						break;
 					case 'd':
@@ -260,6 +265,12 @@ public class Main {
 				printf(" validity:   " + this.modifiedSiteswap.isValid());
 			if(this.printState)
 				printf(" state:      " + this.state);
+			if(this.printOrbits) {
+				printf(" orbits:");
+				for(Siteswap orbit : this.modifiedSiteswap.getOrbits()) {
+					printf(orbit.toString());
+				}
+			}
 			if(this.printDifficulty)
 				printf(" difficulty: " + this.modifiedSiteswap.difficulty());
 			if(this.printPrimality)
