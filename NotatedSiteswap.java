@@ -70,12 +70,21 @@ public abstract class NotatedSiteswap extends Siteswap {
 	// abstract methods
 	public abstract String print();
 	public abstract TwoHandedSyncNotatedSiteswap spring() throws SprungException;
-	
-	public abstract NotatedSiteswap deepCopy();
 
 	// querying basic info
 	public Notation notationType() {
 		return this.notationType;
+	}
+
+	// deep copy
+	public NotatedSiteswap deepCopy() {
+		try {
+			return assemble(super.deepCopy(), this.notationType);
+		} catch(IncompatibleNotationException e) {
+			System.out.println("Impossible error in NotatedSiteswap.java");
+			System.exit(1);
+			return null;
+		}
 	}
 
 	/* ------- */
@@ -216,9 +225,6 @@ public abstract class NotatedSiteswap extends Siteswap {
 			return Notation.emptyNotation;
 		}
 
-		public EmptyNotatedSiteswap deepCopy() {
-			return new EmptyNotatedSiteswap(this);
-		}
 	}
 
 	static class OneHandedNotatedSiteswap extends NotatedSiteswap {
@@ -288,10 +294,6 @@ public abstract class NotatedSiteswap extends Siteswap {
 
 		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
-		}
-
-		public OneHandedNotatedSiteswap deepCopy() {
-			return new OneHandedNotatedSiteswap(this);
 		}
 
 		public String print() {
@@ -410,10 +412,6 @@ public abstract class NotatedSiteswap extends Siteswap {
 					i++;
 				}
 			} while(this.period() % 2 == 1);
-		}
-
-		public TwoHandedAsyncNotatedSiteswap deepCopy() {
-			return new TwoHandedAsyncNotatedSiteswap(this);
 		}
 
 		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
@@ -570,10 +568,6 @@ public abstract class NotatedSiteswap extends Siteswap {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
-		public TwoHandedSyncNotatedSiteswap deepCopy() {
-			return new TwoHandedSyncNotatedSiteswap(this);
-		}
-
 		public String print() {
 			String out = "";
 			String nextBeat;
@@ -663,10 +657,6 @@ public abstract class NotatedSiteswap extends Siteswap {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
-		public TwoHandedMixedNotatedSiteswap deepCopy() {
-			return new TwoHandedMixedNotatedSiteswap(this);
-		}
-
 		public String print() {
 			System.out.println("de-parsing of mixed notation not yet implemented...");
 			System.exit(1);
@@ -691,10 +681,6 @@ public abstract class NotatedSiteswap extends Siteswap {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
-		public NotatedPassingSiteswap deepCopy() {
-			return new NotatedPassingSiteswap(this);
-		}
-		
 		public String print() {
 			System.out.println("de-parsing of passing notation not yet implemented...");
 			System.exit(1);

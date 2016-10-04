@@ -8,7 +8,7 @@ public class Siteswap {
 	int numHands;
 	List<List<Site>> sites;
 
-	// main constructor - initialize a completely empty siteswap with the appropriate number of hands
+	// main constructor - initialize a completely empty siteswap with the given number of hands
 	public Siteswap(int numHands) {
 		this.numHands = numHands;
 		this.sites = new ArrayList<List<Site>>();
@@ -386,7 +386,10 @@ public class Siteswap {
 	}
 
 	public void antitossify() {
-		Siteswap temp = this.deepCopy();
+		Siteswap temp = new Siteswap(this.numHands);
+		for(int i=0; i<this.period(); i++) {
+			temp.appendEmptyBeat();
+		}
 		// loop through beats
 		for(int b=0; b<this.period(); b++) {
 			// loop through hands
@@ -400,12 +403,14 @@ public class Siteswap {
 						if(curToss.height().isInfinite()) {
 							// replace the negative toss with an antitoss in the same site
 							Toss newToss = new Toss(InfinityType.POSITIVE_INFINITY, true);
-							temp.exchangeToss(b, h, t, newToss);
+							temp.addToss(b, h, newToss);
 						} else {
 							// add an antitoss to the appropriate site
-							Toss newToss = new Toss(-curToss.height().finiteValue(), h, true);
-							temp.exchangeToss(b + curToss.height().finiteValue(), curToss.destHand(), t, newToss);
+							Toss newToss = new Toss(-1 * curToss.height().finiteValue(), h, true);
+							temp.addToss(b + curToss.height().finiteValue(), curToss.destHand(), newToss);
 						}
+					} else {
+						temp.addToss(b, h, curToss.deepCopy());
 					}
 				}
 			}
@@ -513,7 +518,7 @@ public class Siteswap {
 		private Site deepCopy() {
 			List<Toss> newTosses = new ArrayList<Toss>();
 			for(int t=0; t<this.tosses.size(); t++) {
-				newTosses.add(this.tosses.get(t));
+				newTosses.add(this.tosses.get(t).deepCopy());
 			}
 			return new Site(this.handIndex, newTosses, this.outDegree);
 		}

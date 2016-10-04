@@ -37,7 +37,6 @@ public class State {
 	// construct a state from a siteswap...
 	public State(Siteswap ss) {
 		this(ss.numHands());
-
 		ss = ss.deepCopy();
 		ss.antitossify();
 		printf(ss);
