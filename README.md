@@ -7,11 +7,11 @@ SiteswapSuite computes information about juggling patterns as abstracted into [s
 ###SYNOPSIS
 Display requested information about a siteswap or state:
 
-`SiteswapSuite [INPUT]`
+`sss [INPUT]`
 
 Compute a transition between two inputs:
 
-`SiteswapSuite [TRANSITION_OPTIONS] [INPUT] [INPUT]`
+`sss [TRANSITION_OPTIONS] [INPUT] [INPUT]`
 
 An `[INPUT]` is of the form
 
@@ -71,9 +71,9 @@ After parsing the input into a siteswap pattern, a sequence of modifications may
 |:-----:|:-----|
 |`-l<x>` |Require transitions to be at least \<x\> beats long. If no transition is needed to get from one input to the other, this option can be used to force a nonempty transition to be computed.|
 |`-m<x>`|Compute at most \<x\> transitions. By default, all transitions are computed (obviously not all, since there are infinite. I still need to figure out the details here.)|
-|`-q`   |Allow extra squeeze catches in transitions. By default, if additional balls need to be caught from infinity in order to transition to the destination transition, they will only be caught by empty hands. With this flag set, all additional balls will be caught on the first beat.|
-|`-g`   |Generate ball/antiball pairs in transitions. By default, tosses will only be made from hands that have balls to throw, and antitosses will only be made from hands that have antiballs to throw. With this flag set, the transition may generate pairs of one ball and one antiball to be thrown together, reducing the length of the transition. With both `-g` and `-q` set, the transitions will all be one beat in length or less.|
-|`-A`   |Un-antitossify transitions. By default, transitions may contain antitosses. With this flag set, antitosses will be converted to regular tosses.|
+|`-q`   |Allow extra squeeze catches in transitions. By default, if additional balls need to be caught from infinity in order to transition to the destination state, they will only be caught by empty hands. With this flag set, all additional balls will be caught on the first beat.|
+|`-g`   |Allow generation of ball/antiball pairs in transitions. By default, tosses will only be made from hands that have balls to throw, and antitosses will only be made from hands that have antiballs to throw. With this flag set, the transition may generate pairs of one ball and one antiball to be thrown together, reducing the length of the transition. With both `-g` and `-q` set, the transitions will all be one beat in length or less.|
+|`-A`   |Un-antitossify transitions. By default, transitions may contain antitosses. With this flag set, antitosses will be converted to regular tosses of negative height.|
 |`-G`   |Display the general form of the transition along with actual examples. The general transition is displayed as '\<tosses\>\{\<catches\>\}', with tosses indicated by '&' (infinite-tosses) and catches indicated by '-&' (negative-infinite tosses).|
 
 
@@ -85,19 +85,19 @@ After parsing the input into a siteswap pattern, a sequence of modifications may
 ###BASIC EXAMPLES
 - Find a transition between the siteswaps `5` and `91`:
 
-`$ ./SiteswapSuite -i 5 -i 91`  
+`$ sss -i 5 -i 91`  
 This displays:
 ```
 INPUT 0:   '5'
 ---------
-parsed:     [[[[5, 0]]]]
+parsed:     [[[(5, 0)]]]
 de-parsed:  5
 numHands:   1
 period:     1
 ==========
 INPUT 1:   '91'
 ---------
-parsed:     [[[[9, 0]]], [[[1, 0]]]]
+parsed:     [[[(9, 0)]], [[(1, 0)]]]
 de-parsed:  91
 numHands:   1
 period:     2
@@ -112,13 +112,13 @@ a74
 ```
 
 - Display information about the 3-ball box (note that short options can be combined into a single argument):  
-`$ ./SiteswapSuite -ivs '(4,2x)*'`
+`$ sss -ivs '(4,2x)*'`
 
 This displays:  
 ```
-INPUT 0:   '(4,2x)\*'
+INPUT 0:   '(4,2x)*'
 ---------
-parsed:     [[[[4, 0]], [[2, 0]]], [[[0]], [[0]]], [[[2, 1]], [[4, 1]]], [[[0]], [[0]]]]
+parsed:     [[[(4, 0)], [(2, 0)]], [[(0)], [(0)]], [[(2, 1)], [(4, 1)]], [[(0)], [(0)]]]
 de-parsed:  (4,2x)(2x,4)
 numHands:   2
 period:     4
