@@ -78,18 +78,18 @@ public class Toss {
 
 	public String toString() {
 		if(this.charge == 0)
-			return "[0]";
-		String out = "[";
+			return "(0)";
+		String out = "(";
 		if(this.height.isInfinite()) {
 			if(this.height.infiniteValue() == InfinityType.NEGATIVE_INFINITY)
 				out += "-";
 			if(this.charge < 0)
 				out += "_";
-			out += "&]";
+			out += "&)";
 		} else {
 			if(this.charge < 0)
 				out += "_";
-			out += height.finiteValue().toString() + ", " + destHand.toString() + "]";
+			out += height.finiteValue().toString() + ", " + destHand.toString() + ")";
 		}
 		return out;
 	}
