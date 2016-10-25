@@ -2,6 +2,7 @@ package siteswapsuite;
 
 import java.util.List;
 import java.util.LinkedList;
+import java.lang.NumberFormatException;
 
 public class Main {
 
@@ -18,183 +19,191 @@ public class Main {
 		}
 	}
 
-	static String parseIntFromArg(String arg, int c) {
-		int startIndex = c;
-		scan:
-		while(c < arg.length()) {
-			switch(arg.charAt(c)) {
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
-					c++;
-					break;
-				default:
-					break scan;
-			}
+	// cmdline tokens
+	static enum TransitionOption {
+		MIN_TRANSITION_LENGTH(true, "-l", "--minTransitionLength"),
+		MAX_TRANSITIONS(true, "-m", "--maxTransitions"),
+		DISPLAY_GENERAL_TRANSITION(false, "-q", "--allowExtraSqueezeCatches"),
+		ALLOW_EXTRA_SQUEEZE_CATCHES(false, "-g", "--generateBallAntiballPairs"),
+		GENERATE_BALL_ANTIBALL_PAIRS(false, "-A", "--unAntitossifyTransitions"),
+		UN_ANTITOSSIFY_TRANSITIONS(false, "-G", "--displayGeneralTransition"),
+		INVALID_TOKEN(false, null, null);
+		boolean requiresParam;
+		String shortForm;
+		String longForm;
+		TransitionOption(boolean requiresParam, String shortForm, String longForm) {
+			this.requiresParam = requiresParam;
+			this.shortForm = shortForm;
+			this.longForm = longForm;
 		}
-		return arg.substring(startIndex,c);
+		static TransitionOption fromStr(String str) {
+			for(TransitionOption opt : TransitionOption.values()) {
+				if(str.equals(opt.shortForm) || str.equals(opt.longForm)) {
+					return opt;
+				}
+			}
+			return INVALID_TOKEN;
+		}
 	}
 
 	static class InputObject {
+		boolean isState;
+
+		// arguments passed from CommandObject (first will be inputNotation)
+		List<String> args;
+
+		// results of parsing arguments
 		String inputNotation;
 		NotatedSiteswap siteswap;
 		State state;
 		NotatedSiteswap modifiedSiteswap;
 		State modifiedState;
-		boolean isState;
+
 		// hand specification
 		int minSSLength = 1;
 		int startHand = 0;
 		int numHands = -1; // inferred from input notations unless specified
-		// info printing options
+
+		// info printing settings
 		boolean printNumBalls = false;
 		boolean printState = false;
 		boolean printOrbits;
 		boolean printDifficulty = false;
 		boolean printValidity = false;
 		boolean printPrimality = false;
-		// siteswap operation sequence to be performed
-		List<SiteswapOperation> operations;
 
-		static enum SiteswapOperation {
-			INVERSE, SPRUNG, INFINITIZE, UNINFINITIZE, ANTITOSSIFY, UNANTITOSSIFY, ANTINEGATE;
-		}
+		// types of operation
+		private static enum InputOption {
+			// state: min ss length
+			MIN_SS_LENGTH(true, "-e", "--minSSLength"),
+			// siteswap: hand specification
+			NUM_HANDS(true, "-h", "--numHands"),
+			START_HAND(true, "-H", "--startHand"),
+			// siteswap info to compute
+			CAPACITY(false, "-c", "--capacity"),
+			STATE(false, "-s", "--state"),
+			VALIDITY(false, "-v", "--validity"),
+			PRIMALITY(false, "-P", "--primality"),
+			DIFFICULTY(false, "-d", "--difficulty"),
+			// siteswap operations
+			INVERT(false, "-V", "--invert"),
+		   	SPRING(false, "-p", "--spring"),
+		   	INFINITIZE(false, "-f", "--infinitize"),
+		   	UNINFINITIZE(false, "-F", "--unInfinitize"),
+		   	ANTITOSSIFY(false, "-a", "--antitossify"),
+		   	UNANTITOSSIFY(false, "-A", "--unAntitossify"),
+		   	ANTINEGATE(false, "-N", "--antiNegate"),
+			INVALID_TOKEN(false, null, null);
 
-		InputObject(String arg, String input) throws ParseError {
-			this.inputNotation = input;
-			int c = 2; // index of char in input arg
-			if(arg.charAt(1) == 'i') {
-				this.isState = false;
-			} else {
-				this.isState = true;
-				// get minSSLength, if present
-				if(arg.length() > 2) {
-					String strInt = parseIntFromArg(arg, 2);
-					if(strInt.length() > 0) {
-						this.minSSLength = Integer.parseInt(strInt);
-						c += strInt.length();
+			boolean requiresParam;
+			String shortForm;
+			String longForm;
+
+			InputOption(boolean requiresParam, String shortForm, String longForm) {
+				this.requiresParam = requiresParam;
+				this.shortForm = shortForm;
+				this.longForm = longForm;
+			}
+
+			static InputOption fromStr(String str) {
+				for(InputOption opt : InputOption.values()) {
+					if(str.equals(opt.shortForm) || str.equals(opt.longForm)) {
+						return opt;
 					}
 				}
+				return INVALID_TOKEN;
 			}
-			this.operations = new LinkedList<SiteswapOperation>();
-			this.parseInputShortOptionsFromIndex(arg, c);
 		}
 
-		private void parseInputShortOptionsFromIndex(String arg, int c) throws ParseError {
-			// parse rest of input args in this block
-			String strInt;
-			while(c < arg.length()) {
-				switch(arg.charAt(c)) {
-					// error checking
-					case 'i':
-					case 'I':
-						throw new ParseError("cannot bundle another -i or -I inside option cluster");
-					// hand specification
-					case 'h':
-						strInt = parseIntFromArg(arg, c+1);
-						if(strInt.length() == 0)
-							throw new ParseError("option -h requires integer argument");
-						else {
-							this.startHand = Integer.parseInt(strInt);
-							c += strInt.length() + 1;
+		// siteswap operation sequence to be performed
+		List<InputOption> operations;
+
+		// constructor
+		InputObject(boolean isState) {
+			this.isState = isState;
+			this.args = new LinkedList<String>();
+			this.operations = new LinkedList<InputOption>();
+		}
+
+		void addArg(String arg) {
+			this.args.add(arg);
+		}
+
+		void parseArgs() throws ParseError {
+			if(this.args.size() == 0) {
+				throw new ParseError("expected input notation");
+			}
+			this.inputNotation = this.args.get(0);
+			int i=1;
+			String str;
+			int intArg = 0;
+			InputOption opt;
+			while(i < this.args.size()) {
+				str = this.args.get(i);
+				opt = InputOption.fromStr(str);
+				if(opt.requiresParam) {
+					if(i + 1 < this.args.size()) {
+						try {
+							intArg = Integer.parseInt(this.args.get(i+1));
+						} catch(NumberFormatException e) {
+							throw new ParseError("option `" + str + "' requires integer argument; got `" + this.args.get(i+1) + "'");
 						}
-						break;
-					case 'H':
-						strInt = parseIntFromArg(arg, c+1);
-						if(strInt.length() == 0)
-							throw new ParseError("option -H requires integer argument");
-						else {
-							this.numHands = Integer.parseInt(strInt);
-							c += strInt.length() + 1;
-						}
-						break;
-					// siteswap operations
-					case 'V':
-						this.operations.add(SiteswapOperation.INVERSE);
-						c++;
-						break;
-					case 'p':
-						this.operations.add(SiteswapOperation.SPRUNG);
-						c++;
-						break;
-					case 'f':
-						this.operations.add(SiteswapOperation.INFINITIZE);
-						c++;
-						break;
-					case 'F':
-						this.operations.add(SiteswapOperation.UNINFINITIZE);
-						c++;
-						break;
-					case 'a':
-						this.operations.add(SiteswapOperation.ANTITOSSIFY);
-						c++;
-						break;
-					case 'A':
-						this.operations.add(SiteswapOperation.UNANTITOSSIFY);
-						c++;
-						break;
-					case 'N':
-						this.operations.add(SiteswapOperation.ANTINEGATE);
-						c++;
-						break;
-					// info printing flags
-					case 'b':
-						this.printNumBalls = true;
-						c++;
-						break;
-					case 's':
-						this.printState = true;
-						c++;
-						break;
-					case 'o':
-						this.printOrbits = true;
-						c++;
-						break;
-					case 'd':
-						this.printDifficulty = true;
-						c++;
-						break;
-					case 'v':
-						this.printValidity = true;
-						c++;
-						break;
-					case 'P':
-						this.printPrimality = true;
-						c++;
-						break;
-					default:
-						throw new ParseError("invalid character in input short argument block: '" + arg.charAt(c) + "'");
+						i++;
+					} else {
+						throw new ParseError("option `" + str + "' requires integer argument");
+					}
 				}
+				switch(opt) {
+					case MIN_SS_LENGTH:
+						this.minSSLength = intArg;
+						break;
+					case NUM_HANDS:
+						this.numHands = intArg;
+						break;
+					case START_HAND:
+						this.startHand = intArg;
+						break;
+					case CAPACITY:
+						this.printNumBalls = true;
+						break;
+					case STATE:
+						this.printState = true;
+						break;
+					case VALIDITY:
+						this.printValidity = true;
+						break;
+					case PRIMALITY:
+						this.printPrimality = true;
+						break;
+					case DIFFICULTY:
+						this.printDifficulty = true;
+						break;
+					case INVALID_TOKEN:
+						throw new ParseError("unrecognized input option: `" + str + "'");
+					default:
+						this.operations.add(opt);
+						break;
+				}
+				i++;
 			}
 		}
-
-		void parseInputShortOptions(String arg) throws ParseError {
-			this.parseInputShortOptionsFromIndex(arg, 1);
-		}
-
+				
 		void parseNotation() throws InvalidNotationException, IncompatibleNumberOfHandsException {
 			try {
 				this.siteswap = NotatedSiteswap.parseSingle(this.inputNotation, this.numHands, this.startHand);
-			} catch(InvalidNotationException e) {
+			} catch(InvalidNotationException | IncompatibleNumberOfHandsException e) {
 				throw e;
 			}
 		}
 
 		void runModifications() {
 			this.modifiedSiteswap = this.siteswap.deepCopy();
-			for(SiteswapOperation m : this.operations) {
+			for(InputOption m : this.operations) {
 				switch(m) {
 					case ANTITOSSIFY:
 						this.modifiedSiteswap.antitossify();
 						break;
-					case SPRUNG:
+					case SPRING:
 						try {
 							this.modifiedSiteswap = this.modifiedSiteswap.spring();
 						} catch(SprungException e) {
@@ -224,13 +233,13 @@ public class Main {
 				printf("---------");
 				String ops = "";
 				int c = 0;
-				for(SiteswapOperation o : operations) {
+				for(InputOption o : operations) {
 					switch(o) {
-						case INVERSE:
-							ops += "inverse";
+						case INVERT:
+							ops += "invert";
 							break;
-						case SPRUNG:
-							ops += "sprung";
+						case SPRING:
+							ops += "spring";
 							break;
 						case INFINITIZE:
 							ops += "infinitize";
@@ -280,11 +289,15 @@ public class Main {
 	}
 	
 	static class CommandObject {
+
 		// inputs
 		InputObject[] inputs = new InputObject[2];
 		int numInputs;
 
 		// transition options
+		// [list of args]
+		List<String> transitionOptions = new LinkedList<String>();
+		// [actual settings]
 		int minTransitionLength = 0;
 		int maxTransitions = -1;
 		boolean displayGeneralTransition = false;
@@ -297,52 +310,87 @@ public class Main {
 		CompatibleNotatedSiteswapPair modifiedInputPatterns; // for computing transition
 		ContextualizedNotatedTransitionList transitions;
 
-		CommandObject(String[] args) throws ParseError, InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
+		// assemble a new command object from a list of cmdline args
+		CommandObject(String[] args) throws SiteswapException {
 			this.numInputs = 0;
-			// parse args
-			int i = 0;
-			while(i < args.length) {
+			// first assemble any transition options
+			// then assemble input objects
+			for(int i=0; i<args.length; i++) {
 				String arg = args[i];
-				if(arg.charAt(0) == '-') {
-					switch(arg.charAt(1)) {
-						case '-':
-							throw new ParseError("long options not yet supported");
-						case 'i':
-						case 'I':
-							if(i+1 < args.length) {
-								try {
-									inputs[this.numInputs] = new InputObject(args[i], args[i+1]);
-									this.numInputs++;
-									i += 2;
-								} catch(ParseError e) {
-									throw e;
-								}
-							} else {
-								throw new ParseError("missing input notation");
-							}
-							break;
-						default:
-							if(this.numInputs > 0)
-								try {
-									inputs[this.numInputs - 1].parseInputShortOptions(arg);
-								} catch(ParseError e) {
-									throw e;
-								}
-							else
-								this.parseCommandShortOptions(arg);
-							i++;
-							break;
-					}
+				// assemble input objects
+				if(arg.equals("-i") || arg.equals("-I")) {
+					inputs[this.numInputs] = new InputObject(args[i].charAt(1) == 'I');
+					this.numInputs++;
 				} else {
-					throw new ParseError("expected option, got '" + arg + "'");
+					if(this.numInputs == 0) {
+						// add transition option
+						this.transitionOptions.add(arg);
+					} else {
+						// pass args to most recent input object
+						inputs[this.numInputs - 1].addArg(arg);
+					}
 				}
 			}
-			// parse input notations, but don't compute transitions yet!
+		}
+
+		void parseTransitionOptions() throws ParseError {
+			int i = 0;
+			String str;
+			int intArg = 0;
+			TransitionOption opt;
+			while(i < this.transitionOptions.size()) {
+				str = transitionOptions.get(i);
+				opt = TransitionOption.fromStr(str);
+				if(opt.requiresParam) {
+					if(i + 1 < this.transitionOptions.size()) {
+						try {
+							intArg = Integer.parseInt(this.transitionOptions.get(i+1));
+						} catch(NumberFormatException e) {
+							throw new ParseError("option `" + str + "' requires integer argument; got `" + this.transitionOptions.get(i+1) + "'");
+						}
+						i++;
+					} else {
+						throw new ParseError("option `" + str + "' requires integer argument");
+					}
+				}
+				switch(opt) {
+					case MIN_TRANSITION_LENGTH:
+						this.minTransitionLength = intArg;
+						break;
+					case MAX_TRANSITIONS:
+						this.maxTransitions = intArg;
+						break;
+					case DISPLAY_GENERAL_TRANSITION:
+						this.displayGeneralTransition = true;
+						break;
+					case ALLOW_EXTRA_SQUEEZE_CATCHES:
+						this.allowExtraSqueezeCatches = true;
+						break;
+					case GENERATE_BALL_ANTIBALL_PAIRS:
+						this.generateBallAntiballPairs = true;
+						break;
+					case UN_ANTITOSSIFY_TRANSITIONS:
+						this.unAntitossifyTransitions = true;
+						break;
+					default:
+						throw new ParseError("unrecognized transition option: `" + str + "'");
+				}
+				i++;
+			}
+		}
+
+		void execute() throws ParseError, InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException {
+			try {
+				this.parseTransitionOptions();
+			} catch(ParseError e) {
+				throw e;
+			}
 			switch(this.numInputs) {
 				case 0:
 					break;
 				case 1:
 					try {
+						this.inputs[0].parseArgs();
 						this.inputs[0].parseNotation();
 						this.inputs[0].runModifications();
 						this.inputs[0].computeState();
@@ -368,55 +416,6 @@ public class Main {
 						throw e;
 					}
 					break;
-			}
-		}
-
-		void parseCommandShortOptions(String arg) throws ParseError {
-			String strInt;
-			int c = 1;
-			while(c < arg.length()) {
-				switch(arg.charAt(c)) {
-					// options that require integer argument
-					case 'l':
-						// minimum length of transition
-						strInt = parseIntFromArg(arg, c+1);
-						if(strInt.length() == 0)
-							throw new ParseError("option -l requires integer argument");
-						else {
-							this.minTransitionLength = Integer.parseInt(strInt);
-							c += strInt.length() + 1;
-						}
-						break;
-					case 'm':
-						// maximum number of transitions to compute
-						strInt = parseIntFromArg(arg, c+1);
-						if(strInt.length() == 0)
-							throw new ParseError("option -m requires integer argument");
-						else {
-							this.maxTransitions = Integer.parseInt(strInt);
-							c += strInt.length() + 1;
-						}
-						break;
-					// what type of transition to compute
-					case 'q':
-						this.allowExtraSqueezeCatches = true;
-						c++;
-						break;
-					case 'g':
-						this.generateBallAntiballPairs = true;
-						c++;
-						break;
-					case 'A':
-						this.unAntitossifyTransitions = true;
-						c++;
-						break;
-					case 'G':
-						this.displayGeneralTransition = true;
-						c++;
-						break;
-					default:
-						throw new ParseError("invalid character in transition short option block: '" + arg.charAt(c) + "'");
-				}
 			}
 		}
 
@@ -464,6 +463,7 @@ public class Main {
 	public static void main(String[] args) {
 		try {
 			CommandObject command = new CommandObject(args);
+			command.execute();
 			command.displayOutput();
 		} catch(SiteswapException e) {
 			printf(e.getMessage());
