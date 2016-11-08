@@ -23,10 +23,10 @@ public class Main {
 	static enum TransitionOption {
 		MIN_TRANSITION_LENGTH(true, "-l", "--minTransitionLength"),
 		MAX_TRANSITIONS(true, "-m", "--maxTransitions"),
-		DISPLAY_GENERAL_TRANSITION(false, "-q", "--allowExtraSqueezeCatches"),
-		ALLOW_EXTRA_SQUEEZE_CATCHES(false, "-g", "--generateBallAntiballPairs"),
-		GENERATE_BALL_ANTIBALL_PAIRS(false, "-A", "--unAntitossifyTransitions"),
-		UN_ANTITOSSIFY_TRANSITIONS(false, "-G", "--displayGeneralTransition"),
+		ALLOW_EXTRA_SQUEEZE_CATCHES(false, "-q", "--allowExtraSqueezeCatches"),
+		GENERATE_BALL_ANTIBALL_PAIRS(false, "-g", "--generateBallAntiballPairs"),
+		UN_ANTITOSSIFY_TRANSITIONS(false, "-A", "--unAntitossifyTransitions"),
+		DISPLAY_GENERAL_TRANSITION(false, "-G", "--displayGeneralTransition"),
 		INVALID_TOKEN(false, null, null);
 		boolean requiresParam;
 		String shortForm;
@@ -296,7 +296,7 @@ public class Main {
 
 		// transition options
 		// [list of args]
-		List<String> transitionOptions = new LinkedList<String>();
+		List<String> transitionArgs = new LinkedList<String>();
 		// [actual settings]
 		int minTransitionLength = 0;
 		int maxTransitions = -1;
@@ -324,7 +324,7 @@ public class Main {
 				} else {
 					if(this.numInputs == 0) {
 						// add transition option
-						this.transitionOptions.add(arg);
+						this.transitionArgs.add(arg);
 					} else {
 						// pass args to most recent input object
 						inputs[this.numInputs - 1].addArg(arg);
@@ -333,20 +333,20 @@ public class Main {
 			}
 		}
 
-		void parseTransitionOptions() throws ParseError {
+		void parseTransitionArgs() throws ParseError {
 			int i = 0;
 			String str;
 			int intArg = 0;
 			TransitionOption opt;
-			while(i < this.transitionOptions.size()) {
-				str = transitionOptions.get(i);
+			while(i < this.transitionArgs.size()) {
+				str = transitionArgs.get(i);
 				opt = TransitionOption.fromStr(str);
 				if(opt.requiresParam) {
-					if(i + 1 < this.transitionOptions.size()) {
+					if(i + 1 < this.transitionArgs.size()) {
 						try {
-							intArg = Integer.parseInt(this.transitionOptions.get(i+1));
+							intArg = Integer.parseInt(this.transitionArgs.get(i+1));
 						} catch(NumberFormatException e) {
-							throw new ParseError("option `" + str + "' requires integer argument; got `" + this.transitionOptions.get(i+1) + "'");
+							throw new ParseError("option `" + str + "' requires integer argument; got `" + this.transitionArgs.get(i+1) + "'");
 						}
 						i++;
 					} else {
@@ -381,7 +381,7 @@ public class Main {
 
 		void execute() throws ParseError, InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException {
 			try {
-				this.parseTransitionOptions();
+				this.parseTransitionArgs();
 			} catch(ParseError e) {
 				throw e;
 			}
@@ -399,6 +399,8 @@ public class Main {
 					}
 					break;
 				case 2:
+					this.inputs[0].parseArgs();
+					this.inputs[1].parseArgs();
 					try {
 						this.inputPatterns = new CompatibleNotatedSiteswapPair(this.inputs[0].inputNotation, this.inputs[0].numHands, this.inputs[0].startHand, this.inputs[1].inputNotation, this.inputs[1].numHands, this.inputs[1].startHand);
 					} catch(InvalidNotationException | IncompatibleNotationException | IncompatibleNumberOfHandsException e) {
