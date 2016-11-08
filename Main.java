@@ -269,7 +269,7 @@ public class Main {
 			printf(" numHands:   " + this.modifiedSiteswap.numHands());
 			printf(" period:     " + this.modifiedSiteswap.period());
 			if(this.printNumBalls)
-				printf(" numBalls:   " + this.modifiedSiteswap.numBalls());
+				printf(" capacity:   " + this.modifiedSiteswap.numBalls());
 			if(this.printValidity)
 				printf(" validity:   " + this.modifiedSiteswap.isValid());
 			if(this.printState)
@@ -313,7 +313,7 @@ public class Main {
 		// assemble a new command object from a list of cmdline args
 		CommandObject(String[] args) throws SiteswapException {
 			this.numInputs = 0;
-			// first assemble any transition options
+			// first assemble any transition options,
 			// then assemble input objects
 			for(int i=0; i<args.length; i++) {
 				String arg = args[i];
@@ -330,6 +330,17 @@ public class Main {
 						inputs[this.numInputs - 1].addArg(arg);
 					}
 				}
+			}
+			// parse all args and set all settings accordingly
+			try {
+				// parse transition args, if any
+				this.parseTransitionArgs();
+				// parse args of each input object
+				for(InputObject input : this.inputs) {
+					input.parseArgs();
+				}
+			} catch(ParseError e) {
+				throw e;
 			}
 		}
 
@@ -379,18 +390,13 @@ public class Main {
 			}
 		}
 
-		void execute() throws ParseError, InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException {
-			try {
-				this.parseTransitionArgs();
-			} catch(ParseError e) {
-				throw e;
-			}
+		// parse input notation, create siteswap/state objects, apply operations, find transition(s)
+		void execute() throws InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException {
 			switch(this.numInputs) {
 				case 0:
 					break;
 				case 1:
 					try {
-						this.inputs[0].parseArgs();
 						this.inputs[0].parseNotation();
 						this.inputs[0].runModifications();
 						this.inputs[0].computeState();
@@ -399,8 +405,6 @@ public class Main {
 					}
 					break;
 				case 2:
-					this.inputs[0].parseArgs();
-					this.inputs[1].parseArgs();
 					try {
 						this.inputPatterns = new CompatibleNotatedSiteswapPair(this.inputs[0].inputNotation, this.inputs[0].numHands, this.inputs[0].startHand, this.inputs[1].inputNotation, this.inputs[1].numHands, this.inputs[1].startHand);
 					} catch(InvalidNotationException | IncompatibleNotationException | IncompatibleNumberOfHandsException e) {
@@ -421,6 +425,7 @@ public class Main {
 			}
 		}
 
+		// show results of computation
 		void displayOutput() throws ImpossibleTransitionException {
 			for(int i=0; i<numInputs; i++) {
 				this.inputs[i].displayInfo(i);
