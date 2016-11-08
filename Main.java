@@ -336,8 +336,9 @@ public class Main {
 				// parse transition args, if any
 				this.parseTransitionArgs();
 				// parse args of each input object
-				for(InputObject input : this.inputs) {
-					input.parseArgs();
+				this.inputs[0].parseArgs();
+				if(this.numInputs == 2) {
+					this.inputs[1].parseArgs();
 				}
 			} catch(ParseError e) {
 				throw e;
