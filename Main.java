@@ -398,8 +398,11 @@ public class Main {
 					break;
 				case 1:
 					try {
+						// parse input notations
 						this.inputs[0].parseNotation();
+						// run siteswap operations
 						this.inputs[0].runModifications();
+						// compute state of pattern
 						this.inputs[0].computeState();
 					} catch(InvalidNotationException | IncompatibleNumberOfHandsException e) {
 						throw e;
@@ -411,17 +414,23 @@ public class Main {
 					} catch(InvalidNotationException | IncompatibleNotationException | IncompatibleNumberOfHandsException e) {
 						throw e;
 					}
+					// parse input notation
 					this.inputs[0].siteswap = this.inputPatterns.prefix;
-					this.inputs[0].runModifications();
-					this.inputs[0].computeState();
 					this.inputs[1].siteswap = this.inputPatterns.suffix;
+					// run siteswap operations
+					this.inputs[0].runModifications();
 					this.inputs[1].runModifications();
+					// compute states of patterns
+					this.inputs[0].computeState();
 					this.inputs[1].computeState();
+					// see if resulting patterns have compatible notations
 					try {
 						this.modifiedInputPatterns = new CompatibleNotatedSiteswapPair(this.inputs[0].modifiedSiteswap, this.inputs[1].modifiedSiteswap);
 					} catch(IncompatibleNumberOfHandsException e) {
 						throw e;
 					}
+					// compute transitions between resulting patterns
+					this.transitions = new ContextualizedNotatedTransitionList(this.modifiedInputPatterns, this.minTransitionLength, this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
 					break;
 			}
 		}
@@ -438,7 +447,6 @@ public class Main {
 					break;
 				case 2:
 					try {
-						this.transitions = new ContextualizedNotatedTransitionList(this.modifiedInputPatterns, this.minTransitionLength, this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
 						if(this.displayGeneralTransition) {
 							printf("General Form of Transition:");
 							printf(transitions.printGeneralTransition());
