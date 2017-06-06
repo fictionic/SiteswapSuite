@@ -19,8 +19,6 @@ An `[INPUT]` is of the form
 
 ### OPTIONS
 
-Here, `<x>` is taken to be an integer argument. It is always mandatory.
-
 #### Input Options
 
 **Info specification**
