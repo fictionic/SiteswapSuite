@@ -1,10 +1,10 @@
 SiteswapSuite
 ================
 
-###DESCRIPTION
+### DESCRIPTION
 SiteswapSuite computes information about juggling patterns as abstracted into [siteswap](http://en.wikipedia.org/wiki/Siteswap) notation, with an emphasis on maximizing the generality of the underlying theory.
 
-###SYNOPSIS
+### SYNOPSIS
 Display requested information about a siteswap or state:
 
 `sss [INPUT]`
@@ -17,11 +17,11 @@ An `[INPUT]` is of the form
 
 `-i <siteswap_notation> [INPUT_OPTIONS]`.
 
-###OPTIONS
+### OPTIONS
 
 Here, `<x>` is taken to be an integer argument. It is always mandatory.
 
-####Input Options
+#### Input Options
 
 **Info specification**
 
@@ -47,8 +47,8 @@ These only apply when the input notation is in vanilla siteswap notation.
 
 |option |effect|
 |:-----:|:-----|
-|`-h<x>`| Force parsing the input notation as having \<x\> hands. This is only useful when giving single inputs to the program, because an appropriate number of hands is inferred for each input pattern given the other pattern. For example, if given the single input `-i 3`, the program will take '3' to represent a one-handed pattern; but `-i 3 -h2` will produce the pattern '(3,0)!(0,3)!'.|
-|`-H<x>` | Force parsing the input notation as starting with hand \<x\>. Default is 0. For example: `-i 3 -h2 -H0` produces '(3,0)!(0,3)!', whereas `-i 3 -h2 -H1` produces '(0,3)!(3,0)!'.|
+|`-hN`| Force parsing the input notation as having N hands. This is only useful when giving single inputs to the program, because an appropriate number of hands is inferred for each input pattern given the other pattern. For example, if given the single input `-i 3`, the program will take '3' to represent a one-handed pattern; but `-i 3 -h2` will produce the pattern '(3,0)!(0,3)!'.|
+|`-HN` | Force parsing the input notation as starting with hand N. Default is 0. For example: `-i 3 -h2 -H0` produces '(3,0)!(0,3)!', whereas `-i 3 -h2 -H1` produces '(0,3)!(3,0)!'.|
 
 **Modification sequence specification**
 
@@ -65,24 +65,24 @@ After parsing the input into a siteswap pattern, a sequence of modifications may
 |`-N`  |"anti-negated" pattern. |
 
  
-####Transition Options
+#### Transition Options
 
 |option |effect|
 |:-----:|:-----|
-|`-l<x>` |Require transitions to be at least \<x\> beats long. If no transition is needed to get from one input to the other, this option can be used to force a nonempty transition to be computed.|
-|`-m<x>`|Compute at most \<x\> transitions. By default, all transitions are computed (obviously not all, since there are infinite. I still need to figure out the details here.)|
+|`-lN` |Require transitions to be at least N beats long. If no transition is needed to get from one input to the other, this option can be used to force a nonempty transition to be computed.|
+|`-mN`|Compute at most N transitions. By default, all transitions are computed (obviously not all, since there are infinite. I still need to figure out the details here.)|
 |`-q`   |Allow extra squeeze catches in transitions. By default, if additional balls need to be caught from infinity in order to transition to the destination state, they will only be caught by empty hands. With this flag set, all additional balls will be caught on the first beat.|
 |`-g`   |Allow generation of ball/antiball pairs in transitions. By default, tosses will only be made from hands that have balls to throw, and antitosses will only be made from hands that have antiballs to throw. With this flag set, the transition may generate pairs of one ball and one antiball to be thrown together, reducing the length of the transition. With both `-g` and `-q` set, the transitions will all be one beat in length or less.|
 |`-A`   |Un-antitossify transitions. By default, transitions may contain antitosses. With this flag set, antitosses will be converted to regular tosses of negative height.|
 |`-G`   |Display the general form of the transition along with actual examples. The general transition is displayed as '\<tosses\>\{\<catches\>\}', with tosses indicated by '&' (infinite-tosses) and catches indicated by '-&' (negative-infinite tosses).|
 
 
-###SETUP
+### SETUP
 
 `$ git clone https://github.com/seeegma/SiteswapSuite`  
 `$ make`
 
-###BASIC EXAMPLES
+### BASIC EXAMPLES
 - Find a transition between the siteswaps `5` and `91`:
 
 `$ sss -i 5 -i 91`  
@@ -127,7 +127,7 @@ state:      [[ 1,  1][ 0,  0][ 0,  1][ 0,  0]]
 ==========
 ```
 
-###ON GENERALITY OF THE THEORY (IN PROGRESS!)
+### ON GENERALITY OF THE THEORY (IN PROGRESS!)
 
 When one first learns siteswap, typically one learns the "vanilla" flavor, in which all of the following axioms hold:
 - every beat contains exactly one or zero tosses (i.e. no multiplex)
