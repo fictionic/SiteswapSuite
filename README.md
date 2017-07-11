@@ -25,54 +25,57 @@ An `[INPUT]` is of the form
 
 When an input siteswap is given, the following information is always printed:
 - a notation-independent string representation of the siteswap as a list of (beats) lists of (hands) lists of tosses
-- the parsed siteswap datastructure translated back into proper notation
+- the parsed siteswap data structure translated back into proper notation
 - the number of hands in the pattern
 - the period of the pattern
 
 Beyond this, options must be given to indicate what information about the input is computed and displayed:
 
-|option|effect|
-|:----:|:-----|
-|`-b`  | Number of balls in pattern. If there is no definite number of balls, gives the minimum.|
-|`-s`  | Juggling state of pattern.|
-|`-v`  | Validity of pattern.|
-|`-P`  | Primality of pattern. That is, whether or not a state is visited more than once during one period of the pattern.|
-|`-d`  | 'Difficulty' of pattern, as given by Dancey's formula b/(h+h/b). Thus it does not take into account the details of the siteswap at all.|
+|long name|short name|effect|
+|:--:|:-:|:---|
+| `--capacity` |`-c`| Number of balls in ('capacity of') pattern. If there is no definite number of balls, gives the minimum (so really 'capacity' is a poor choice of terminology).|
+| `--state` |`-s`| Juggling state of pattern.|
+| `--validity` |`-v`| Validity of pattern.|
+| `--primality` |`-P`|  Primality of pattern. That is, whether or not a state is visited more than once during one period of the pattern.|
+| `--difficulty` |`-d`| 'Difficulty' of pattern, as given by Dancey's formula b/(h+h/b). Thus it does not take into account the details of the siteswap at all.|
 
 **Hand specification**
 
 These only apply when the input notation is in vanilla siteswap notation.
 
-|option |effect|
-|:-----:|:-----|
-|`-hN`| Force parsing the input notation as having N hands. This is only useful when giving single inputs to the program, because an appropriate number of hands is inferred for each input pattern given the other pattern. For example, if given the single input `-i 3`, the program will take '3' to represent a one-handed pattern; but `-i 3 -h2` will produce the pattern '(3,0)!(0,3)!'.|
-|`-HN` | Force parsing the input notation as starting with hand N. Default is 0. For example: `-i 3 -h2 -H0` produces '(3,0)!(0,3)!', whereas `-i 3 -h2 -H1` produces '(0,3)!(3,0)!'.|
+|long name|short name|effect|
+|:--:|:-:|:---|
+| `--numHands N|`-h N ` | Force parsing the input notation as having N hands. This is only useful when giving single inputs to the program, because an appropriate number of hands is inferred for each input pattern given the other pattern. For example, if given the single input `-i 3`, the program will take '3' to represent a one-handed pattern; but `-i 3 -h2` will produce the pattern '(3,0)!(0,3)!'.|
+| `--startHand N|`-H N ` | Force parsing the input notation as starting with hand N. Default is 0. For example: `-i 3 -h2 -H0` produces '(3,0)!(0,3)!', whereas `-i 3 -h2 -H1` produces '(0,3)!(3,0)!'.|
 
 **Modification sequence specification**
 
 After parsing the input into a siteswap pattern, a sequence of modifications may be performed before information about the pattern is computed, and before the pattern is used to compute a transition.
 
-|option|effect|
-|:----:|:-----|
-|`-V`  |Inverse of pattern. (Technically the time-reverse.)|
-|`-p`  |Sprung version of pattern.|
-|`-f`  |"Infinitized" pattern. Each toss is replaced with a toss of infinite height, and a catch (negative-infinite-toss) is added at the site at which it is caught.|
-|`-F`  |"Un-infinitized" pattern. Finds a possible way to pair up positive-infinite tosses with negative-infinite tosses of the same charge.|
-|`-a`  |"antitossified" pattern. All negative tosses are removed, and the equivalent positive antitosses are added in the appropriate place (this does not change the pattern in any way other than appearance.)|
-|`-A`  |"un-antitossified" pattern. Inverse of above operation.|
-|`-N`  |"anti-negated" pattern. |
+|long name|short name|effect|
+|:---:|:-:|:---|
+| `--invert` |`-V` | Inverse of pattern. (Technically the time-reverse.)|
+| `--spring` |`-p` | Sprung version of pattern.|
+| `--infinitize` |`-f` | "Infinitized" pattern. Each toss is replaced with a toss of infinite height, and a catch (negative-infinite-toss) is added at the site at which it is caught.|
+| `--unInfinitize` |`-F` | "Un-infinitized" pattern. Finds a possible way to pair up positive-infinite tosses with negative-infinite tosses of the same charge.|
+| `--antitossify` |`-a` | "antitossified" pattern. All negative tosses are removed, and the equivalent positive antitosses are added in the appropriate place (this does not change the pattern in any way other than appearance.)|
+| `--unAntitossify` |`-A` | "un-antitossified" pattern. Inverse of above operation.|
+| `--antiNegate` |`-N` | "anti-negated" pattern. |
 
+(Note: none of these are implemented yet.)
  
 #### Transition Options
 
-|option |effect|
-|:-----:|:-----|
-|`-lN` |Require transitions to be at least N beats long. If no transition is needed to get from one input to the other, this option can be used to force a nonempty transition to be computed.|
-|`-mN`|Compute at most N transitions. By default, all transitions are computed (obviously not all, since there are infinite. I still need to figure out the details here.)|
-|`-q`   |Allow extra squeeze catches in transitions. By default, if additional balls need to be caught from infinity in order to transition to the destination state, they will only be caught by empty hands. With this flag set, all additional balls will be caught on the first beat.|
-|`-g`   |Allow generation of ball/antiball pairs in transitions. By default, tosses will only be made from hands that have balls to throw, and antitosses will only be made from hands that have antiballs to throw. With this flag set, the transition may generate pairs of one ball and one antiball to be thrown together, reducing the length of the transition. With both `-g` and `-q` set, the transitions will all be one beat in length or less.|
-|`-A`   |Un-antitossify transitions. By default, transitions may contain antitosses. With this flag set, antitosses will be converted to regular tosses of negative height.|
-|`-G`   |Display the general form of the transition along with actual examples. The general transition is displayed as '\<tosses\>\{\<catches\>\}', with tosses indicated by '&' (infinite-tosses) and catches indicated by '-&' (negative-infinite tosses).|
+|long name|short name|effect|
+|:---:|:-:|:---|
+| `--minTransitionLength` |`-l N` | Require transitions to be at least N beats long. If no transition is needed to get from one input to the other, this option can be used to force a nonempty transition to be computed.|
+| `--maxTransitions` |`-m N` | Compute at most N transitions. By default, all transitions are computed (obviously not all, since there are infinite. I still need to figure out the details here.)|
+| `--allowSqueezeCatches` |`-q`   | Allow extra squeeze catches in transitions. By default, if additional balls need to be caught from infinity in order to transition to the destination state, they will only be caught by empty hands. With this flag set, all additional balls will be caught on the first beat.|
+| `--allowBallAntiballPairs` |`-g`   | Allow generation of ball/antiball pairs in transitions. By default, tosses will only be made from hands that have balls to throw, and antitosses will only be made from hands that have antiballs to throw. With this flag set, the transition may generate pairs of one ball and one antiball to be thrown together, reducing the length of the transition. With both `-g` and `-q` set, the transitions will all be one beat in length or less.|
+| `--unAntitossifyTransitions` |`-A`   | Un-antitossify transitions. By default, transitions may contain antitosses. With this flag set, antitosses will be converted to regular tosses of negative height.|
+| `--displayGeneralTransition` |`-G`   | Display the general form of the transition along with actual examples. The general transition is displayed as '\<tosses\>\{\<catches\>\}', with tosses indicated by '&' (infinite-tosses) and catches indicated by '-&' (negative-infinite tosses).|
+
+(Note: only `-G` and `-m` are implemented.)
 
 
 ### SETUP
