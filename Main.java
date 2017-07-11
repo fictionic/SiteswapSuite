@@ -392,7 +392,7 @@ public class Main {
 		}
 
 		// parse input notation, create siteswap/state objects, apply operations, find transition(s)
-		void execute() throws InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException {
+		void execute() throws InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
 			switch(this.numInputs) {
 				case 0:
 					break;
@@ -430,7 +430,11 @@ public class Main {
 						throw e;
 					}
 					// compute transitions between resulting patterns
-					this.transitions = new ContextualizedNotatedTransitionList(this.modifiedInputPatterns, this.minTransitionLength, this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
+					try {
+						this.transitions = new ContextualizedNotatedTransitionList(this.modifiedInputPatterns, this.minTransitionLength, this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
+					} catch(ImpossibleTransitionException e) {
+						throw e;
+					}
 					break;
 			}
 		}
@@ -446,27 +450,23 @@ public class Main {
 				case 1:
 					break;
 				case 2:
-					try {
-						if(this.displayGeneralTransition) {
-							printf("General Form of Transition:");
-							printf(transitions.printGeneralTransition());
+					if(this.displayGeneralTransition) {
+						printf("General Form of Transition:");
+						printf(transitions.printGeneralTransition());
+					}
+					if(this.maxTransitions != 0) {
+						if(this.maxTransitions != -1)
+							printf("Transitions (first " + this.maxTransitions + "):");
+						else
+							printf("Transitions:");
+						// print transition info based on transition flags
+						for(int t=0; t<this.transitions.transitionList().size(); t++) {
+							if(this.maxTransitions != -1 && t > this.maxTransitions)
+								break;
+							printf(this.transitions.transitionList().get(t).print());
+							if(this.unAntitossifyTransitions)
+								printf(this.transitions.unAntitossifiedTransitionList().get(t).print());
 						}
-						if(this.maxTransitions != 0) {
-							if(this.maxTransitions != -1)
-								printf("Transitions (first " + this.maxTransitions + "):");
-							else
-								printf("Transitions:");
-							// print transition info based on transition flags
-							for(int t=0; t<this.transitions.transitionList().size(); t++) {
-								if(this.maxTransitions != -1 && t > this.maxTransitions)
-									break;
-								printf(this.transitions.transitionList().get(t).print());
-								if(this.unAntitossifyTransitions)
-									printf(this.transitions.unAntitossifiedTransitionList().get(t).print());
-							}
-						}
-					} catch(ImpossibleTransitionException e) {
-						throw e;
 					}
 					break;
 				default:
