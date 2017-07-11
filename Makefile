@@ -1,4 +1,4 @@
-all: exception math pure-ss transition notation main package
+all: exception math pure-ss notation transition main package
 
 package:
 	mkdir -p bin
