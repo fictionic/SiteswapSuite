@@ -58,8 +58,8 @@ public enum Notation {
 	}
 
 	/* siteswap regex patterns */
-	// the empty pattern (need some way of notating it without the empty string, cuz that's never passed on the commandline)
-	static final String emptyNotation = ".";
+	// the empty pattern (need a way of notating it without the empty string, for printing)
+	static final String emptyNotation = "(|\\.)";
 
 	// basics
 	static final String modifier = "(-?_?|_?-?)";

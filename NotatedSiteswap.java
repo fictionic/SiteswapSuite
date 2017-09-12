@@ -57,7 +57,7 @@ class SprungException extends SiteswapException {
 	}
 }
 
-public abstract class NotatedSiteswap extends Siteswap {
+public class NotatedSiteswap {
 
 	private static boolean debug = false;
 	private static void printf(Object o) {
@@ -65,45 +65,29 @@ public abstract class NotatedSiteswap extends Siteswap {
 			System.out.println(o);
 	}
 
-	protected Notation notationType;
-
-	// abstract methods
-	public abstract String print();
-	public abstract TwoHandedSyncNotatedSiteswap spring() throws SprungException;
+	Notation notationType;
+	Siteswap siteswap;
 
 	// querying basic info
-	public Notation notationType() {
-		return this.notationType;
+	public Notation notationType() { return this.notationType; }
+	public Siteswap siteswap() { return this.siteswap; }
+
+	// constructor
+	private NotatedSiteswap(Siteswap ss, Notation notationType) {
+		this.siteswap = ss;
+		this.notationType = notationType;
 	}
 
 	// deep copy
 	public NotatedSiteswap deepCopy() {
-		try {
-			return assemble(super.deepCopy(), this.notationType);
-		} catch(IncompatibleNotationException e) {
-			System.out.println("Impossible error in NotatedSiteswap.java");
-			System.exit(1);
-			return null;
-		}
+		return new NotatedSiteswap(this.siteswap, this.notationType);
 	}
 
 	/* ------- */
 	/* PARSING */
 	/* ------- */
 
-	// link to Siteswap() constructor for subclasses
-	private NotatedSiteswap(int numHands) {
-		super(numHands);
-	}
-
-	public static NotatedSiteswap assemble(Siteswap ss) throws IncompatibleNotationException {
-		try {
-			return assemble(ss, Notation.defaultNotationType(ss.numHands()));
-		} catch(IncompatibleNotationException e) {
-			throw e;
-		}
-	}
-
+	// pair a Siteswap with a pre-computed NotationType
 	public static NotatedSiteswap assemble(Siteswap ss, Notation notationType) throws IncompatibleNotationException {
 		switch(notationType) {
 			case EMPTY:
@@ -115,7 +99,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 				if(ss.numHands() == 1)
 					return new OneHandedNotatedSiteswap(ss);
 				if(ss.numHands() == 2)
-					return new TwoHandedAsyncNotatedSiteswap(ss); // figure out what to do here regarding startHand
+					return new TwoHandedAsyncNotatedSiteswap(ss); // TODO: figure out what to do here regarding startHand
 				else
 					throw new IncompatibleNotationException(Notation.ASYNCHRONOUS, ss.numHands());
 			case SYNCHRONOUS:
@@ -136,20 +120,8 @@ public abstract class NotatedSiteswap extends Siteswap {
 		}
 	}
 
-	// construct a NotatedSiteswap out of a siteswap and a notationtype
-	private NotatedSiteswap(Siteswap ss, Notation notationType) {
-		super(ss.numHands, ss.sites);
-		this.notationType = notationType;
-		// (no compatibility checking is done because it's only called by inner classes
-		// as a result of methods it itself calls)
-	}
-
-	// construct a NotatedSiteswap out of a siteswap, guessing a good notationtype
-	public NotatedSiteswap(Siteswap ss) {
-		this(ss, Notation.defaultNotationType(ss.numHands()));
-	}
-
-	public static NotatedSiteswap parseSingle(String inputNotation, int numHands, int startHand) throws InvalidNotationException, IncompatibleNumberOfHandsException {
+	// build a Siteswap from a notation string and pair it with the determined NotationType
+	public static NotatedSiteswap parse(String inputNotation, int numHands, int startHand) throws InvalidNotationException, IncompatibleNumberOfHandsException {
 		Notation n;
 		try {
 			n = Notation.analyze(inputNotation);
