@@ -1,2 +1,2 @@
 package siteswapsuite;
-class SiteswapException  extends Exception { }
+class SiteswapException extends Exception { }

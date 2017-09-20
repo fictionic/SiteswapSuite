@@ -87,12 +87,12 @@ public class Main {
 			DIFFICULTY(false, "-d", "--difficulty"),
 			// siteswap operations
 			INVERT(false, "-V", "--invert"),
-		   	SPRING(false, "-p", "--spring"),
-		   	INFINITIZE(false, "-f", "--infinitize"),
-		   	UNINFINITIZE(false, "-F", "--unInfinitize"),
-		   	ANTITOSSIFY(false, "-a", "--antitossify"),
-		   	UNANTITOSSIFY(false, "-A", "--unAntitossify"),
-		   	ANTINEGATE(false, "-N", "--antiNegate"),
+			SPRING(false, "-p", "--spring"),
+			INFINITIZE(false, "-f", "--infinitize"),
+			UNINFINITIZE(false, "-F", "--unInfinitize"),
+			ANTITOSSIFY(false, "-a", "--antitossify"),
+			UNANTITOSSIFY(false, "-A", "--unAntitossify"),
+			ANTINEGATE(false, "-N", "--antiNegate"),
 			INVALID_TOKEN(false, null, null);
 
 			boolean requiresParam;
@@ -187,10 +187,10 @@ public class Main {
 				i++;
 			}
 		}
-				
+
 		void parseNotation() throws InvalidNotationException, IncompatibleNumberOfHandsException {
 			try {
-				this.siteswap = NotatedSiteswap.parseSingle(this.inputNotation, this.numHands, this.startHand);
+				this.siteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand);
 			} catch(InvalidNotationException | IncompatibleNumberOfHandsException e) {
 				throw e;
 			}
@@ -201,11 +201,11 @@ public class Main {
 			for(InputOption m : this.operations) {
 				switch(m) {
 					case ANTITOSSIFY:
-						this.modifiedSiteswap.antitossify();
+						this.modifiedSiteswap.siteswap.antitossify();
 						break;
 					case SPRING:
 						try {
-							this.modifiedSiteswap = this.modifiedSiteswap.spring();
+							this.modifiedSiteswap = this.modifiedSiteswap.siteswap.spring();
 						} catch(SprungException e) {
 							printf(e.getMessage());
 						}
@@ -215,11 +215,11 @@ public class Main {
 				}
 			}
 		}
-		
+
 		void computeState() {
-			this.state = new State(this.siteswap);
+			this.state = new State(this.siteswap.siteswap);
 			if(this.operations.size() > 0)
-				this.modifiedState = new State(this.modifiedSiteswap);
+				this.modifiedState = new State(this.modifiedSiteswap.siteswap);
 			else
 				this.modifiedState = this.state;
 		}
@@ -287,7 +287,7 @@ public class Main {
 		}
 
 	}
-	
+
 	static class CommandObject {
 
 		// inputs
