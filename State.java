@@ -142,7 +142,9 @@ public class State {
 			printf("this: " + this.toString());
 			if(isAllZeros) { // if there is no repeated portion in the final product
 				printf("removing repeated portion");
-				endOfLastSection.prev = null;
+				if(endOfLastSection != null) {
+					endOfLastSection.prev = null;
+				}
 				this.firstRepeatedNode = null;
 				this.repeatedLength = 0;
 				printf("this: " + this.toString());
@@ -168,7 +170,9 @@ public class State {
 					cur = cur.prev;
 				}
 				// and make it the last node
-				lastNonZero.prev = null;
+				if(lastNonZero != null) {
+					lastNonZero.prev = null;
+				}
 				printf("this: " + this.toString());
 			} else { // if there is one
 				this.repeatedLength = ss.period();
