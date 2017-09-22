@@ -11,27 +11,15 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 	private int prefixLength, transitionLength, suffixLength;
 	private int numHands;
 
-	private static boolean debug = false;
-
-	private static void printf(Object msg) {
-		if(debug) {
-			try {
-				System.out.println(msg);
-			} catch(NullPointerException e) {
-				System.out.println("null");
-			}
-		}
-	}
-
 	public ContextualizedNotatedTransitionList(CompatibleNotatedSiteswapPair patterns, int minLength, int maxTransitions, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) throws ImpossibleTransitionException {
 		super(patterns);
-		this.numHands = this.prefix.numHands;
+		this.numHands = this.prefix.siteswap.numHands;
 		// get transition
-		printf("prefix: " + this.prefix.toString());
-		printf("suffix: " + this.suffix.toString());
+		Util.printf("prefix: " + this.prefix.toString(), Util.DebugLevel.DEBUG);
+		Util.printf("suffix: " + this.suffix.toString(), Util.DebugLevel.DEBUG);
 		// then find the general form of the transition, if possible
 		try {
-			this.generalTransition = Transition.compute(new State(this.prefix), new State(this.suffix), minLength, allowExtraSqueezeCatches, generateBallAntiballPairs);
+			this.generalTransition = Transition.compute(new State(this.prefix.siteswap), new State(this.suffix.siteswap), minLength, allowExtraSqueezeCatches, generateBallAntiballPairs);
 			this.transitionLength = generalTransition.eventualPeriod;
 			// then get a list of the specific transitions
 			List<Siteswap> unNotatedTransitionList = this.generalTransition.unInfinitize(maxTransitions);
@@ -94,17 +82,17 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 			return this.transitionList.get(transitionIndex); // don't actually do anything until we figure out the alg!
 		else {
 		////////
-		Siteswap oldTransition = this.transitionList.get(transitionIndex);
-		printf("oldTransition:");
-		printf(oldTransition);
+		Siteswap oldTransition = this.transitionList.get(transitionIndex).siteswap;
+		Util.printf("oldTransition:", Util.DebugLevel.DEBUG);
+		Util.printf(oldTransition, Util.DebugLevel.DEBUG);
 		Siteswap newTransition = oldTransition.deepCopy();
 		Integer newTransitionStart = null, newTransitionEnd = null;
 		int destBeat, destHand;
 		Toss curToss;
 		// un-antitossify transition
-		printf("un-antitossifying transition...");
+		Util.printf("un-antitossifying transition...", Util.DebugLevel.DEBUG);
 		for(int b=0; b<oldTransition.period(); b++) {
-			printf("b: " + b);
+			Util.printf("b: " + b, Util.DebugLevel.DEBUG);
 			for(int h=0; h<this.numHands; h++) {
 				for(int t=0; t<oldTransition.numTossesAtSite(b, h); t++) {
 					curToss = oldTransition.getToss(b, h, t);
@@ -112,7 +100,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 					ExtendedInteger tossHeight;
 					Toss toAdd;
 					if(curToss.charge() != 0 && curToss.isAntitoss()) {
-						printf("removing toss");
+						Util.printf("removing toss", Util.DebugLevel.DEBUG);
 						newTransition.getSite(b, h).removeToss(t);
 						if(curToss.height().isInfinite()) {
 							destBeat = b;
@@ -122,14 +110,14 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 							newTransition.addToss(destBeat, h, toAdd);
 						} else {
 							destBeat = b + curToss.height().finiteValue();
-							printf("extending transition");
+							Util.printf("extending transition", Util.DebugLevel.DEBUG);
 							destBeat = newTransition.extendToBeatIndex(destBeat);
-							printf(destBeat);
+							Util.printf(destBeat, Util.DebugLevel.DEBUG);
 							tossHeight = new ExtendedInteger(-curToss.height().finiteValue());
 							toAdd = new Toss(tossHeight.finiteValue(), h, false);
 							newTransition.addToss(destBeat, curToss.destHand(), toAdd);
 						}
-						printf(newTransition);
+						Util.printf(newTransition, Util.DebugLevel.DEBUG);
 						// update endpoints
 						if(newTransitionStart == null || destBeat < newTransitionStart)
 							newTransitionStart = destBeat;
@@ -139,24 +127,24 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 				}
 			}
 		}
-		printf("CURRENT STATE OF TRANSITION:");
-		printf(newTransition);
-		printf("start: " + newTransitionStart);
-		printf("end: " + newTransitionEnd);
+		Util.printf("CURRENT STATE OF TRANSITION:", Util.DebugLevel.DEBUG);
+		Util.printf(newTransition, Util.DebugLevel.DEBUG);
+		Util.printf("start: " + newTransitionStart, Util.DebugLevel.DEBUG);
+		Util.printf("end: " + newTransitionEnd, Util.DebugLevel.DEBUG);
 		// un-antitossify prefix
-		printf("un-antitossifying prefix...");
+		Util.printf("un-antitossifying prefix...", Util.DebugLevel.DEBUG);
 		for(int b=-prefixLength; b<0; b++) {
-			printf("b: " + b);
-			for(int h=0; h<prefix.numHands(); h++) {
-				for(int t=0; t<prefix.numTossesAtSite(b, h); t++) {
-					curToss = prefix.getToss(b, h, t);
+			Util.printf("b: " + b, Util.DebugLevel.DEBUG);
+			for(int h=0; h<prefix.siteswap.numHands(); h++) {
+				for(int t=0; t<prefix.siteswap.numTossesAtSite(b, h); t++) {
+					curToss = prefix.siteswap.getToss(b, h, t);
 					ExtendedInteger tossHeight;
 					Toss toAdd;
-					printf(curToss);
+					Util.printf(curToss, Util.DebugLevel.DEBUG);
 					if(curToss.charge() != 0 && curToss.isAntitoss()) {
 						if(!curToss.height().isInfinite()) {
 							destBeat = b + curToss.height().finiteValue();
-							printf("destBeat: " + destBeat);
+							Util.printf("destBeat: " + destBeat, Util.DebugLevel.DEBUG);
 							tossHeight = new ExtendedInteger(-curToss.height().finiteValue());
 							toAdd = new Toss(tossHeight.finiteValue(), curToss.destHand(), false);
 						} else {
@@ -169,33 +157,33 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 							newTransition.addToss(destBeat, h, toAdd);
 							if(destBeat > newTransitionEnd) {
 								newTransitionEnd = destBeat;
-								printf("end: " + newTransitionEnd);
+								Util.printf("end: " + newTransitionEnd, Util.DebugLevel.DEBUG);
 							}
 						} else 
-							printf("skip");
+							Util.printf("skip", Util.DebugLevel.DEBUG);
 					}
 				}
 			}
 		}
-		printf("CURRENT STATE OF TRANSITION:");
-		printf(newTransition);
+		Util.printf("CURRENT STATE OF TRANSITION:", Util.DebugLevel.DEBUG);
+		Util.printf(newTransition, Util.DebugLevel.DEBUG);
 		// un-antitossify suffix
-		printf("un-antitossifying suffix...");
+		Util.printf("un-antitossifying suffix...", Util.DebugLevel.DEBUG);
 		int shiftAmount = 0;
 		boolean skippedAll;
 		int b, base = oldTransition.period();
 		do {
-			printf("trying another period");
+			Util.printf("trying another period", Util.DebugLevel.DEBUG);
 			skippedAll = true;
 			for(int i=0; i<suffixLength; i++) {
 				b = base + i;
-				printf("b: " + b);
-				for(int h=0; h<suffix.numHands(); h++) {
-					for(int t=0; t<suffix.numTossesAtSite(b, h); t++) {
-						curToss = suffix.getToss(b, h, t);
+				Util.printf("b: " + b, Util.DebugLevel.DEBUG);
+				for(int h=0; h<suffix.siteswap.numHands(); h++) {
+					for(int t=0; t<suffix.siteswap.numTossesAtSite(b, h); t++) {
+						curToss = suffix.siteswap.getToss(b, h, t);
 						ExtendedInteger tossHeight;
 						Toss toAdd;
-						printf(curToss);
+						Util.printf(curToss, Util.DebugLevel.DEBUG);
 						if(curToss.charge() != 0 && curToss.isAntitoss()) {
 							if(!curToss.height().isInfinite()) {
 								destBeat = b + curToss.height().finiteValue();
@@ -206,7 +194,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 								tossHeight = new ExtendedInteger(InfinityType.NEGATIVE_INFINITY);
 								toAdd = new Toss(tossHeight.infiniteValue(), false);
 							}
-							printf("destBeat: " + destBeat);
+							Util.printf("destBeat: " + destBeat, Util.DebugLevel.DEBUG);
 							if(!tossHeight.isInfinite() && tossHeight.finiteValue() != 0 && (destBeat <= newTransitionEnd || !skippedAll)) {
 								destBeat = newTransition.extendToBeatIndex(destBeat);
 								newTransition.addToss(destBeat, h, toAdd);
@@ -216,14 +204,14 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 								if(destBeat > newTransitionEnd)
 									newTransitionEnd = destBeat;
 							} else 
-								printf("skip");
+								Util.printf("skip", Util.DebugLevel.DEBUG);
 						}
 					}
 				}
 			}
 			base += suffixLength;
 		} while(!skippedAll);
-		printf("skipped all; done");
+		Util.printf("skipped all; done", Util.DebugLevel.DEBUG);
 		NotatedSiteswap ret = null;
 		try {
 			ret = NotatedSiteswap.assemble(newTransition.subPattern(newTransitionStart, newTransitionEnd+1), this.compatibleNotationType);
@@ -231,7 +219,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 			System.out.println(e.getMessage());
 			System.exit(1);
 		}
-		printf(ret);
+		Util.printf(ret, Util.DebugLevel.DEBUG);
 		return ret;
 		}
 	}

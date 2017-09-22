@@ -11,10 +11,10 @@ class CompatibleNotatedSiteswapPair {
 	}
 
 	CompatibleNotatedSiteswapPair(NotatedSiteswap prefix, NotatedSiteswap suffix) throws IncompatibleNumberOfHandsException {
-		if(prefix.numHands() != suffix.numHands())
+		if(prefix.siteswap.numHands() != suffix.siteswap.numHands())
 			throw new IncompatibleNumberOfHandsException();
 		// determine compatibleNotationType
-		switch(prefix.numHands()) {
+		switch(prefix.siteswap.numHands()) {
 			case 0:
 				this.compatibleNotationType = suffix.notationType();
 				break;
@@ -58,12 +58,12 @@ class CompatibleNotatedSiteswapPair {
 				if(numHands == -1)
 					numHands = n2.defaultNumHands();
 				this.prefix = new NotatedSiteswap.EmptyNotatedSiteswap(numHands);
-				this.suffix = NotatedSiteswap.parseSingle(s2, numHands, startHand2);
+				this.suffix = NotatedSiteswap.parse(s2, numHands, startHand2);
 				this.compatibleNotationType = Notation.EMPTY;
 			} else if(n2 == Notation.EMPTY) {
 				if(numHands == -1)
 					numHands = n1.defaultNumHands();
-				this.prefix = NotatedSiteswap.parseSingle(s1, numHands, startHand2);
+				this.prefix = NotatedSiteswap.parse(s1, numHands, startHand2);
 				this.suffix = new NotatedSiteswap.EmptyNotatedSiteswap(numHands);
 				this.compatibleNotationType = Notation.EMPTY;
 			} else {

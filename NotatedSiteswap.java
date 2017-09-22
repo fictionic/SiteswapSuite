@@ -21,10 +21,11 @@ class IncompatibleNotationException extends SiteswapException {
 		if(this.n == null)
 			return "ERROR: notation strings `" + s1 + "' and `" + s2 + "' are incompatible";
 		else {
-			if(n == Notation.EMPTY)
+			if(n == Notation.EMPTY) {
 				return "ERROR: notation type `" + n.name() + "' is incompatible with period > 0";
-			else
+			} else {
 				return "ERROR: notation type `" + n.name() + "' is incompatible with numHands==" + numHands;
+			}
 		}
 	}
 }
@@ -59,12 +60,6 @@ class SprungException extends SiteswapException {
 
 public abstract class NotatedSiteswap {
 
-	private static boolean debug = false;
-	private static void printf(Object o) {
-		if(debug)
-			System.out.println(o);
-	}
-
 	Notation notationType;
 	Siteswap siteswap;
 
@@ -75,15 +70,16 @@ public abstract class NotatedSiteswap {
 	// printing notation
 	public abstract String print();
 
+	// deep copy
+	public abstract NotatedSiteswap deepCopy();
+
+	// spring
+	public abstract NotatedSiteswap spring() throws SprungException;
+
 	// constructor
 	private NotatedSiteswap(Siteswap ss, Notation notationType) {
 		this.siteswap = ss;
 		this.notationType = notationType;
-	}
-
-	// deep copy
-	public NotatedSiteswap deepCopy() {
-		return new NotatedSiteswap(this.siteswap, this.notationType);
 	}
 
 	/* -------------- */
@@ -94,32 +90,37 @@ public abstract class NotatedSiteswap {
 	public static NotatedSiteswap assemble(Siteswap ss, Notation notationType) throws IncompatibleNotationException {
 		switch(notationType) {
 			case EMPTY:
-				if(ss.period() == 0)
+				if(ss.period() == 0) {
 					return new EmptyNotatedSiteswap(ss);
-				else
+				} else {
 					throw new IncompatibleNotationException(notationType, -1);
+				}
 			case ASYNCHRONOUS:
-				if(ss.numHands() == 1)
+				if(ss.numHands() == 1) {
 					return new OneHandedNotatedSiteswap(ss);
-				if(ss.numHands() == 2)
+				} if(ss.numHands() == 2) {
 					return new TwoHandedAsyncNotatedSiteswap(ss); // TODO: figure out what to do here regarding startHand
-				else
+				} else {
 					throw new IncompatibleNotationException(Notation.ASYNCHRONOUS, ss.numHands());
+				}
 			case SYNCHRONOUS:
-				if(ss.numHands() == 2)
+				if(ss.numHands() == 2) {
 					return new TwoHandedSyncNotatedSiteswap(ss);
-				else
+				} else {
 					throw new IncompatibleNotationException(Notation.SYNCHRONOUS, ss.numHands());
+				}
 			case MIXED:
-				if(ss.numHands() == 2)
+				if(ss.numHands() == 2) {
 					return new TwoHandedMixedNotatedSiteswap(ss);
-				else
+				} else {
 					throw new IncompatibleNotationException(Notation.MIXED, ss.numHands());
+				}
 			default: // case PASSING:
-				if(ss.numHands() == 4)
+				if(ss.numHands() == 4) {
 					return new NotatedPassingSiteswap(ss);
-				else
+				} else {
 					throw new IncompatibleNotationException(Notation.PASSING, ss.numHands());
+				}
 		}
 	}
 
@@ -133,50 +134,34 @@ public abstract class NotatedSiteswap {
 		}
 		switch(n) {
 			case EMPTY:
-				if(numHands == -1)
+				if(numHands == -1) {
 					numHands = 0;
+				}
 				return new EmptyNotatedSiteswap(numHands);
 			case ASYNCHRONOUS:
-				if(numHands == -1 || numHands == 1)
+				if(numHands == -1 || numHands == 1) {
 					return new OneHandedNotatedSiteswap(inputNotation);
-				else if(numHands == 2)
+				} else if(numHands == 2) {
 					return new TwoHandedAsyncNotatedSiteswap(inputNotation, startHand);
-				else
+				} else {
 					break;
+				}
 			case SYNCHRONOUS:
-				if(numHands == -1 || numHands == 2)
+				if(numHands == -1 || numHands == 2) {
 					return new TwoHandedSyncNotatedSiteswap(inputNotation);
-				else
+				} else {
 					break;
+				}
 			case MIXED:
-				if(numHands == -1 || numHands == 2)
+				if(numHands == -1 || numHands == 2) {
 					return new TwoHandedMixedNotatedSiteswap(inputNotation);
-				else
+				} else {
 					break;
+				}
 			default: // case PASSING
 				return new NotatedPassingSiteswap(inputNotation);
 		}
 		throw new IncompatibleNumberOfHandsException(inputNotation, numHands);
-	}
-
-	/* ---------- */
-	/* DE-PARSING */
-	/* ---------- */
-
-	// de-parse a Siteswap (NOT NEEDED: NEVER NEED TO GO STRAIGHT FROM SITESWAP TO STRING)
-	public String notate(Siteswap ss) {
-		if(ss.period() == 0 || ss.numHands() == 0)
-			return (new EmptyNotatedSiteswap(ss)).print();
-		switch(this.siteswap.numHands) {
-			case 1:
-				return (new OneHandedNotatedSiteswap(ss).print());
-			case 2:
-				// assume synchronous; that's all we can know without digging through the pattern.
-				// will return to this later
-				return (new TwoHandedSyncNotatedSiteswap(ss).print());
-			default:
-				return (new NotatedPassingSiteswap(ss).print());
-		}
 	}
 
 	/* -------------- */
@@ -200,7 +185,12 @@ public abstract class NotatedSiteswap {
 			return Notation.emptyNotation;
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
+		// deep copy
+		public NotatedSiteswap deepCopy() {
+			return (NotatedSiteswap)(new EmptyNotatedSiteswap(this.siteswap));
+		}
+
+		public NotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
@@ -289,7 +279,12 @@ public abstract class NotatedSiteswap {
 			return out;
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
+		// deep copy
+		public NotatedSiteswap deepCopy() {
+			return (NotatedSiteswap)(new OneHandedNotatedSiteswap(this.siteswap));
+		}
+
+		public NotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
@@ -417,7 +412,19 @@ public abstract class NotatedSiteswap {
 			return out;
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
+		// deep copy
+		public NotatedSiteswap deepCopy() {
+			return (NotatedSiteswap)(new TwoHandedAsyncNotatedSiteswap(this.siteswap, this.startHand));
+		}
+
+		// additional constructor for deep copy
+		TwoHandedAsyncNotatedSiteswap(Siteswap ss, int startHand) {
+			super(ss, Notation.ASYNCHRONOUS);
+			// TODO: set startHand by looking at beats
+			this.startHand = startHand;
+		}
+
+		public NotatedSiteswap spring() throws SprungException {
 			TwoHandedSyncNotatedSiteswap newSiteswap = new TwoHandedSyncNotatedSiteswap(new Siteswap(2));
 			int sprungHand = (this.startHand + 1) % 2;
 			for(int b=0; b<this.siteswap.period(); b++) {
@@ -554,14 +561,14 @@ public abstract class NotatedSiteswap {
 				allZeroes = true;
 				//loop through hands within each beat (we know numHands = 2 since we screened for that in parse())
 				for(int h=0; h<2; h++) {
-					printf("nextBeat: " + nextBeat);
+					Util.printf("nextBeat: " + nextBeat, Util.DebugLevel.DEBUG);
 					//see if we need to add multiplex notation
 					if(this.siteswap.numTossesAtSite(b, h) > 1) {
 						nextBeat += "[";
 						//loop through tosses within hand
 						for(int t=0; t<this.siteswap.numTossesAtSite(b, h); t++) {
 							Toss curToss = this.siteswap.getToss(b, h, t);
-							printf(curToss);
+							Util.printf(curToss, Util.DebugLevel.DEBUG);
 							nextBeat += Notation.reverseThrowHeight(curToss);
 							if(curToss.charge() != 0) {
 								allZeroes = false;
@@ -575,8 +582,8 @@ public abstract class NotatedSiteswap {
 						//account for only toss in hand
 						Toss curToss = this.siteswap.getToss(b, h, 0);
 						if(curToss.charge() != 0) {
-							printf("encountered non-zero toss");
-							printf(curToss);
+							Util.printf("encountered non-zero toss", Util.DebugLevel.DEBUG);
+							Util.printf(curToss, Util.DebugLevel.DEBUG);
 							allZeroes = false;
 						}
 						nextBeat += Notation.reverseThrowHeight(curToss);
@@ -591,16 +598,16 @@ public abstract class NotatedSiteswap {
 				}
 				nextBeat += ")";
 				if(b == 0) {
-					printf("not skipping beat 0");
+					Util.printf("not skipping beat 0", Util.DebugLevel.DEBUG);
 					out += nextBeat;
 					skippedLastBeat = false;
 				} else if(!skippedLastBeat && allZeroes) {
 					// skip this beat
-					printf("skipping beat " + b);
+					Util.printf("skipping beat " + b, Util.DebugLevel.DEBUG);
 					skippedLastBeat = true;
 				} else {
 					// don't skip this beat
-					printf("not skipping beat " + b);
+					Util.printf("not skipping beat " + b, Util.DebugLevel.DEBUG);
 					if(!skippedLastBeat)
 						out += "!";
 					out += nextBeat;
@@ -608,13 +615,18 @@ public abstract class NotatedSiteswap {
 				}
 			}
 			if(!skippedLastBeat) {
-				printf("adding final '!'");
+				Util.printf("adding final '!'", Util.DebugLevel.DEBUG);
 				out += "!";
 			}
 			return out;
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
+		// deep copy
+		public NotatedSiteswap deepCopy() {
+			return (NotatedSiteswap)(new TwoHandedSyncNotatedSiteswap(this.siteswap));
+		}
+
+		public NotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
@@ -641,7 +653,12 @@ public abstract class NotatedSiteswap {
 			return null;
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
+		// deep copy
+		public NotatedSiteswap deepCopy() {
+			return (NotatedSiteswap)(new TwoHandedMixedNotatedSiteswap(this.siteswap));
+		}
+
+		public NotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
@@ -668,7 +685,12 @@ public abstract class NotatedSiteswap {
 			return null;
 		}
 
-		public TwoHandedSyncNotatedSiteswap spring() throws SprungException {
+		// deep copy
+		public NotatedSiteswap deepCopy() {
+			return (NotatedSiteswap)(new NotatedPassingSiteswap(this.siteswap));
+		}
+
+		public NotatedSiteswap spring() throws SprungException {
 			throw new SprungException("WARNING: cannot spring a non-async pattern");
 		}
 
