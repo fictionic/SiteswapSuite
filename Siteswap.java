@@ -169,7 +169,7 @@ public class Siteswap {
 			for(int b=0; b<copy.period(); b++) {
 				for(int h=0; h<copy.numHands(); h++) {
 					for(int t=0; t<copy.numTossesAtSite(b,h); t++) {
-						System.out.println("b: " + b + ", h: " + h + ", t: " + t);
+						Util.printf("b: " + b + ", h: " + h + ", t: " + t, Util.DebugLevel.DEBUG);
 						toss = copy.getToss(b,h,t);
 						if(toss.charge() != 0) {
 							allZero = false;
@@ -186,15 +186,15 @@ public class Siteswap {
 						int b2 = 0, h2 = 0, t2 = 0;
 						do {
 							// TODO: fix this algorithm
-							System.out.println("b2: " + b2 + ", h2: " + h2 + ", t2: " + t2);
-							System.out.println(copy);
-							System.out.println(curOrbit);
-							System.out.println();
+							Util.printf("b2: " + b2 + ", h2: " + h2 + ", t2: " + t2, Util.DebugLevel.DEBUG);
+							Util.printf(copy, Util.DebugLevel.DEBUG);
+							Util.printf(curOrbit, Util.DebugLevel.DEBUG);
+							Util.printf("", Util.DebugLevel.DEBUG);
 							// add next toss to orbit
 							curToss = copy.getToss(b2, h2, t2);
 							curOrbit.addToss(b, h, curToss);
 							if(curToss.height().isInfinite()) {
-								System.out.println("DON'T KNOW WHAT TO DO WITH INFINITE TOSS WHEN FINDING ORBITS");
+								Util.printf("DON'T KNOW WHAT TO DO WITH INFINITE TOSS WHEN FINDING ORBITS", Util.DebugLevel.DEBUG);
 								continue;
 							}
 							// remove toss from copy
@@ -218,7 +218,7 @@ public class Siteswap {
 	}
 
 	public ExtendedFraction difficulty() {
-		System.out.println("WARNING: difficulty calculation not yet implemented");
+		Util.printf("WARNING: difficulty calculation not yet implemented", Util.DebugLevel.ERROR);
 		ExtendedFraction b = this.numBalls();
 		int h = this.numHands;
 		int bottom;
