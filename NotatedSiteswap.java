@@ -182,7 +182,7 @@ public abstract class NotatedSiteswap {
 
 		// print
 		public String print() {
-			return Notation.emptyNotation;
+			return Notation.emptyNotationPrint;
 		}
 
 		// deep copy

@@ -59,7 +59,8 @@ public enum Notation {
 
 	/* siteswap regex patterns */
 	// the empty pattern (need a way of notating it without the empty string, for printing)
-	static final String emptyNotation = "(|\\.)";
+	static final String emptyNotation = "(||\\.)";
+	public static final String emptyNotationPrint = ".";
 
 	// basics
 	static final String modifier = "(-?_?|_?-?)";
@@ -85,7 +86,7 @@ public enum Notation {
 
 	// put them all together!
 	public static Notation analyze(String s) throws InvalidNotationException {
-		if(s.equals(emptyNotation))
+		if(Pattern.matches(emptyNotation, s))
 			return Notation.EMPTY;
 		if(Pattern.matches(validAsyncNotation, s))
 			return Notation.ASYNCHRONOUS;
