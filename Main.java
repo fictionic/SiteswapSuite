@@ -6,9 +6,6 @@ import java.lang.NumberFormatException;
 
 public class Main {
 
-	static void printf(Object input) { System.out.println(input); }
-
-
 	static class ParseError extends SiteswapException {
 		String message;
 		ParseError(String message) {
@@ -21,6 +18,7 @@ public class Main {
 
 	// cmdline tokens
 	static enum TransitionOption {
+		ENABLE_DEBUG(false, "-d", "--debug"), // TODO: put this somewhere else, or else rename things!!
 		MIN_TRANSITION_LENGTH(true, "-l", "--minTransitionLength"),
 		MAX_TRANSITIONS(true, "-m", "--maxTransitions"),
 		ALLOW_EXTRA_SQUEEZE_CATCHES(false, "-q", "--allowExtraSqueezeCatches"),
@@ -87,12 +85,12 @@ public class Main {
 			DIFFICULTY(false, "-d", "--difficulty"),
 			// siteswap operations
 			INVERT(false, "-V", "--invert"),
-		   	SPRING(false, "-p", "--spring"),
-		   	INFINITIZE(false, "-f", "--infinitize"),
-		   	UNINFINITIZE(false, "-F", "--unInfinitize"),
-		   	ANTITOSSIFY(false, "-a", "--antitossify"),
-		   	UNANTITOSSIFY(false, "-A", "--unAntitossify"),
-		   	ANTINEGATE(false, "-N", "--antiNegate"),
+			SPRING(false, "-p", "--spring"),
+			INFINITIZE(false, "-f", "--infinitize"),
+			UNINFINITIZE(false, "-F", "--unInfinitize"),
+			ANTITOSSIFY(false, "-a", "--antitossify"),
+			UNANTITOSSIFY(false, "-A", "--unAntitossify"),
+			ANTINEGATE(false, "-N", "--antiNegate"),
 			INVALID_TOKEN(false, null, null);
 
 			boolean requiresParam;
@@ -187,7 +185,7 @@ public class Main {
 				i++;
 			}
 		}
-				
+
 		void parseNotation() throws InvalidNotationException, IncompatibleNumberOfHandsException {
 			try {
 				this.siteswap = NotatedSiteswap.parseSingle(this.inputNotation, this.numHands, this.startHand);
@@ -207,7 +205,7 @@ public class Main {
 						try {
 							this.modifiedSiteswap = this.modifiedSiteswap.spring();
 						} catch(SprungException e) {
-							printf(e.getMessage());
+							Util.printf(e.getMessage(), Util.DebugLevel.INFO);
 						}
 						break;
 					default:
@@ -215,7 +213,7 @@ public class Main {
 				}
 			}
 		}
-		
+
 		void computeState() {
 			this.state = new State(this.siteswap);
 			if(this.operations.size() > 0)
@@ -225,12 +223,12 @@ public class Main {
 		}
 
 		void displayInfo(int i) {
-			printf("INPUT " + i + ":   '" + this.inputNotation + "'");
+			Util.printf("INPUT " + i + ":   '" + this.inputNotation + "'", Util.DebugLevel.INFO);
 			// generate string representing operation sequence
 			if(!this.operations.isEmpty()) {
-				printf(" parsed:     " + this.siteswap.toString());
-				printf(" de-parsed:  " + this.siteswap.print());
-				printf("---------");
+				Util.printf(" parsed:     " + this.siteswap.toString(), Util.DebugLevel.INFO);
+				Util.printf(" de-parsed:  " + this.siteswap.print(), Util.DebugLevel.INFO);
+				Util.printf("---------", Util.DebugLevel.INFO);
 				String ops = "";
 				int c = 0;
 				for(InputOption o : operations) {
@@ -260,34 +258,34 @@ public class Main {
 					if(++c < operations.size())
 						ops += ", ";
 				}
-				printf(" Modification Sequence: " + ops);
-				printf("---------");
-				printf("OUTPUT " + i + ":");
+				Util.printf(" Modification Sequence: " + ops, Util.DebugLevel.INFO);
+				Util.printf("---------", Util.DebugLevel.INFO);
+				Util.printf("OUTPUT " + i + ":", Util.DebugLevel.INFO);
 			}
-			printf(" parsed:     " + this.modifiedSiteswap.toString());
-			printf(" de-parsed:  " + this.modifiedSiteswap.print());
-			printf(" numHands:   " + this.modifiedSiteswap.numHands());
-			printf(" period:     " + this.modifiedSiteswap.period());
+			Util.printf(" parsed:     " + this.modifiedSiteswap.toString(), Util.DebugLevel.INFO);
+			Util.printf(" de-parsed:  " + this.modifiedSiteswap.print(), Util.DebugLevel.INFO);
+			Util.printf(" numHands:   " + this.modifiedSiteswap.numHands(), Util.DebugLevel.INFO);
+			Util.printf(" period:     " + this.modifiedSiteswap.period(), Util.DebugLevel.INFO);
 			if(this.printNumBalls)
-				printf(" capacity:   " + this.modifiedSiteswap.numBalls());
+				Util.printf(" capacity:   " + this.modifiedSiteswap.numBalls(), Util.DebugLevel.INFO);
 			if(this.printValidity)
-				printf(" validity:   " + this.modifiedSiteswap.isValid());
+				Util.printf(" validity:   " + this.modifiedSiteswap.isValid(), Util.DebugLevel.INFO);
 			if(this.printState)
-				printf(" state:      " + this.state);
+				Util.printf(" state:      " + this.state, Util.DebugLevel.INFO);
 			if(this.printOrbits) {
-				printf(" orbits:");
+				Util.printf(" orbits:", Util.DebugLevel.INFO);
 				for(Siteswap orbit : this.modifiedSiteswap.getOrbits()) {
-					printf(orbit.toString());
+					Util.printf(orbit.toString(), Util.DebugLevel.INFO);
 				}
 			}
 			if(this.printDifficulty)
-				printf(" difficulty: " + this.modifiedSiteswap.difficulty());
+				Util.printf(" difficulty: " + this.modifiedSiteswap.difficulty(), Util.DebugLevel.INFO);
 			if(this.printPrimality)
-				printf(" primality:  " + this.modifiedSiteswap.isPrime());
+				Util.printf(" primality:  " + this.modifiedSiteswap.isPrime(), Util.DebugLevel.INFO);
 		}
 
 	}
-	
+
 	static class CommandObject {
 
 		// inputs
@@ -366,6 +364,9 @@ public class Main {
 					}
 				}
 				switch(opt) {
+					case ENABLE_DEBUG:
+						Util.debugLevel = Util.DebugLevel.DEBUG;
+						break;
 					case MIN_TRANSITION_LENGTH:
 						this.minTransitionLength = intArg;
 						break;
@@ -443,7 +444,7 @@ public class Main {
 		void displayOutput() throws ImpossibleTransitionException {
 			for(int i=0; i<numInputs; i++) {
 				this.inputs[i].displayInfo(i);
-				printf("==========");
+				Util.printf("==========", Util.DebugLevel.INFO);
 			}
 			switch(this.numInputs) {
 				case 0:
@@ -451,26 +452,26 @@ public class Main {
 					break;
 				case 2:
 					if(this.displayGeneralTransition) {
-						printf("General Form of Transition:");
-						printf(transitions.printGeneralTransition());
+						Util.printf("General Form of Transition:", Util.DebugLevel.INFO);
+						Util.printf(transitions.printGeneralTransition(), Util.DebugLevel.INFO);
 					}
 					if(this.maxTransitions != 0) {
 						if(this.maxTransitions != -1)
-							printf("Transitions (first " + this.maxTransitions + "):");
+							Util.printf("Transitions (first " + this.maxTransitions + "):", Util.DebugLevel.INFO);
 						else
-							printf("Transitions:");
+							Util.printf("Transitions:", Util.DebugLevel.INFO);
 						// print transition info based on transition flags
 						for(int t=0; t<this.transitions.transitionList().size(); t++) {
 							if(this.maxTransitions != -1 && t > this.maxTransitions)
 								break;
-							printf(this.transitions.transitionList().get(t).print());
+							Util.printf(this.transitions.transitionList().get(t).print(), Util.DebugLevel.INFO);
 							if(this.unAntitossifyTransitions)
-								printf(this.transitions.unAntitossifiedTransitionList().get(t).print());
+								Util.printf(this.transitions.unAntitossifiedTransitionList().get(t).print(), Util.DebugLevel.INFO);
 						}
 					}
 					break;
 				default:
-					printf("ERROR: I don't know what to do with more than 2 inputs!");
+					Util.printf("ERROR: I don't know what to do with more than 2 inputs!", Util.DebugLevel.INFO);
 
 			}
 		}
@@ -482,7 +483,7 @@ public class Main {
 			command.execute();
 			command.displayOutput();
 		} catch(SiteswapException e) {
-			printf(e.getMessage());
+			Util.printf(e.getMessage(), Util.DebugLevel.INFO);
 		}
 	}
 }

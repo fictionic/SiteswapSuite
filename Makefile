@@ -1,4 +1,4 @@
-all: exception math pure-ss notation transition main package
+all: util exception math pure-ss notation transition main package
 
 package:
 	mkdir -p bin
@@ -21,6 +21,9 @@ notation:
 
 exception:
 	javac -d . SiteswapException.java
+
+util:
+	javac -d . Util.java
 
 clean:
 	rm -r siteswapsuite

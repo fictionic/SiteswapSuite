@@ -5,16 +5,6 @@ import java.util.ArrayList;
 
 public class State {
 
-	private static final boolean debug = true;
-	private static void printf(Object toPrint) {
-		if(debug) {
-			if(toPrint == null)
-				System.out.println("{null}");
-			else
-				System.out.println(toPrint);
-		}
-	}
-
 	private int numHands; // number of hands
 	private Node nowNode; // node that's next in line to be thrown from
 	private int finiteLength; // number of nodes in the finite portion of the state
@@ -39,7 +29,7 @@ public class State {
 		this(ss.numHands());
 		ss = ss.deepCopy(); // don't change the object we're given
 		ss.antitossify(); // life is simpler without negative tosses
-		// printf(ss);
+		// Util.printf(ss, Util.DebugLevel.DEBUG);
 		if(ss.period() > 0) {
 			// we construct a State that represents the state associated with the given siteswap.
 			// but to do this we need a State object that keeps track of the current state we're
@@ -64,26 +54,26 @@ public class State {
 			// --> simulate juggling the pattern until the state 
 			//     doesn't change from one period to the next
 			do {
-				printf("");
-				printf(" sim: " + simulationState.toString());
-				printf("prev: " + simulationStateAtLastIteration.toString());
-				printf("this: " + this.toString());
+				Util.printf("", Util.DebugLevel.DEBUG);
+				Util.printf(" sim: " + simulationState.toString(), Util.DebugLevel.DEBUG);
+				Util.printf("prev: " + simulationStateAtLastIteration.toString(), Util.DebugLevel.DEBUG);
+				Util.printf("this: " + this.toString(), Util.DebugLevel.DEBUG);
 				simulationStateAtLastIteration = simulationState.deepCopy(); // sample the simulation state
 
 				// assume this next series of nodes will be the repeated portion
 				if(thisCurNode != null) {
 					// merge previous section into finite portion, leaving an empty repeated portion to be filled in this iteration
-					printf("merging repeated section into finite portion");
+					Util.printf("merging repeated section into finite portion", Util.DebugLevel.DEBUG);
 					this.finiteLength += ss.period();
 					this.repeatedLength = 0;
-					printf("this: " + this.toString());
+					Util.printf("this: " + this.toString(), Util.DebugLevel.DEBUG);
 				}
 				endOfLastSection = thisCurNode;
 				isAllZeros = true;
 				for(int b=0; b<ss.period(); b++) {
-					printf("b = " + b);
+					Util.printf("b = " + b, Util.DebugLevel.DEBUG);
 					// add a new Node for a new beat
-					printf("\tadding new node");
+					Util.printf("\tadding new node", Util.DebugLevel.DEBUG);
 					Node newNode = new Node();
 					if(b == 0) {
 						this.firstRepeatedNode = newNode;
@@ -96,26 +86,26 @@ public class State {
 						thisCurNode = newNode;
 					}
 					this.repeatedLength++;
-					printf("\tthis: " + this.toString());
+					Util.printf("\tthis: " + this.toString(), Util.DebugLevel.DEBUG);
 					for(int h=0; h<this.numHands; h++) {
-						printf("\th = " + h);
+						Util.printf("\th = " + h, Util.DebugLevel.DEBUG);
 						// set value to charge needed at this site
 						int neededCharge = ss.outDegreeAtSite(b, h);
 						int curCharge = simulationState.getFiniteNode(0).getChargeAtHand(h);
 						if(curCharge != neededCharge) {
-							printf("\t\taccounting for balls/antiballs");
-							printf("\t\tneeded charge: " + neededCharge);
-							printf("\t\tcurrent charge: " + curCharge);
+							Util.printf("\t\taccounting for balls/antiballs", Util.DebugLevel.DEBUG);
+							Util.printf("\t\tneeded charge: " + neededCharge, Util.DebugLevel.DEBUG);
+							Util.printf("\t\tcurrent charge: " + curCharge, Util.DebugLevel.DEBUG);
 							thisCurNode.setChargeAtHand(h, neededCharge - curCharge);
 							isAllZeros = false;
 						} else {
-							printf("\t\tno need to account for balls/antiballs");
+							Util.printf("\t\tno need to account for balls/antiballs", Util.DebugLevel.DEBUG);
 						}
-						printf("\t\tthis: " + this.toString());
+						Util.printf("\t\tthis: " + this.toString(), Util.DebugLevel.DEBUG);
 						// then simulate the tosses at this site on simulationState
 						for(int t=0; t<ss.numTossesAtSite(b, h); t++) {
 							Toss toss = ss.getToss(b, h, t);
-							printf("\t\t\tsimulating toss: " + toss.toString());
+							Util.printf("\t\t\tsimulating toss: " + toss.toString(), Util.DebugLevel.DEBUG);
 							ExtendedInteger height = toss.height();
 							if(!height.isInfinite()) {
 								switch(toss.charge()) {
@@ -129,26 +119,26 @@ public class State {
 										break;
 								}
 							} // we don't care about infinite tosses, cuz they don't affect the rest of the state
-							printf("\t\t\tsim: " + simulationState.toString());
+							Util.printf("\t\t\tsim: " + simulationState.toString(), Util.DebugLevel.DEBUG);
 						}
 					}
 					simulationState.advanceTime();
-					printf("\t\tadvanced time");
-					printf("\t\tsim: " + simulationState.toString());
+					Util.printf("\t\tadvanced time", Util.DebugLevel.DEBUG);
+					Util.printf("\t\tsim: " + simulationState.toString(), Util.DebugLevel.DEBUG);
 				}
 			} while(!simulationState.equals(simulationStateAtLastIteration));
-			printf(" sim: " + simulationState.toString());
-			printf("prev: " + simulationStateAtLastIteration.toString());
-			printf("this: " + this.toString());
+			Util.printf(" sim: " + simulationState.toString(), Util.DebugLevel.DEBUG);
+			Util.printf("prev: " + simulationStateAtLastIteration.toString(), Util.DebugLevel.DEBUG);
+			Util.printf("this: " + this.toString(), Util.DebugLevel.DEBUG);
 			if(isAllZeros) { // if there is no repeated portion in the final product
-				printf("removing repeated portion");
+				Util.printf("removing repeated portion", Util.DebugLevel.DEBUG);
 				if(endOfLastSection != null) {
 					endOfLastSection.prev = null;
 				}
 				this.firstRepeatedNode = null;
 				this.repeatedLength = 0;
-				printf("this: " + this.toString());
-				printf("trimming extra zeroes in finite portion");
+				Util.printf("this: " + this.toString(), Util.DebugLevel.DEBUG);
+				Util.printf("trimming extra zeroes in finite portion", Util.DebugLevel.DEBUG);
 				// -- remove unnecessary zero nodes --
 				// first skip any zero nodes at the start
 				Node cur = this.nowNode;
@@ -173,11 +163,11 @@ public class State {
 				if(lastNonZero != null) {
 					lastNonZero.prev = null;
 				}
-				printf("this: " + this.toString());
+				Util.printf("this: " + this.toString(), Util.DebugLevel.DEBUG);
 			} else { // if there is one
 				this.repeatedLength = ss.period();
 			}
-			printf("\n");
+			Util.printf("\n", Util.DebugLevel.DEBUG);
 		}
 	}
 

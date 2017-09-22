@@ -12,24 +12,13 @@ class ImpossibleTransitionException extends SiteswapException {
 
 abstract class Transition extends Siteswap {
 
-	private static final boolean debug = false;
-
-	private static void printf(Object toPrint) {
-		if(debug) {
-			if(toPrint == null)
-				System.out.println("{null}");
-			else
-				System.out.println(toPrint);
-		}
-	}
-
 	int eventualPeriod = 0;
 
 	static Transition compute(State from, State to, int minLength, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) throws ImpossibleTransitionException {
 
-		printf(from);
-		printf(to);
-		printf("");
+		Util.printf(from, Util.DebugLevel.DEBUG);
+		Util.printf(to, Util.DebugLevel.DEBUG);
+		Util.printf("", Util.DebugLevel.DEBUG);
 
 		// first check that the states are finite, otherwise there won't be a transition
 		if(!from.isFinite() || !to.isFinite()) {
@@ -80,42 +69,42 @@ abstract class Transition extends Siteswap {
 
 			int b = 0; // index of beat in output siteswap
 
-			printf("s1: " + from.toString());
-			printf("s2: " + to.toString());
+			Util.printf("s1: " + from.toString(), Util.DebugLevel.DEBUG);
+			Util.printf("s2: " + to.toString(), Util.DebugLevel.DEBUG);
 
 			State.DiffSum diffs;
 			int futureCatches = 0;
 			int futureAnticatches = 0;
 
 			diffs = from.diffSums(to); // compute difference sum
-			printf(diffs);
+			Util.printf(diffs, Util.DebugLevel.DEBUG);
 
 			int ballNumDiff = (diffs.catches - diffs.antiCatches) - (diffs.tosses - diffs.antiTosses);
-			printf("ballNumDiff: " + ballNumDiff);
+			Util.printf("ballNumDiff: " + ballNumDiff, Util.DebugLevel.DEBUG);
 			int ballNumDiffPositive = (ballNumDiff > 0 ? ballNumDiff : 0);
 			int ballNumDiffNegative = (ballNumDiff < 0 ? ballNumDiff : 0);
 
-			printf("this: ");
-			printf(this);
-			printf("");
+			Util.printf("this: ", Util.DebugLevel.DEBUG);
+			Util.printf(this, Util.DebugLevel.DEBUG);
+			Util.printf("", Util.DebugLevel.DEBUG);
 
 			int debugCounter = 20;
 
 			// find the transition!
 			while(b < minLength || diffs.tosses != 0 || diffs.antiTosses != 0 || futureCatches + ballNumDiffNegative != diffs.catches || futureAnticatches + ballNumDiffPositive != diffs.antiCatches) {
-				printf(">>>>>  b: " + b);
+				Util.printf(">>>>>  b: " + b, Util.DebugLevel.DEBUG);
 				this.appendEmptyBeat();
 				// see if we can catch new balls/antiballs
 				for(int h=0; h<numHands; h++) {
 					if(from.getChargeAtBeatAtHand(0,h) == 0) {
-						printf(to.getChargeAtBeatAtHand(0,h));
+						Util.printf(to.getChargeAtBeatAtHand(0,h), Util.DebugLevel.DEBUG);
 						if(ballNumDiffNegative < 0 && to.getChargeAtBeatAtHand(0,h) < 0) {
-							printf("catching new antiball at beat " + b);
+							Util.printf("catching new antiball at beat " + b, Util.DebugLevel.DEBUG);
 							this.addInfiniteAntitoss(b, h, InfinityType.NEGATIVE_INFINITY);
 							from.decChargeOfNowNodeAtHand(h);
 							ballNumDiffNegative++;
 						} else if(ballNumDiffPositive > 0 && to.getChargeAtBeatAtHand(0,h) > 0) {
-							printf("catching new ball at beat " + b);
+							Util.printf("catching new ball at beat " + b, Util.DebugLevel.DEBUG);
 							this.addInfiniteToss(b, h, InfinityType.NEGATIVE_INFINITY);
 							from.incChargeOfNowNodeAtHand(h);
 							ballNumDiffPositive--;
@@ -123,17 +112,17 @@ abstract class Transition extends Siteswap {
 					}
 				}
 				// shift goal state backward by one beat, and match lengths
-				printf("shifting");
+				Util.printf("shifting", Util.DebugLevel.DEBUG);
 				to.shiftBackward();
 				from.getFiniteNode(to.finiteLength() - 1);
-				printf("s1: " + from.toString());
-				printf("s2: " + to.toString());
+				Util.printf("s1: " + from.toString(), Util.DebugLevel.DEBUG);
+				Util.printf("s2: " + to.toString(), Util.DebugLevel.DEBUG);
 
 				// make tosses to match charges in nodes between states
 				for(int h=0; h<numHands; h++) {
 					int chargeAtHand = from.getChargeAtBeatAtHand(0, h);
 					while(chargeAtHand > 0) {
-						printf("performing toss at beat " + b);
+						Util.printf("performing toss at beat " + b, Util.DebugLevel.DEBUG);
 						this.addInfiniteToss(b, h, InfinityType.POSITIVE_INFINITY);
 						chargeAtHand--;
 						if(ballNumDiffNegative < 0 && diffs.catches == 0)
@@ -142,7 +131,7 @@ abstract class Transition extends Siteswap {
 							futureCatches++;
 					}
 					while(chargeAtHand < 0) {
-						printf("performing antitoss at beat " + b);
+						Util.printf("performing antitoss at beat " + b, Util.DebugLevel.DEBUG);
 						this.addInfiniteAntitoss(b, h, InfinityType.POSITIVE_INFINITY);
 						chargeAtHand++;
 						if(ballNumDiffPositive > 0 && diffs.antiCatches == 0)
@@ -151,42 +140,42 @@ abstract class Transition extends Siteswap {
 							futureAnticatches++;
 					}
 				}
-				printf("advancing time");
+				Util.printf("advancing time", Util.DebugLevel.DEBUG);
 				from.advanceTime();
 				to.advanceTime();
 				b++;
 
-				printf("s1: " + from.toString());
-				printf("s2: " + to.toString());
+				Util.printf("s1: " + from.toString(), Util.DebugLevel.DEBUG);
+				Util.printf("s2: " + to.toString(), Util.DebugLevel.DEBUG);
 				diffs = from.diffSums(to);
-				printf(diffs);
-				printf("futureCatches: " + futureCatches);
-				printf("futureAnticatches: " + futureAnticatches);
-				printf("ballNumDiffPositive: " + ballNumDiffPositive);
-				printf("ballNumDiffNegative: " + ballNumDiffNegative);
-				printf(this);
+				Util.printf(diffs, Util.DebugLevel.DEBUG);
+				Util.printf("futureCatches: " + futureCatches, Util.DebugLevel.DEBUG);
+				Util.printf("futureAnticatches: " + futureAnticatches, Util.DebugLevel.DEBUG);
+				Util.printf("ballNumDiffPositive: " + ballNumDiffPositive, Util.DebugLevel.DEBUG);
+				Util.printf("ballNumDiffNegative: " + ballNumDiffNegative, Util.DebugLevel.DEBUG);
+				Util.printf(this, Util.DebugLevel.DEBUG);
 				debugCounter--;
 				if(debugCounter == 0) {
-					printf("debug counter threshhold reached; aborting");
+					Util.printf("debug counter threshhold reached; aborting", Util.DebugLevel.DEBUG);
 					break;
 				}
 			}
 
 			this.eventualPeriod = b;
 			this.appendEmptyBeat();
-			printf(this);
+			Util.printf(this, Util.DebugLevel.DEBUG);
 
-			printf("FINDING CATCHES!");
+			Util.printf("FINDING CATCHES!", Util.DebugLevel.DEBUG);
 
 			// find catches!
 			while(from.finiteLength() > 0) {
 				for(int h=0; h<numHands; h++) {
 					int diff = to.getChargeAtBeatAtHand(0, h) - from.getChargeAtBeatAtHand(0, h);
 					if(diff > 0) {
-						printf("catching ball at beat " + b);
+						Util.printf("catching ball at beat " + b, Util.DebugLevel.DEBUG);
 						this.addInfiniteToss(b, h, InfinityType.NEGATIVE_INFINITY);
 					} else if(diff < 0) {
-						printf("catching antiball at beat " + b);
+						Util.printf("catching antiball at beat " + b, Util.DebugLevel.DEBUG);
 						this.addInfiniteAntitoss(b, h, InfinityType.NEGATIVE_INFINITY);
 					}
 				}
@@ -195,9 +184,9 @@ abstract class Transition extends Siteswap {
 				from.advanceTime();
 				to.advanceTime();
 			}
-			printf("found general transition:");
-			printf(this);
-			printf("-");
+			Util.printf("found general transition:", Util.DebugLevel.DEBUG);
+			Util.printf(this, Util.DebugLevel.DEBUG);
+			Util.printf("-", Util.DebugLevel.DEBUG);
 		}
 	}
 
@@ -260,12 +249,12 @@ abstract class Transition extends Siteswap {
 		}
 		int extraTosses = numTosses - numCatches;
 		int extraAntitosses = numAntitosses - numAnticatches;
-		printf("     numTosses: " + numTosses);
-		printf("    numCatches: " + numCatches);
-		printf(" numAntitosses: " + numAntitosses);
-		printf("numAnticatches: " + numAnticatches);
-		printf(">     extraTosses: " + extraTosses);
-		printf("> extraAntitosses: " + extraAntitosses);
+		Util.printf("     numTosses: " + numTosses, Util.DebugLevel.DEBUG);
+		Util.printf("    numCatches: " + numCatches, Util.DebugLevel.DEBUG);
+		Util.printf(" numAntitosses: " + numAntitosses, Util.DebugLevel.DEBUG);
+		Util.printf("numAnticatches: " + numAnticatches, Util.DebugLevel.DEBUG);
+		Util.printf(">     extraTosses: " + extraTosses, Util.DebugLevel.DEBUG);
+		Util.printf("> extraAntitosses: " + extraAntitosses, Util.DebugLevel.DEBUG);
 		// get list of all options for tosses, and null where non-tosses are
 		List<List<Toss>> tossOptionsList = new ArrayList<List<Toss>>();
 		for(int tossBeat=0; tossBeat<eventualPeriod; tossBeat++) {
@@ -309,10 +298,10 @@ abstract class Transition extends Siteswap {
 				}
 			}
 		}
-		printf("tossOptionsList");
-		printf(tossOptionsList);
-		printf("toss perms: " + (numCatches + extraTosses));
-		printf("antiToss perms: " + (numAnticatches + extraAntitosses));
+		Util.printf("tossOptionsList", Util.DebugLevel.DEBUG);
+		Util.printf(tossOptionsList, Util.DebugLevel.DEBUG);
+		Util.printf("toss perms: " + (numCatches + extraTosses), Util.DebugLevel.DEBUG);
+		Util.printf("antiToss perms: " + (numAnticatches + extraAntitosses), Util.DebugLevel.DEBUG);
 		List<List<Integer>> tossPerms = findAllPermutations(numCatches + extraTosses);
 		List<List<Integer>> antiTossPerms = findAllPermutations(numAnticatches + extraAntitosses);
 		// combine into final list of transitions! (to be processed by a different class shortly...)
@@ -353,7 +342,7 @@ abstract class Transition extends Siteswap {
 					maxTransitions--;
 			}
 		}
-		printf(ret);
+		Util.printf(ret, Util.DebugLevel.DEBUG);
 		return ret;
 	}
 

@@ -59,12 +59,6 @@ class SprungException extends SiteswapException {
 
 public abstract class NotatedSiteswap extends Siteswap {
 
-	private static boolean debug = false;
-	private static void printf(Object o) {
-		if(debug)
-			System.out.println(o);
-	}
-
 	protected Notation notationType;
 
 	// abstract methods
@@ -579,14 +573,14 @@ public abstract class NotatedSiteswap extends Siteswap {
 				allZeroes = true;
 				//loop through hands within each beat (we know numHands = 2 since we screened for that in parse())
 				for(int h=0; h<2; h++) {
-					printf("nextBeat: " + nextBeat);
+					Util.printf("nextBeat: " + nextBeat, Util.DebugLevel.DEBUG);
 					//see if we need to add multiplex notation
 					if(this.numTossesAtSite(b, h) > 1) {
 						nextBeat += "[";
 						//loop through tosses within hand
 						for(int t=0; t<this.numTossesAtSite(b, h); t++) {
 							Toss curToss = this.getToss(b, h, t);
-							printf(curToss);
+							Util.printf(curToss, Util.DebugLevel.DEBUG);
 							nextBeat += Notation.reverseThrowHeight(curToss);
 							if(curToss.charge() != 0) {
 								allZeroes = false;
@@ -600,8 +594,8 @@ public abstract class NotatedSiteswap extends Siteswap {
 						//account for only toss in hand
 						Toss curToss = this.getToss(b, h, 0);
 						if(curToss.charge() != 0) {
-							printf("encountered non-zero toss");
-							printf(curToss);
+							Util.printf("encountered non-zero toss", Util.DebugLevel.DEBUG);
+							Util.printf(curToss, Util.DebugLevel.DEBUG);
 							allZeroes = false;
 						}
 						nextBeat += Notation.reverseThrowHeight(curToss);
@@ -616,16 +610,16 @@ public abstract class NotatedSiteswap extends Siteswap {
 				}
 				nextBeat += ")";
 				if(b == 0) {
-					printf("not skipping beat 0");
+					Util.printf("not skipping beat 0", Util.DebugLevel.DEBUG);
 					out += nextBeat;
 					skippedLastBeat = false;
 				} else if(!skippedLastBeat && allZeroes) {
 					// skip this beat
-					printf("skipping beat " + b);
+					Util.printf("skipping beat " + b, Util.DebugLevel.DEBUG);
 					skippedLastBeat = true;
 				} else {
 					// don't skip this beat
-					printf("not skipping beat " + b);
+					Util.printf("not skipping beat " + b, Util.DebugLevel.DEBUG);
 					if(!skippedLastBeat)
 						out += "!";
 					out += nextBeat;
@@ -633,7 +627,7 @@ public abstract class NotatedSiteswap extends Siteswap {
 				}
 			}
 			if(!skippedLastBeat) {
-				printf("adding final '!'");
+				Util.printf("adding final '!'", Util.DebugLevel.DEBUG);
 				out += "!";
 			}
 			return out;
