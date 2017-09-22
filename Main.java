@@ -226,7 +226,7 @@ public class Main {
 			Util.printf("INPUT " + i + ":   '" + this.inputNotation + "'", Util.DebugLevel.INFO);
 			// generate string representing operation sequence
 			if(!this.operations.isEmpty()) {
-				Util.printf(" parsed:     " + this.notatedSiteswap.toString(), Util.DebugLevel.INFO);
+				Util.printf(" parsed:     " + this.notatedSiteswap.siteswap.toString(), Util.DebugLevel.INFO);
 				Util.printf(" de-parsed:  " + this.notatedSiteswap.print(), Util.DebugLevel.INFO);
 				Util.printf("---------", Util.DebugLevel.INFO);
 				String ops = "";
