@@ -2,7 +2,7 @@ package siteswapsuite;
 
 class CompatibleNotatedSiteswapPair {
 	NotatedSiteswap prefix, suffix;
-	Notation compatibleNotationType;
+	SiteswapNotation compatibleNotationType;
 
 	CompatibleNotatedSiteswapPair(CompatibleNotatedSiteswapPair p) {
 		this.prefix = p.prefix;
@@ -19,25 +19,25 @@ class CompatibleNotatedSiteswapPair {
 				this.compatibleNotationType = suffix.notationType();
 				break;
 			case 1:
-				this.compatibleNotationType = Notation.ASYNCHRONOUS;
+				this.compatibleNotationType = SiteswapNotation.ASYNCHRONOUS;
 				break;
 			case 2:
-				this.compatibleNotationType = Notation.SYNCHRONOUS;
+				this.compatibleNotationType = SiteswapNotation.SYNCHRONOUS;
 				break;
 			default:
-				this.compatibleNotationType = Notation.PASSING;
+				this.compatibleNotationType = SiteswapNotation.PASSING;
 		}
 		this.prefix = prefix;
 		this.suffix = suffix;
 	}
 
-	CompatibleNotatedSiteswapPair(String s1, int numHands1, int startHand1, String s2, int numHands2, int startHand2) throws InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException {
+	CompatibleNotatedSiteswapPair(String s1, int numHands1, int startHand1, String s2, int numHands2, int startHand2) throws InvalidSiteswapNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException {
 		// figure out if there is a compatible number of hands for both notations
 		if(numHands1 != -1 && numHands2 != -1 && numHands1 != numHands2) {
 			throw new IncompatibleNumberOfHandsException();
 		}
-		Notation n1;
-		Notation n2;
+		SiteswapNotation n1;
+		SiteswapNotation n2;
 		int numHands;
 		if(numHands1 != -1)
 			numHands = numHands1;
@@ -46,43 +46,43 @@ class CompatibleNotatedSiteswapPair {
 		else
 			numHands = -1;
 		try {
-			n1 = Notation.analyze(s1);
-			n2 = Notation.analyze(s2);
-		} catch(InvalidNotationException e) {
+			n1 = SiteswapNotation.analyze(s1);
+			n2 = SiteswapNotation.analyze(s2);
+		} catch(InvalidSiteswapNotationException e) {
 			throw e;
 		}
 		// parse the strings appropriately
 		try {
 			// check if either notation is emptynotation
-			if(n1 == Notation.EMPTY) {
+			if(n1 == SiteswapNotation.EMPTY) {
 				if(numHands == -1)
 					numHands = n2.defaultNumHands();
 				this.prefix = new NotatedSiteswap.EmptyNotatedSiteswap(numHands);
 				this.suffix = NotatedSiteswap.parse(s2, numHands, startHand2);
-				this.compatibleNotationType = Notation.EMPTY;
-			} else if(n2 == Notation.EMPTY) {
+				this.compatibleNotationType = SiteswapNotation.EMPTY;
+			} else if(n2 == SiteswapNotation.EMPTY) {
 				if(numHands == -1)
 					numHands = n1.defaultNumHands();
 				this.prefix = NotatedSiteswap.parse(s1, numHands, startHand2);
 				this.suffix = new NotatedSiteswap.EmptyNotatedSiteswap(numHands);
-				this.compatibleNotationType = Notation.EMPTY;
+				this.compatibleNotationType = SiteswapNotation.EMPTY;
 			} else {
 				// otherwise determine best way to parse inputs
 				switch(numHands) {
 					// if numHands was explicitly set to 1
 					case 1:
-						if(n1 == Notation.ASYNCHRONOUS) {
-							if(n2 == Notation.ASYNCHRONOUS) {
+						if(n1 == SiteswapNotation.ASYNCHRONOUS) {
+							if(n2 == SiteswapNotation.ASYNCHRONOUS) {
 								this.prefix = new NotatedSiteswap.OneHandedNotatedSiteswap(s1);
 								this.suffix = new NotatedSiteswap.OneHandedNotatedSiteswap(s2);
-								this.compatibleNotationType = Notation.ASYNCHRONOUS;
+								this.compatibleNotationType = SiteswapNotation.ASYNCHRONOUS;
 							} else
 								throw new IncompatibleNumberOfHandsException(s2, numHands);
 						} else
 							throw new IncompatibleNumberOfHandsException(s1, numHands);
 					// if numHands was explicitly set to 2
 					case 2:
-						this.compatibleNotationType = Notation.SYNCHRONOUS; // because a transition between them might not be synchronous
+						this.compatibleNotationType = SiteswapNotation.SYNCHRONOUS; // because a transition between them might not be synchronous
 						switch(n1) {
 							case ASYNCHRONOUS:
 								this.prefix = new NotatedSiteswap.TwoHandedAsyncNotatedSiteswap(s1, startHand1);
@@ -117,17 +117,17 @@ class CompatibleNotatedSiteswapPair {
 							case ASYNCHRONOUS:
 								switch(n2) {
 									case ASYNCHRONOUS:
-										this.compatibleNotationType = Notation.ASYNCHRONOUS;
+										this.compatibleNotationType = SiteswapNotation.ASYNCHRONOUS;
 										this.prefix = new NotatedSiteswap.OneHandedNotatedSiteswap(s1);
 										this.suffix = new NotatedSiteswap.OneHandedNotatedSiteswap(s2);
 										break;
 									case SYNCHRONOUS:
-										this.compatibleNotationType = Notation.SYNCHRONOUS;
+										this.compatibleNotationType = SiteswapNotation.SYNCHRONOUS;
 										this.prefix = new NotatedSiteswap.TwoHandedAsyncNotatedSiteswap(s1, startHand1);
 										this.suffix = new NotatedSiteswap.TwoHandedSyncNotatedSiteswap(s2);
 										break;
 									case MIXED:
-										this.compatibleNotationType = Notation.SYNCHRONOUS;
+										this.compatibleNotationType = SiteswapNotation.SYNCHRONOUS;
 										this.prefix = new NotatedSiteswap.TwoHandedAsyncNotatedSiteswap(s1, startHand1);
 										this.suffix = new NotatedSiteswap.TwoHandedMixedNotatedSiteswap(s2);
 										break;
@@ -136,7 +136,7 @@ class CompatibleNotatedSiteswapPair {
 								}
 								break;
 							case SYNCHRONOUS:
-								this.compatibleNotationType = Notation.SYNCHRONOUS;
+								this.compatibleNotationType = SiteswapNotation.SYNCHRONOUS;
 								this.prefix = new NotatedSiteswap.TwoHandedSyncNotatedSiteswap(s1);
 								switch(n2) {
 									case ASYNCHRONOUS:
@@ -153,7 +153,7 @@ class CompatibleNotatedSiteswapPair {
 								}
 								break;
 							case MIXED:
-								this.compatibleNotationType = Notation.SYNCHRONOUS;
+								this.compatibleNotationType = SiteswapNotation.SYNCHRONOUS;
 								this.prefix = new NotatedSiteswap.TwoHandedMixedNotatedSiteswap(s1);
 								switch(n2) {
 									case ASYNCHRONOUS:
@@ -169,7 +169,7 @@ class CompatibleNotatedSiteswapPair {
 								}
 								break;
 							default: // case PASSING
-								this.compatibleNotationType = Notation.SYNCHRONOUS;
+								this.compatibleNotationType = SiteswapNotation.SYNCHRONOUS;
 								this.prefix = new NotatedSiteswap.NotatedPassingSiteswap(s1);
 								switch(n2) {
 									case ASYNCHRONOUS:

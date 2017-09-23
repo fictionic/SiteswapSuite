@@ -17,7 +17,7 @@ transition:
 	javac -d . Transition.java ContextualizedNotatedTransitionList.java 
 
 notation:
-	javac -d . Notation.java NotatedSiteswap.java CompatibleNotatedSiteswapPair.java
+	javac -d . SiteswapNotation.java NotatedSiteswap.java CompatibleNotatedSiteswapPair.java StateNotation.java NotatedState.java
 
 main:
 	javac -d . Main.java

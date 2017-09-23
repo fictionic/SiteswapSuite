@@ -50,12 +50,16 @@ public class Main {
 		// arguments passed from CommandObject (first will be inputNotation)
 		List<String> args;
 
-		// results of parsing arguments
 		String inputNotation;
+
+		// results of parsing arguments
 		NotatedSiteswap notatedSiteswap;
 		State state;
 		NotatedSiteswap modifiedSiteswap;
 		State modifiedState;
+
+		// if input is a state
+		NotatedState notatedState;
 
 		// hand specification
 		int minSSLength = 1;
@@ -186,12 +190,31 @@ public class Main {
 			}
 		}
 
-		void parseNotation() throws InvalidNotationException, IncompatibleNumberOfHandsException {
+		void parseNotation() throws InvalidSiteswapNotationException, IncompatibleNumberOfHandsException, InvalidStateNotationException {
 			try {
-				this.notatedSiteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand);
-			} catch(InvalidNotationException | IncompatibleNumberOfHandsException e) {
+				if(this.isState) {
+					this.notatedState = NotatedState.parse(this.inputNotation);
+				} else {
+					this.notatedSiteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand);
+				}
+			} catch(InvalidSiteswapNotationException | IncompatibleNumberOfHandsException | InvalidStateNotationException e) {
 				throw e;
 			}
+		}
+
+		void computeSiteswap() {
+			if(!this.isState) {
+				return;
+			}
+			// TODO: generate a siteswap from the state
+			Siteswap siteswap = null;
+			try {
+				siteswap = Transition.compute(this.notatedState.state, this.notatedState.state, 1, false, false);
+			} catch(ImpossibleTransitionException e) {
+				// impossible error
+				Util.printf(e.getMessage(), Util.DebugLevel.ERROR);
+			}
+			this.notatedSiteswap = NotatedSiteswap.assembleAutomatic(siteswap);
 		}
 
 		void runModifications() {
@@ -393,7 +416,7 @@ public class Main {
 		}
 
 		// parse input notation, create siteswap/state objects, apply operations, find transition(s)
-		void execute() throws InvalidNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
+		void execute() throws InvalidSiteswapNotationException, IncompatibleNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException, InvalidStateNotationException {
 			switch(this.numInputs) {
 				case 0:
 					break;
@@ -401,18 +424,20 @@ public class Main {
 					try {
 						// parse input notations
 						this.inputs[0].parseNotation();
+						// get siteswap objects
+						this.inputs[0].computeSiteswap();
 						// run siteswap operations
 						this.inputs[0].runModifications();
 						// compute state of pattern
 						this.inputs[0].computeState();
-					} catch(InvalidNotationException | IncompatibleNumberOfHandsException e) {
+					} catch(InvalidSiteswapNotationException | IncompatibleNumberOfHandsException e) {
 						throw e;
 					}
 					break;
 				case 2:
 					try {
 						this.inputPatterns = new CompatibleNotatedSiteswapPair(this.inputs[0].inputNotation, this.inputs[0].numHands, this.inputs[0].startHand, this.inputs[1].inputNotation, this.inputs[1].numHands, this.inputs[1].startHand);
-					} catch(InvalidNotationException | IncompatibleNotationException | IncompatibleNumberOfHandsException e) {
+					} catch(InvalidSiteswapNotationException | IncompatibleNotationException | IncompatibleNumberOfHandsException e) {
 						throw e;
 					}
 					// parse input notation

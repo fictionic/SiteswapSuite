@@ -2,9 +2,9 @@ package siteswapsuite;
 
 import java.util.regex.Pattern;
 
-class InvalidNotationException extends SiteswapException {
+class InvalidSiteswapNotationException extends SiteswapException {
 	String s;
-	InvalidNotationException(String s) {
+	InvalidSiteswapNotationException(String s) {
 		this.s = s;
 	}
 	public String getMessage() {
@@ -12,13 +12,13 @@ class InvalidNotationException extends SiteswapException {
 	}
 }
 
-public enum Notation { 
+public enum SiteswapNotation { 
 
 	EMPTY(0), ASYNCHRONOUS(1), SYNCHRONOUS(2), MIXED(2), PASSING(4);
 
 	private int defaultNumHands;
 
-	Notation(int numHands) {
+	SiteswapNotation(int numHands) {
 		this.defaultNumHands = numHands;
 	}
 
@@ -26,7 +26,7 @@ public enum Notation {
 		return this.defaultNumHands;
 	}
 
-	public static Notation defaultNotationType(int numHands) {
+	public static SiteswapNotation defaultNotationType(int numHands) {
 		switch(numHands) {
 			case 0:
 				return EMPTY;
@@ -85,19 +85,19 @@ public enum Notation {
 	static final String validPassingNotation = ""; //later...
 
 	// put them all together!
-	public static Notation analyze(String s) throws InvalidNotationException {
+	public static SiteswapNotation analyze(String s) throws InvalidSiteswapNotationException {
 		if(Pattern.matches(emptyNotation, s))
-			return Notation.EMPTY;
+			return SiteswapNotation.EMPTY;
 		if(Pattern.matches(validAsyncNotation, s))
-			return Notation.ASYNCHRONOUS;
+			return SiteswapNotation.ASYNCHRONOUS;
 		else if(Pattern.matches(validSyncNotation, s))
-			return Notation.SYNCHRONOUS;
+			return SiteswapNotation.SYNCHRONOUS;
 		else if(Pattern.matches(validMixedNotation, s))
-			return Notation.MIXED;
+			return SiteswapNotation.MIXED;
 		else if(Pattern.matches(validPassingNotation, s))
-			return Notation.PASSING;
+			return SiteswapNotation.PASSING;
 		else {
-			throw new InvalidNotationException(s);
+			throw new InvalidSiteswapNotationException(s);
 		}
 	}
 

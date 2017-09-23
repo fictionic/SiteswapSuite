@@ -5,11 +5,11 @@ import java.util.ArrayList;
 
 public class State {
 
-	private int numHands; // number of hands
-	private Node nowNode; // node that's next in line to be thrown from
-	private int finiteLength; // number of nodes in the finite portion of the state
-	private Node firstRepeatedNode; // earliest node in the repeated portion
-	private int repeatedLength; // number of nodes in the repeated portion
+	int numHands; // number of hands
+	Node nowNode; // node that's next in line to be thrown from
+	int finiteLength; // number of nodes in the finite portion of the state
+	Node firstRepeatedNode; // earliest node in the repeated portion
+	int repeatedLength; // number of nodes in the repeated portion
 
 	public int numHands() { return this.numHands; }
 	public int finiteLength() { return this.finiteLength; }
@@ -398,35 +398,35 @@ public class State {
 		return out;
 	}
 
-	private class Node {
+	class Node {
 		private List<Charge> handCharges;
 		Node prev;
-		private Node() {
+		Node() {
 			this.handCharges = new ArrayList<Charge>();
 			this.prev = null;
 			for(int h=0; h<numHands; h++) {
 				this.handCharges.add(new Charge());
 			}
 		}
-		private int getChargeAtHand(int handIndex) {
+		int getChargeAtHand(int handIndex) {
 			return this.handCharges.get(handIndex).value;
 		}
-		private void setChargeAtHand(int handIndex, int newCharge) {
+		void setChargeAtHand(int handIndex, int newCharge) {
 			this.handCharges.get(handIndex).set(newCharge);
 		}
-		private void incChargeAtHand(int handIndex) {
+		void incChargeAtHand(int handIndex) {
 			this.handCharges.get(handIndex).inc();
 		}
-		private void decChargeAtHand(int handIndex) {
+		void decChargeAtHand(int handIndex) {
 			this.handCharges.get(handIndex).dec();
 		}
-		private int getTotalCharge() {
+		int getTotalCharge() {
 			int charge = 0;
 			for(int i=0; i<numHands; i++)
 				charge += this.handCharges.get(i).value;
 			return charge;
 		}
-		private boolean isEmpty() {
+		boolean isEmpty() {
 			for(int h=0; h<numHands; h++) {
 				if(this.handCharges.get(h).value != 0)
 					return false;
@@ -450,7 +450,7 @@ public class State {
 			}
 			this.prev = null;
 		}
-		private Node deepCopy() {
+		Node deepCopy() {
 			return new Node(this);
 		}
 		private class Charge {
