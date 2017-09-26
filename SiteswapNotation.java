@@ -2,7 +2,7 @@ package siteswapsuite;
 
 import java.util.regex.Pattern;
 
-class InvalidSiteswapNotationException extends SiteswapException {
+class InvalidSiteswapNotationException extends InvalidNotationException {
 	String s;
 	InvalidSiteswapNotationException(String s) {
 		this.s = s;

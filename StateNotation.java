@@ -1,6 +1,6 @@
 package siteswapsuite;
 
-class InvalidStateNotationException extends SiteswapException {
+class InvalidStateNotationException extends InvalidNotationException {
 	String message;
 	InvalidStateNotationException(String notation) {
 		this.message = "ERROR: string `" + notation + "' is not valid state notation";

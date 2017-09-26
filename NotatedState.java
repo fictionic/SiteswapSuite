@@ -12,7 +12,7 @@ public class NotatedState {
 		this.notationType = null; //???
 	}
 
-	public static NotatedState parse(String inputNotation) throws InvalidStateNotationException {
+	public static NotatedState parse(String inputNotation, int numHands, int startHand) throws InvalidStateNotationException {
 		// determine type of notation
 		if(Pattern.matches(StateNotation.simpleStateNotation, inputNotation))
 			return new SimpleNotatedState(inputNotation);
@@ -109,7 +109,7 @@ public class NotatedState {
 
 	public static void main(String[] args) {
 		try {
-			NotatedState ns = NotatedState.parse(args[0]);
+			NotatedState ns = NotatedState.parse(args[0], -1, -1);
 			System.out.println(ns);
 		} catch(InvalidStateNotationException e) {
 			System.out.println(e.getMessage());

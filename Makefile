@@ -5,7 +5,7 @@ package:
 	jar -cfe bin/SiteswapSuite.jar siteswapsuite/Main siteswapsuite/*.class
 
 exception:
-	javac -d . SiteswapException.java
+	javac -d . SiteswapException.java InvalidNotationException.java
 
 math:
 	javac -d . InfinityType.java ExtendedInteger.java ExtendedFraction.java
