@@ -226,6 +226,16 @@ public class State {
 		return this.getFiniteNode(b).getChargeAtHand(h);
 	}
 
+	public Transition getTransitionToSelf(int minTransitionLength) {
+		Transition ret = null;
+		try {
+			ret = Transition.compute(this, this, minTransitionLength, false, false);
+		} catch(ImpossibleTransitionException e) {
+			Util.printf("ERROR: Impossible error in State.java: " + e.getMessage(), Util.DebugLevel.ERROR);
+		}
+		return ret;
+	}
+
 	public boolean equals(State other) {
 		if(other == null)
 			return false;
