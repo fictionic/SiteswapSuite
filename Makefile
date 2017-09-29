@@ -1,4 +1,4 @@
-all: util exception math pure-ss notation transition main package
+all: util exception math pure-ss notation main package
 
 package:
 	mkdir -p bin
@@ -11,13 +11,11 @@ math:
 	javac -d . InfinityType.java ExtendedInteger.java ExtendedFraction.java
 
 pure-ss:
-	javac -d . Toss.java Siteswap.java State.java
-
-transition:
-	javac -d . Transition.java ContextualizedNotatedTransitionList.java 
+	javac -d . Toss.java Siteswap.java State.java Transition.java 
 
 notation:
-	javac -d . SiteswapNotation.java NotatedSiteswap.java CompatibleNotatedSiteswapPair.java StateNotation.java NotatedState.java
+	javac -d . SiteswapNotation.java NotatedSiteswap.java StateNotation.java NotatedState.java \
+		CompatibleNotatedSiteswapPair.java ContextualizedNotatedTransitionList.java
 
 main:
 	javac -d . Main.java
@@ -28,3 +26,6 @@ util:
 clean:
 	rm -r siteswapsuite
 	rm SiteswapSuite.jar
+
+test:
+	javac -d . Test.java
