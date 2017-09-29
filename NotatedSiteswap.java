@@ -257,18 +257,21 @@ public abstract class NotatedSiteswap {
 							}
 						}
 						if(height.isInfinite()) {
-							if(isAntitoss)
+							if(isAntitoss) {
 								this.siteswap.addInfiniteAntitoss(b, 0, height.infiniteValue());
-							else
+							} else {
 								this.siteswap.addInfiniteToss(b, 0, height.infiniteValue());
+							}
 						} else {
-							if(isAntitoss)
+							if(isAntitoss) {
 								this.siteswap.addFiniteAntitoss(b, 0, height.finiteValue(), 0);
-							else
+							} else {
 								this.siteswap.addFiniteToss(b, 0, height.finiteValue(), 0);
+							}
 						}
-						if(!multi)
+						if(!multi) {
 							b++;
+						}
 						isAntitoss = false;
 						break;
 				}
@@ -362,36 +365,42 @@ public abstract class NotatedSiteswap {
 								this.siteswap.appendEmptyBeat();
 								//add toss of correct height and destination to current hand
 								if(height.isInfinite()) {
-									if(isAntitoss)
+									if(isAntitoss) {
 										this.siteswap.addInfiniteAntitoss(b, curHand, height.infiniteValue());
-									else
+									} else {
 										this.siteswap.addInfiniteToss(b, curHand, height.infiniteValue());
+									}
 								} else {
 									destHand = (curHand + height.finiteValue()) % 2; //0=left, 1=right
-									if(destHand < 0)
+									if(destHand < 0) {
 										destHand += 2;
-									if(isAntitoss)
+									}
+									if(isAntitoss) {
 										this.siteswap.addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
-									else
+									} else {
 										this.siteswap.addFiniteToss(b, curHand, height.finiteValue(), destHand);
+									}
 									//increment beat index
 									b++;
 								}
 							} else {
 								//add toss of correct height and destination to current hand
 								if(height.isInfinite()) {
-									if(isAntitoss)
+									if(isAntitoss) {
 										this.siteswap.addInfiniteAntitoss(b, curHand, height.infiniteValue());
-									else
+									} else {
 										this.siteswap.addInfiniteToss(b, curHand, height.infiniteValue());
+									}
 								} else {
 									destHand = (curHand + height.finiteValue()) % 2; //0=left, 1=right
-									if(destHand < 0)
+									if(destHand < 0) {
 										destHand += 2;
-									if(isAntitoss)
+									}
+									if(isAntitoss) {
 										this.siteswap.addFiniteAntitoss(b, curHand, height.finiteValue(), destHand);
-									else
+									} else {
 										this.siteswap.addFiniteToss(b, curHand, height.finiteValue(), destHand);
+									}
 								}
 							}
 							isAntitoss = false;
@@ -523,8 +532,8 @@ public abstract class NotatedSiteswap {
 					case '!':
 						//remove last beat
 						this.siteswap.removeLastBeat();
-						//decrement beat index
 						b--;
+						//decrement beat index
 						break;
 					case '*':
 						this.siteswap.starify();
@@ -549,12 +558,13 @@ public abstract class NotatedSiteswap {
 							}
 						} else {
 							destHand = (curHand + height.finiteValue()) % 2;
-							if(destHand < 0)
+							if(destHand < 0) {
 								destHand += 2;
-							if(isAntitoss)
+							} if(isAntitoss) {
 								newToss = new Toss(height.finiteValue(), destHand, true);
-							else
+							} else {
 								newToss = new Toss(height.finiteValue(), destHand, false);
+							}
 							isAntitoss = false;
 						}
 						this.siteswap.addToss(b, curHand, newToss);
@@ -592,10 +602,10 @@ public abstract class NotatedSiteswap {
 							}
 						}
 						nextBeat += "]";
-					} else {
+					} else if(this.siteswap.numTossesAtSite(b, h) == 1) {
 						//account for only toss in hand
 						Toss curToss = this.siteswap.getToss(b, h, 0);
-						if(curToss.charge() != 0) {
+						if(!curToss.isZero(h)) {
 							Util.printf("encountered non-zero toss", Util.DebugLevel.DEBUG);
 							Util.printf(curToss, Util.DebugLevel.DEBUG);
 							allZeroes = false;
@@ -604,6 +614,9 @@ public abstract class NotatedSiteswap {
 						if(!curToss.height().isInfinite() && curToss.destHand() != (h + Math.abs(curToss.height().finiteValue())) % 2) {
 							nextBeat += "x";
 						}
+					} else {
+						// notate empty site
+						nextBeat += "0";
 					}
 					//put a comma if we've just finished doing the left hand
 					if(h == 0) {
@@ -622,8 +635,9 @@ public abstract class NotatedSiteswap {
 				} else {
 					// don't skip this beat
 					Util.printf("not skipping beat " + b, Util.DebugLevel.DEBUG);
-					if(!skippedLastBeat)
+					if(!skippedLastBeat) {
 						out += "!";
+					}
 					out += nextBeat;
 					skippedLastBeat = false;
 				}
@@ -656,13 +670,13 @@ public abstract class NotatedSiteswap {
 		// parse
 		TwoHandedMixedNotatedSiteswap(String s) {
 			this(new Siteswap(2));
-			System.out.println("Parsing of mixed notation not yet implemented...");
+			Util.printf("WARNINR: Parsing of mixed notation not yet implemented...", Util.DebugLevel.ERROR);
 			System.exit(1);
 		}
 
 		// print
 		public String print() {
-			System.out.println("de-parsing of mixed notation not yet implemented...");
+			Util.printf("WARNINR: Parsing of mixed notation not yet implemented...", Util.DebugLevel.ERROR);
 			System.exit(1);
 			return null;
 		}
@@ -688,13 +702,13 @@ public abstract class NotatedSiteswap {
 		// parse
 		NotatedPassingSiteswap(String s) {
 			this(new Siteswap(4));
-			System.out.println("Parsing of passing notation not yet implemented...");
+			Util.printf("Parsing of passing notation not yet implemented...", Util.DebugLevel.ERROR);
 			System.exit(1);
 		}
 
 		// print
 		public String print() {
-			System.out.println("de-parsing of passing notation not yet implemented...");
+			Util.printf("Parsing of passing notation not yet implemented...", Util.DebugLevel.ERROR);
 			System.exit(1);
 			return null;
 		}

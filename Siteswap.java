@@ -45,15 +45,17 @@ public class Siteswap {
 					curTossHeight = curToss.height();
 					if(curTossHeight.isInfinite()) {
 						if(curTossHeight.infiniteValue() == InfinityType.POSITIVE_INFINITY) {
-							if(!curToss.isAntitoss())
+							if(!curToss.isAntitoss()) {
 								numInfinities++;
-							else
+							} else {
 								numInfinities--;
+							}
 						} else {
-							if(!curToss.isAntitoss())
+							if(!curToss.isAntitoss()) {
 								numInfinities--;
-							else
+							} else {
 								numInfinities++;
+							}
 						}
 					} else {
 						finiteValue += curToss.charge() * curTossHeight.finiteValue();
@@ -65,10 +67,11 @@ public class Siteswap {
 		if(numInfinities == 0) {
 			top = new ExtendedInteger(finiteValue);
 		} else {
-			if(numInfinities > 0)
+			if(numInfinities > 0) {
 				top = new ExtendedInteger(InfinityType.POSITIVE_INFINITY);
-			else
+			} else {
 				top = new ExtendedInteger(InfinityType.NEGATIVE_INFINITY);
+			}
 		}
 		return new ExtendedFraction(top, this.sites.size());
 	}
@@ -90,10 +93,17 @@ public class Siteswap {
 			for(int h=0; h<toRunOn.numHands; h++) {
 				for(int t=0; t<toRunOn.numTossesAtSite(b, h); t++) {
 					curToss = toRunOn.getToss(b, h, t);
-					if(curToss.charge() != 0 && !curToss.height().isInfinite()) {
+					if(curToss.height().isInfinite()) {
+						if(curToss.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
+							destBeat = b;
+							destHand = h;
+							toRunOn.getSite(destBeat, destHand).inDegree += curToss.charge();
+						}
+					} else {
 						destBeat = (b + curToss.height().finiteValue()) % toRunOn.period();
-						if(destBeat < 0)
+						if(destBeat < 0) {
 							destBeat += toRunOn.period();
+						}
 						destHand = curToss.destHand();
 						toRunOn.getSite(destBeat, destHand).inDegree += curToss.charge();
 					}
@@ -103,8 +113,9 @@ public class Siteswap {
 		// check if each site's inDegree matches its outDegree (numTosses)
 		for(int b=0; b<toRunOn.sites.size(); b++) {
 			for(int h=0; h<toRunOn.numHands; h++) {
-				if(toRunOn.getSite(b, h).inDegree != toRunOn.getSite(b, h).outDegree)
+				if(toRunOn.getSite(b, h).inDegree != toRunOn.getSite(b, h).outDegree) {
 					return false;
+				}
 			}
 		}
 		return true;
@@ -122,15 +133,17 @@ public class Siteswap {
 						continue;
 					if(toss.height().isInfinite()) {
 						if(toss.height().infiniteValue() == InfinityType.POSITIVE_INFINITY) {
-							if(toss.charge() == 1)
+							if(toss.charge() == 1) {
 								curState.decChargeOfNowNodeAtHand(h);
-							else
+							} else {
 								curState.incChargeOfNowNodeAtHand(h);
+							}
 						} else {
-							if(toss.charge() == 1)
+							if(toss.charge() == 1) {
 								curState.incChargeOfNowNodeAtHand(h);
-							else
+							} else {
 								curState.decChargeOfNowNodeAtHand(h);
+							}
 						}
 					} else {
 						if(toss.charge() == 1) {
@@ -199,7 +212,7 @@ public class Siteswap {
 							}
 							// remove toss from copy
 							copy.removeToss(b2,h2,t2);
-							// advance through siteswap 
+							// advance through siteswap
 							b2 = (b2 + toss.height().finiteValue()) % this.period();
 							if(b2 < 0) b2 += this.period();
 							h2 = curToss.destHand();
@@ -233,8 +246,9 @@ public class Siteswap {
 
 	Site getSite(int beatIndex, int handIndex) {
 		beatIndex = beatIndex % this.sites.size();
-		if(beatIndex < 0)
+		if(beatIndex < 0) {
 			beatIndex += this.sites.size();
+		}
 		return this.sites.get(beatIndex).get(handIndex);
 	}
 
@@ -325,8 +339,9 @@ public class Siteswap {
 
 	// manipulating pattern
 	public void starify() {
-		if(this.numHands() != 2)
+		if(this.numHands() != 2) {
 			return;
+		}
 		int originalPeriod = this.period();
 		for(int b=0; b<originalPeriod; b++) {
 			this.appendEmptyBeat();
@@ -458,7 +473,6 @@ public class Siteswap {
 		private Site(int handIndex) {
 			this.handIndex = handIndex;
 			this.tosses = new ArrayList<Toss>();
-			this.tosses.add(new Toss(handIndex));
 			this.inDegree = 0;
 			this.outDegree = 0;
 		}
@@ -480,27 +494,24 @@ public class Siteswap {
 		}
 
 		Toss getToss(int tossIndex) {
+			if(tossIndex >= this.tosses.size()) {
+				return null;
+			}
 			return this.tosses.get(tossIndex);
 		}
 
 		Toss removeToss(int tossIndex) {
 			if(!this.isEmpty()) {
 				this.outDegree -= this.tosses.get(tossIndex).charge();
-				Toss toReturn = this.tosses.remove(tossIndex);
-				if(this.tosses.size() == 0)
-					this.tosses.add(new Toss(this.handIndex));
-				return toReturn;
-			} else
+				return this.tosses.remove(tossIndex);
+			} else {
 				return null;
+			}
 		}
 
 		void addToss(Toss toss) {
-			if(toss.charge() != 0) {
-				if(this.isEmpty())
-					this.tosses.remove(0);
-				this.tosses.add(toss);
-				this.outDegree += toss.charge();
-			}
+			this.tosses.add(toss);
+			this.outDegree += toss.charge();
 		}
 
 		void exchangeToss(int tossIndex, Toss newToss) {
@@ -509,10 +520,7 @@ public class Siteswap {
 		}
 
 		private boolean isEmpty() {
-			if(this.tosses.size() == 1 && this.tosses.get(0).charge() == 0)
-				return true;
-			else
-				return false;
+			return this.tosses.size() == 0;
 		}
 
 		private Site deepCopy() {
