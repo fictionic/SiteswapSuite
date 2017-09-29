@@ -19,7 +19,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 		Util.printf("suffix: " + this.suffix.toString(), Util.DebugLevel.DEBUG);
 		// then find the general form of the transition, if possible
 		try {
-			this.generalTransition = Transition.compute(new State(this.prefix.siteswap), new State(this.suffix.siteswap), minLength, allowExtraSqueezeCatches, generateBallAntiballPairs);
+			this.generalTransition = Transition.compute(this.from.state, this.to.state, minLength, allowExtraSqueezeCatches, generateBallAntiballPairs);
 			this.transitionLength = generalTransition.eventualPeriod;
 			// then get a list of the specific transitions
 			List<Siteswap> unNotatedTransitionList = this.generalTransition.unInfinitize(maxTransitions);
@@ -27,7 +27,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 			this.transitionList = new ArrayList<NotatedSiteswap>();
 			for(int i=0; i<unNotatedTransitionList.size(); i++) {
 				try {
-					this.transitionList.add(NotatedSiteswap.assemble(unNotatedTransitionList.get(i), this.compatibleNotationType));
+					this.transitionList.add(NotatedSiteswap.assemble(unNotatedTransitionList.get(i), this.compatibleSiteswapNotationType));
 				} catch(IncompatibleNotationException e) {
 					System.out.println("incompatible notations within ContextualizedNotatedTransitionList constructor, somehow...");
 					System.out.println(e);
@@ -50,9 +50,9 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 	public String printGeneralTransition() {
 		try {
 			String ret = "";
-			NotatedSiteswap firstHalf = NotatedSiteswap.assemble(this.generalTransition.subPattern(0,this.generalTransition.eventualPeriod), this.compatibleNotationType);
+			NotatedSiteswap firstHalf = NotatedSiteswap.assemble(this.generalTransition.subPattern(0,this.generalTransition.eventualPeriod), this.compatibleSiteswapNotationType);
 			ret += firstHalf.print();
-			NotatedSiteswap secondHalf = NotatedSiteswap.assemble(this.generalTransition.subPattern(this.generalTransition.eventualPeriod, this.generalTransition.period()), this.compatibleNotationType);
+			NotatedSiteswap secondHalf = NotatedSiteswap.assemble(this.generalTransition.subPattern(this.generalTransition.eventualPeriod, this.generalTransition.period()), this.compatibleSiteswapNotationType);
 			ret += "{";
 			ret += secondHalf.print();
 			ret += "}";
@@ -159,7 +159,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 								newTransitionEnd = destBeat;
 								Util.printf("end: " + newTransitionEnd, Util.DebugLevel.DEBUG);
 							}
-						} else 
+						} else
 							Util.printf("skip", Util.DebugLevel.DEBUG);
 					}
 				}
@@ -203,7 +203,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 									newTransitionStart = destBeat;
 								if(destBeat > newTransitionEnd)
 									newTransitionEnd = destBeat;
-							} else 
+							} else
 								Util.printf("skip", Util.DebugLevel.DEBUG);
 						}
 					}
@@ -214,7 +214,7 @@ public class ContextualizedNotatedTransitionList extends CompatibleNotatedSitesw
 		Util.printf("skipped all; done", Util.DebugLevel.DEBUG);
 		NotatedSiteswap ret = null;
 		try {
-			ret = NotatedSiteswap.assemble(newTransition.subPattern(newTransitionStart, newTransitionEnd+1), this.compatibleNotationType);
+			ret = NotatedSiteswap.assemble(newTransition.subPattern(newTransitionStart, newTransitionEnd+1), this.compatibleSiteswapNotationType);
 		} catch(IncompatibleNotationException e) {
 			System.out.println(e.getMessage());
 			System.exit(1);
