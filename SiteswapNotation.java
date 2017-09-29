@@ -68,12 +68,12 @@ public enum SiteswapNotation {
 
 	// async (one-handed)
 	static final String asyncToss = "(" + modifier + magnitude + ")";
-	static final String asyncMux = "(" + asyncToss + "|\\[" + asyncToss + "+\\])";
+	static final String asyncMux = "(" + asyncToss + "|\\[" + asyncToss + "*\\])";
 	static final String validAsyncNotation = asyncMux + "+";
 
 	// sync (two-handed)
 	static final String syncToss = "(" + modifier + magnitude + "x?)";
-	static final String syncHand = "(" + syncToss + "|\\[" + syncToss + "+\\])";
+	static final String syncHand = "(" + syncToss + "|\\[" + syncToss + "*\\])";
 	static final String syncBeat = "(\\(" + syncHand + "," + syncHand + "\\)!?)";
 	static final String validSyncNotation = syncBeat + "+\\*?";
 
@@ -104,6 +104,9 @@ public enum SiteswapNotation {
 	// for deparsing
 	protected static String reverseThrowHeight(Toss t) {
 		String toReturn = "";
+		if(t == null) {
+			return "0"; // null is passed when there is no toss
+		}
 		ExtendedInteger H = t.height();
 		if(H.sign() < 0)
 			toReturn += "-";
