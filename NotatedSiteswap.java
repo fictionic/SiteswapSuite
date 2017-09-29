@@ -95,12 +95,8 @@ public abstract class NotatedSiteswap {
 				return new OneHandedNotatedSiteswap(ss);
 			case SYNCHRONOUS:
 				return new TwoHandedAsyncNotatedSiteswap(ss);
-			case PASSING:
+			default: // case PASSING
 				return new NotatedPassingSiteswap(ss);
-			default:
-				Util.printf("ERROR: impossible error in NotatedSiteswap.java", Util.DebugLevel.ERROR);
-				System.exit(1);
-				return null;
 		}
 	}
 
