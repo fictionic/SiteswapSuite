@@ -15,22 +15,21 @@ public class Toss {
 	public Toss(int height, int destHand, boolean isAntitoss) {
 		this.height = new ExtendedInteger(height);
 		this.destHand = destHand;
-		if(height != 0) {
-			if(isAntitoss)
-				this.charge = -1;
-			else
-				this.charge = 1;
-		} else
-			this.charge = 0;
+		if(isAntitoss) {
+			this.charge = -1;
+		} else {
+			this.charge = 1;
+		}
 	}
 
 	public Toss(InfinityType height, boolean isAntitoss) {
 		this.height = new ExtendedInteger(height);
 		this.destHand = null;
-		if(isAntitoss)
+		if(isAntitoss) {
 			this.charge = -1;
-		else
+		} else {
 			this.charge = 1;
+		}
 	}
 
 	public ExtendedInteger height() {
@@ -45,11 +44,28 @@ public class Toss {
 		if(this.charge == 0) {
 			return null;
 		} else {
-			if(this.charge == 1)
+			if(this.charge == 1) {
 				return false;
-			else
+			} else {
 				return true;
+			}
 		}
+	}
+
+	// whether this toss has height zero
+	public boolean isZero() {
+		if(this.height.isInfinite()) {
+			return false;
+		}
+		return this.height.finiteValue() == 0;
+	}
+
+	// whether this toss is a true zero toss (not a 0x)
+	public boolean isZero(int sourceHand) {
+		if(this.height.isInfinite()) {
+			return false;
+		}
+		return this.height.finiteValue() == 0 && this.destHand == sourceHand;
 	}
 
 	public int charge() {
@@ -59,8 +75,9 @@ public class Toss {
 	public Toss getStarredToss() {
 		if(destHand != null) {
 			return new Toss(this.height.finiteValue(), (this.destHand + 1) % 2, this.charge < 0);
-		} else 
+		} else {
 			return this.deepCopy();
+		}
 	}
 
 	public void starify() {
@@ -77,18 +94,19 @@ public class Toss {
 	}
 
 	public String toString() {
-		if(this.charge == 0)
-			return "(0)";
 		String out = "(";
 		if(this.height.isInfinite()) {
-			if(this.height.infiniteValue() == InfinityType.NEGATIVE_INFINITY)
+			if(this.height.infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
 				out += "-";
-			if(this.charge < 0)
+			}
+			if(this.charge < 0) {
 				out += "_";
+			}
 			out += "&)";
 		} else {
-			if(this.charge < 0)
+			if(this.charge < 0) {
 				out += "_";
+			}
 			out += height.finiteValue().toString() + ", " + destHand.toString() + ")";
 		}
 		return out;
