@@ -255,6 +255,8 @@ public class Main {
 		}
 
 		void runComputations() {
+			// first get state
+			this.notatedState = NotatedState.assembleAutomatic(new State(this.notatedSiteswap.siteswap));
 			// first run modifications to siteswap
 			this.modifiedSiteswap = this.notatedSiteswap.deepCopy();
 			for(InputOption m : this.operations) {
