@@ -186,7 +186,6 @@ public class Main {
 				}
 				Util.printf(" Modification Sequence: " + ops, Util.DebugLevel.INFO);
 				Util.printf("---------", Util.DebugLevel.INFO);
-				Util.printf("OUTPUT " + this.index + ":", Util.DebugLevel.INFO);
 			}
 		}
 
@@ -264,6 +263,9 @@ public class Main {
 					case ANTITOSSIFY:
 						this.modifiedSiteswap.siteswap.antitossify();
 						break;
+					case UNINFINITIZE:
+						this.modifiedSiteswap.siteswap.unInfinitize();
+						break;
 					case SPRING:
 						try {
 							this.modifiedSiteswap = this.modifiedSiteswap.spring();
@@ -279,7 +281,7 @@ public class Main {
 			if(this.operations.size() > 0) {
 				this.modifiedState = NotatedState.assembleAutomatic(new State(this.modifiedSiteswap.siteswap));
 			} else {
-				this.modifiedState = NotatedState.assembleAutomatic(this.notatedState.state);
+				this.modifiedState = this.notatedState.deepCopy();
 			}
 		}
 
@@ -292,6 +294,13 @@ public class Main {
 		}
 
 		void displayComputedInfo() {
+			if(this.operations.size() > 0) {
+				Util.printf("OUTPUT " + this.index + ":", Util.DebugLevel.INFO);
+				Util.printf("---------", Util.DebugLevel.INFO);
+				Util.printf(" parsed:     " + this.modifiedSiteswap.siteswap.toString(), Util.DebugLevel.INFO);
+				Util.printf(" notated:    " + this.modifiedSiteswap.print(), Util.DebugLevel.INFO);
+				Util.printf("---------", Util.DebugLevel.INFO);
+			}
 			Util.printf(" numHands:   " + this.modifiedSiteswap.siteswap.numHands(), Util.DebugLevel.INFO);
 			Util.printf(" period:     " + this.modifiedSiteswap.siteswap.period(), Util.DebugLevel.INFO);
 			if(this.printNumBalls) {
@@ -301,10 +310,10 @@ public class Main {
 				Util.printf(" validity:   " + this.modifiedSiteswap.siteswap.isValid(), Util.DebugLevel.INFO);
 			}
 			if(this.printState) {
-				Util.printf(" state:      " + this.notatedState, Util.DebugLevel.INFO);
+				Util.printf(" state:      " + this.notatedState.state, Util.DebugLevel.INFO);
 			}
 			if(this.printOrbits) {
-				Util.printf(" orbits:", Util.DebugLevel.INFO);
+				Util.printf(" orbits:     ", Util.DebugLevel.INFO);
 				for(Siteswap orbit : this.modifiedSiteswap.siteswap.getOrbits()) {
 					Util.printf(orbit.toString(), Util.DebugLevel.INFO);
 				}
@@ -334,6 +343,8 @@ public class Main {
 		}
 
 		void runComputations() {
+			// first compute a siteswap
+			this.notatedSiteswap = NotatedSiteswap.assembleAutomatic(this.notatedState.state.getTransitionToSelf(this.minSSLength));
 			// first run modifications to siteswap
 			this.modifiedSiteswap = this.notatedSiteswap.deepCopy();
 			for(InputOption m : this.operations) {

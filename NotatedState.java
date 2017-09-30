@@ -26,8 +26,7 @@ public abstract class NotatedState {
 			System.exit(1);
 			return null;
 			// return new ComplexNotatedState(inputNotation);
-		}
-		else {
+		} else {
 			throw new InvalidStateNotationException(inputNotation);
 		}
 	}
