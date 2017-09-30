@@ -3,13 +3,13 @@ package siteswapsuite;
 public class Toss {
 
 	private ExtendedInteger height;
-	private int charge;
+	private int charge; // integer version of isAntitoss
 	private Integer destHand;
 
 	public Toss(int emptyHandIndex) {
 		this.height = new ExtendedInteger(0);
 		this.destHand = emptyHandIndex;
-		this.charge = 0;
+		this.charge = 1;
 	}
 
 	public Toss(int height, int destHand, boolean isAntitoss) {

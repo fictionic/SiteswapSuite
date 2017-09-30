@@ -78,6 +78,7 @@ public class Siteswap {
 
 	public boolean isValid() {
 		Siteswap toRunOn = this.deepCopy();
+		// turn any `-&`s into catches by pairing them up with `&`s
 		toRunOn.unInfinitize();
 		// reset inDegree of each site
 		for(int b=0; b<toRunOn.sites.size(); b++) {
@@ -110,10 +111,13 @@ public class Siteswap {
 				}
 			}
 		}
-		// check if each site's inDegree matches its outDegree (numTosses)
+		// check if each site's inDegree matches its outDegree
 		for(int b=0; b<toRunOn.sites.size(); b++) {
 			for(int h=0; h<toRunOn.numHands; h++) {
 				if(toRunOn.getSite(b, h).inDegree != toRunOn.getSite(b, h).outDegree) {
+					Util.printf("b: " + b + ", h: " + h, Util.DebugLevel.DEBUG);
+					Util.printf("in:  " + toRunOn.getSite(b, h).inDegree, Util.DebugLevel.DEBUG);
+					Util.printf("out: " + toRunOn.getSite(b, h).outDegree, Util.DebugLevel.DEBUG);
 					return false;
 				}
 			}
@@ -129,8 +133,9 @@ public class Siteswap {
 			for(int h=0; h<this.numHands(); h++) {
 				for(int t=0; t<this.numTossesAtSite(b, h); t++) {
 					Toss toss = this.getToss(b, h, t);
-					if(toss.charge() == 0)
+					if(toss.charge() == 0) {
 						continue;
+					}
 					if(toss.height().isInfinite()) {
 						if(toss.height().infiniteValue() == InfinityType.POSITIVE_INFINITY) {
 							if(toss.charge() == 1) {
@@ -367,15 +372,17 @@ public class Siteswap {
 					Toss curToss = this.getToss(b, h, t);
 					if(curToss.height().isInfinite() && curToss.height().infiniteValue() == InfinityType.POSITIVE_INFINITY) {
 						search: {
-							// first search this site to see if we can make zero-tosses
-							for(int t2=0; t2<this.numTossesAtSite(b, h); t2++) {
-								Toss curCatch = this.getToss(b, h, t2);
-								if(curCatch.charge() == curToss.charge() &&
-										curCatch.height().isInfinite() &&
-										curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
-									this.removeToss(b, h, t2);
-									this.exchangeToss(b, h, t, new Toss(h));
-									break search;
+							// first search this beat to see if we can make zero-tosses
+							for(int h2=0; h2<this.numHands; h2++) {
+								for(int t2=0; t2<this.numTossesAtSite(b, h2); t2++) {
+									Toss curCatch = this.getToss(b, h2, t2);
+									if(curCatch.charge() == curToss.charge() &&
+											curCatch.height().isInfinite() &&
+											curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
+										this.exchangeToss(b, h, t,  new Toss(0, h2, curToss.isAntitoss()) );
+										this.removeToss(b, h2, t2);
+										break search;
+									}
 								}
 							}
 							// now search for positive tosses
@@ -515,8 +522,10 @@ public class Siteswap {
 		}
 
 		void exchangeToss(int tossIndex, Toss newToss) {
-			this.outDegree += newToss.charge() - this.tosses.get(tossIndex).charge();
-			this.tosses.set(tossIndex, newToss);
+			if(!this.isEmpty()) {
+				this.outDegree += newToss.charge() - this.tosses.get(tossIndex).charge();
+				this.tosses.set(tossIndex, newToss);
+			}
 		}
 
 		private boolean isEmpty() {

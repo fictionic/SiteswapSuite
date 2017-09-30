@@ -201,7 +201,7 @@ public abstract class NotatedSiteswap {
 
 		// deep copy
 		public NotatedSiteswap deepCopy() {
-			return (NotatedSiteswap)(new EmptyNotatedSiteswap(this.siteswap));
+			return (NotatedSiteswap)(new EmptyNotatedSiteswap(this.siteswap.deepCopy()));
 		}
 
 		public NotatedSiteswap spring() throws SprungException {
@@ -298,7 +298,7 @@ public abstract class NotatedSiteswap {
 
 		// deep copy
 		public NotatedSiteswap deepCopy() {
-			return (NotatedSiteswap)(new OneHandedNotatedSiteswap(this.siteswap));
+			return (NotatedSiteswap)(new OneHandedNotatedSiteswap(this.siteswap.deepCopy()));
 		}
 
 		public NotatedSiteswap spring() throws SprungException {
@@ -437,7 +437,7 @@ public abstract class NotatedSiteswap {
 
 		// deep copy
 		public NotatedSiteswap deepCopy() {
-			return (NotatedSiteswap)(new TwoHandedAsyncNotatedSiteswap(this.siteswap, this.startHand));
+			return (NotatedSiteswap)(new TwoHandedAsyncNotatedSiteswap(this.siteswap.deepCopy(), this.startHand));
 		}
 
 		// additional constructor for deep copy
@@ -651,7 +651,7 @@ public abstract class NotatedSiteswap {
 
 		// deep copy
 		public NotatedSiteswap deepCopy() {
-			return (NotatedSiteswap)(new TwoHandedSyncNotatedSiteswap(this.siteswap));
+			return (NotatedSiteswap)(new TwoHandedSyncNotatedSiteswap(this.siteswap.deepCopy()));
 		}
 
 		public NotatedSiteswap spring() throws SprungException {
