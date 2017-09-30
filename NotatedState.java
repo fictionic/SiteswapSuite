@@ -2,7 +2,7 @@ package siteswapsuite;
 
 import java.util.regex.Pattern;
 
-public class NotatedState {
+public abstract class NotatedState {
 
 	State state;
 	StateNotation notationType;
@@ -54,10 +54,20 @@ public class NotatedState {
 		return ret;
 	}
 
+	public abstract NotatedState deepCopy();
+
+	/* -------------- */
+	/* THE SUBCLASSES */
+	/* -------------- */
+
 	private static class SimpleNotatedState extends NotatedState {
 		SimpleNotatedState() {
 			super(1);
 			this.notationType = StateNotation.SIMPLE;
+		}
+		SimpleNotatedState(State state) {
+			this();
+			this.state = state;
 		}
 		SimpleNotatedState(String s) {
 			this();
@@ -92,12 +102,19 @@ public class NotatedState {
 			}
 			// TODO: non-finite state parsing
 		}
+		public NotatedState deepCopy() {
+			return new SimpleNotatedState(this.state.deepCopy());
+		}
 	}
 
 	private static class ComplexNotatedState extends NotatedState {
 		ComplexNotatedState() {
 			super(2);
 			this.notationType = StateNotation.COMPLEX;
+		}
+		ComplexNotatedState(State state) {
+			this();
+			this.state = state;
 		}
 		ComplexNotatedState(String s) {
 			this();
@@ -141,6 +158,9 @@ public class NotatedState {
 				}
 				i++;
 			}
+		}
+		public NotatedState deepCopy() {
+			return new ComplexNotatedState(this.state.deepCopy());
 		}
 	}
 
