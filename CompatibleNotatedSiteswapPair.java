@@ -29,6 +29,8 @@ class CompatibleNotatedSiteswapPair {
 	CompatibleNotatedSiteswapPair(CompatibleNotatedSiteswapPair p) {
 		this.prefix = p.prefix;
 		this.suffix = p.suffix;
+		this.from = p.from;
+		this.to = p.to;
 		this.compatibleSiteswapNotationType = p.compatibleSiteswapNotationType;
 	}
 
@@ -164,6 +166,8 @@ class CompatibleNotatedSiteswapPair {
 		}
 		this.prefix = prefix;
 		this.suffix = suffix;
+		this.from = NotatedState.assembleAutomatic(new State(this.prefix.siteswap));
+		this.to = NotatedState.assembleAutomatic(new State(this.suffix.siteswap));
 	}
 
 	public NotatedSiteswap prefix() {
