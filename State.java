@@ -226,10 +226,10 @@ public class State {
 		return this.getFiniteNode(b).getChargeAtHand(h);
 	}
 
-	public Transition getTransitionToSelf(int minTransitionLength) {
-		Transition ret = null;
+	public Siteswap getTransitionToSelf(int minTransitionLength) {
+		Siteswap ret = null;
 		try {
-			ret = Transition.compute(this, this, minTransitionLength, false, false);
+			ret = Transition.compute(this, this, minTransitionLength, false, false).unInfinitize(1).get(0);
 		} catch(ImpossibleTransitionException e) {
 			Util.printf("ERROR: Impossible error in State.java: " + e.getMessage(), Util.DebugLevel.ERROR);
 		}
