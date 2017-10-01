@@ -329,11 +329,12 @@ public class Main {
 	}
 
 	static class StateInputObject extends InputObject {
-		private NotatedState notatedState;
+
 		StateInputObject(int index) {
 			super(index);
 			this.isState = true;
 		}
+		
 		void parseNotation() throws InvalidStateNotationException, IncompatibleNumberOfHandsException {
 			try {
 				this.notatedState = NotatedState.parse(this.inputNotation, this.numHands, this.startHand);
@@ -410,7 +411,7 @@ public class Main {
 
 		// transition options
 		// [list of args]
-		List<String> transitionArgs = new LinkedList<String>();
+		List<String> globalArgs = new LinkedList<String>();
 		// [actual settings]
 		int minTransitionLength = 0;
 		int maxTransitions = -1;
@@ -441,7 +442,7 @@ public class Main {
 				} else {
 					if(this.numInputs == 0) {
 						// add transition option
-						this.transitionArgs.add(arg);
+						this.globalArgs.add(arg);
 					} else {
 						// pass args to most recent input object
 						inputs[this.numInputs - 1].addArg(arg);
@@ -463,15 +464,15 @@ public class Main {
 			String str;
 			int intArg = 0;
 			GlobalOption opt;
-			while(i < this.transitionArgs.size()) {
-				str = transitionArgs.get(i);
+			while(i < this.globalArgs.size()) {
+				str = this.globalArgs.get(i);
 				opt = GlobalOption.fromStr(str);
 				if(opt.requiresParam) {
-					if(i + 1 < this.transitionArgs.size()) {
+					if(i + 1 < this.globalArgs.size()) {
 						try {
-							intArg = Integer.parseInt(this.transitionArgs.get(i+1));
+							intArg = Integer.parseInt(this.globalArgs.get(i+1));
 						} catch(NumberFormatException e) {
-							throw new ParseError("option `" + str + "' requires integer argument; got `" + this.transitionArgs.get(i+1) + "'");
+							throw new ParseError("option `" + str + "' requires integer argument; got `" + this.globalArgs.get(i+1) + "'");
 						}
 						i++;
 					} else {
