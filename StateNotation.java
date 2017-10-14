@@ -3,12 +3,11 @@ package siteswapsuite;
 import java.util.regex.Pattern;
 
 class InvalidStateNotationException extends InvalidNotationException {
-	String message;
-	InvalidStateNotationException(String notation) {
-		this.message = "ERROR: string `" + notation + "' is not valid state notation";
+	InvalidStateNotationException(String s) {
+		super(s);
 	}
 	public String getMessage() {
-		return this.message;
+		return "ERROR: string `" + this.s + "' is not valid state notation";
 	}
 }
 

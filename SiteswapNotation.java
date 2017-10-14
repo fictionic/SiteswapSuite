@@ -3,9 +3,8 @@ package siteswapsuite;
 import java.util.regex.Pattern;
 
 class InvalidSiteswapNotationException extends InvalidNotationException {
-	String s;
 	InvalidSiteswapNotationException(String s) {
-		this.s = s;
+		super(s);
 	}
 	public String getMessage() {
 		return "ERROR: string `" + s + "' is not valid siteswap notation";
