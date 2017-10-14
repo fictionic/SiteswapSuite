@@ -42,7 +42,7 @@ class IncompatibleNumberOfHandsException extends SiteswapException {
 	}
 	public String getMessage() {
 		if(this.inputNotation != null)
-			return "ERROR: cannot parse input string '" + this.inputNotation + " as having " + this.numHands + " hands";
+			return "ERROR: cannot parse input string '" + this.inputNotation + "' as having " + this.numHands + " hands";
 		else
 			return "ERROR: incompatible number of hands";
 	}
