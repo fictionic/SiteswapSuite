@@ -205,9 +205,9 @@ class Command {
 						}
 					}
 					// get input options
+					int intIndex = 0;
 					for(int i=0; i<parsedArgs.options.size(); i++) {
 						Argument opt = parsedArgs.options.get(i);
-						int intIndex = 0;
 						switch(opt) {
 							case NUM_HANDS:
 								this.numHands = parsedArgs.ints.get(intIndex++);
