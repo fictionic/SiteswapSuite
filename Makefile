@@ -18,7 +18,7 @@ notation:
 		CompatibleNotatedSiteswapPair.java ContextualizedNotatedTransitionList.java
 
 main:
-	javac -d . Main.java
+	javac -d . Argument.java ParsedArguments.java Main.java 
 
 util:
 	javac -d . Util.java
@@ -28,4 +28,5 @@ clean:
 	rm SiteswapSuite.jar
 
 test:
-	javac -d . Test.java
+	# javac -d . Test.java
+	javac -d . ArgumentParser.java

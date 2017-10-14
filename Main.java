@@ -14,174 +14,316 @@ class ParseError extends SiteswapException {
 	}
 }
 
-public class Main {
-
-	// cmdline tokens
-	static enum Argument {
-		// global options
-		ENABLE_DEBUG('d', "debug", ArgumentType.TAKES_OWN_OPTIONS),
-		// input indicator
-		INPUT('i', "input", ArgumentType.TAKES_OWN_OPTIONS),
-		// input options
-		NUM_HANDS('h', "numHands", ArgumentType.REQUIRES_INT),
-		START_HAND('H', "startHand", ArgumentType.REQUIRES_INT),
-		KEEP_ZEROES('z', "keepZeroes", ArgumentType.FLAG),
-		// info items
-		INFO(null, "info", ArgumentType.TAKES_OWN_OPTIONS),
-		CAPACITY('c', "capacity", ArgumentType.FLAG),
-		VALIDITY('v', "validity", ArgumentType.FLAG),
-		PRIMALITY('P', "primality", ArgumentType.FLAG),
-		DIFFICULTY('d', "difficulty", ArgumentType.FLAG),
-		// siteswap operations
-		OPS(null, "ops", ArgumentType.TAKES_OWN_OPTIONS),
-		INVERT('V', "invert", ArgumentType.FLAG),
-		SPRING('p', "spring", ArgumentType.FLAG),
-		INFINITIZE('f', "infinitize", ArgumentType.FLAG),
-		UNINFINITIZE('F', "unInfinitize", ArgumentType.FLAG),
-		ANTITOSSIFY('a', "antitossify", ArgumentType.FLAG),
-		UNANTITOSSIFY('A', "unAntitossify", ArgumentType.FLAG),
-		ANTINEGATE('N', "antiNegate", ArgumentType.FLAG),
-		// 'big' operations
-		TO_SITESWAP('S', "siteswap", ArgumentType.TAKES_OWN_OPTIONS),
-		TO_STATE('s', "state", ArgumentType.FLAG),
-		TRANSITION('T', "transition", ArgumentType.TAKES_OWN_OPTIONS),
-		// transition options
-		MIN_TRANSITION_LENGTH('l', "minTransitionLength", ArgumentType.REQUIRES_INT),
-		MAX_TRANSITIONS('m', "maxTransitions", ArgumentType.REQUIRES_INT),
-		ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allowExtraSqueezeCatches", ArgumentType.FLAG),
-		GENERATE_BALL_ANTIBALL_PAIRS('g', "generateBallAntiballPairs", ArgumentType.FLAG),
-		UN_ANTITOSSIFY_TRANSITIONS('A', "unAntitossifyTransitions", ArgumentType.FLAG),
-		DISPLAY_GENERAL_TRANSITION('G', "displayGeneralTransition", ArgumentType.FLAG),
-		// invalid
-		INVALID_TOKEN(null, null, null);
-
-		// FOR LATER...
-		static enum ArgumentType {
-			FLAG,
-			REQUIRES_INT,
-			TAKES_OWN_OPTIONS;
+class ArgumentCollection {
+	Argument head;
+	List<Argument> options;
+	List<Integer> ints;
+	List<String> strings;
+	String followUpString;
+	int followUpInt;
+	private ArgumentCollection() {
+		this.head = Argument.INVALID_TOKEN;
+		this.options = new ArrayList<>();
+		this.ints = new ArrayList<>();
+		this.strings = new ArrayList<>();
+	}
+	static ArgumentCollection parse(String str) {
+		ArgumentCollection ret = new ArgumentCollection();
+		boolean isLongOption;
+		// for long options with inline arguments
+		String headStr;
+		String optionsStr = null;
+		if(str.length() == 2 && str.charAt(0) == '-') {
+			isLongOption = false;
+			headStr = str;
+		} else if(str.charAt(0) == '-' && str.charAt(1) == '-') {
+			isLongOption = true;
+			str = str.substring(2, str.length());
+			// strip out inline options
+			int sepIndex = str.indexOf(':');
+			if(sepIndex > -1) {
+				headStr = str.substring(0, sepIndex);
+				optionsStr = str.substring(sepIndex+1, str.length());
+			} else {
+				headStr = str;
+			}
+		} else {
+			return ret;
 		}
-
-		// fields
-		Character shortForm;
-		String longForm;
-		ArgumentType type;
-		// constructor
-		private Argument(Character shortForm, String longForm, ArgumentType type) {
-			this.shortForm = shortForm;
-			this.longForm = longForm;
-			this.type = type;
+		// parse headStr
+		if(isLongOption) {
+			ret.head = Argument.parseLongOptionName(headStr);
+		} else {
+			ret.head = Argument.parseShortOptionName(str.charAt(1));
 		}
-		// public acess to constructor
-		static Argument fromStr(String str) {
-			for(Argument opt : Argument.values()) {
-				if(str.equals(opt.shortForm) || str.equals(opt.longForm)) {
-					return opt;
+		// parse optionsStr
+		if(optionsStr != null && optionsStr.length() > 0) {
+			for(String subArg : optionsStr.split(",")) {
+				// parse inline arguments to options
+				int sepIndex = subArg.indexOf('=');
+				String inlineArg = null;
+				if(sepIndex > -1) {
+					String[] subArgSplit = subArg.split("=", 2);
+					subArg = subArgSplit[0];
+					inlineArg = subArgSplit[1];
+				}
+				Argument curArg;
+				if(subArg.length() == 1) {
+					curArg = Argument.parseShortOptionName(subArg.charAt(0));
+				} else {
+					curArg = Argument.parseLongOptionName(subArg);
+				}
+				ret.options.add(curArg);
+				// add inline arg if present
+				if(curArg.type == ArgumentType.REQUIRES_STRING) {
+					ret.options.add(Argument.LITERAL_STRING);
+					ret.strings.add(inlineArg);
+				} else if(curArg.type == ArgumentType.REQUIRES_INT) {
+					ret.options.add(Argument.LITERAL_INT);
+					int intArg = Integer.parseInt(inlineArg);
+					ret.ints.add(intArg);
 				}
 			}
-			return INVALID_TOKEN;
+		}
+		return ret;
+	}
+	public String toString() {
+		String ret = "";
+		ret += this.head.toString();
+		if(this.head.type == ArgumentType.REQUIRES_INT) {
+			ret += " " + this.followUpInt;
+		} else if(this.head.type == ArgumentType.REQUIRES_STRING) {
+			ret += " " + this.followUpString;
+		}
+		int intIndex = 0;
+		int stringIndex = 0;
+		for(Argument arg : this.options) {
+			if(arg == Argument.LITERAL_INT) {
+				ret += " " + this.ints.get(intIndex++);
+			} else if(arg == Argument.LITERAL_STRING) {
+				ret += " " + this.strings.get(stringIndex++);
+			} else {
+				ret += " " + arg.toString();
+			}
+		}
+		return ret;
+	}
+}
+
+class Command {
+
+	List<Chain> chains;
+
+	Command() {
+		this.chains = new ArrayList<>();
+	}
+
+	void parseArgs(String[] args) throws ParseError, InvalidNotationException {
+		String str;
+		for(int i=0; i<args.length; i++) {
+			str = args[i];
+			ArgumentCollection parseResult = ArgumentCollection.parse(str);
+			ArgumentType headType = parseResult.head.type;
+			// collect follow-up if necessary
+			if(headType == ArgumentType.REQUIRES_INT) {
+				if(i+1 == args.length) {
+					throw new ParseError("argument '" + args[i] + "' requires integer follow-up");
+				}
+				i++;
+				try {
+					parseResult.followUpInt = Integer.parseInt(args[i]);
+				} catch(NumberFormatException e) {
+					throw new ParseError("follow-up '" + args[i] + "' cannot be coerced into an integer");
+				}
+			} else if(headType == ArgumentType.REQUIRES_STRING) {
+				if(i+1 == args.length) {
+					throw new ParseError("argument '" + args[i] + "' requires string follow-up");
+				}
+				i++;
+				parseResult.followUpString = args[i];
+			}
+			Util.printf(parseResult, Util.DebugLevel.DEBUG);
+			// deal with meaning of argument
+			ChainInput chainInput;
+			switch(parseResult.head) {
+				case ENABLE_DEBUG:
+					Util.debugLevel = Util.DebugLevel.DEBUG;
+					break;
+				case INPUT:
+					chainInput = new ChainInput(parseResult);
+					this.chains.add(new Chain(chainInput));
+					break;
+				case TRANSITION:
+					if(this.chains.size() < 2) {
+						throw new ParseError("need at least two inputs to compute a transition");
+					}
+					chainInput = new ChainInput(parseResult);
+					this.chains.add(new Chain(chainInput));
+					break;
+				case INVALID_TOKEN:
+					throw new ParseError("invalid token: '" + str + "'");
+				default:
+					if(this.chains.size() == 0) {
+						throw new ParseError("argument '" + str + "' must be applied to an input");
+					}
+					// pass argument to most recent chain
+					this.getChain(-1).addArg(parseResult);
+					break;
+			}
 		}
 	}
 
-	static class Command {
-		List<Chain> chains;
-
-		Command(String[] args) throws ParseError {
-			this.chains = new ArrayList<>();
-			this.parseArgs(args);
+	class ChainInput {
+		boolean isTransitionChain;
+		// if single input
+		String inputNotation;
+		String prefix = null;
+		boolean isState = false;
+		NotatedSiteswap notatedSiteswap;
+		NotatedState notatedState;
+		int numHands = -1;
+		int startHand = 0;
+		boolean keepZeroes = false;
+		// if double input
+		Chain from, to;
+		// constructors
+		ChainInput(ArgumentCollection parsedArgs) throws ParseError, InvalidNotationException {
+			// check what type of input we have
+			switch(parsedArgs.head) {
+				case INPUT:
+					this.inputNotation = parsedArgs.followUpString;
+					// check for notation type indicators
+					if(this.inputNotation.length() > 2 && this.inputNotation.charAt(2) == ':') {
+						this.prefix = this.inputNotation.substring(0,2);
+						this.inputNotation = this.inputNotation.substring(3,this.inputNotation.length());
+						if(this.prefix.equals("ss")) {
+							this.isState = false;
+						} else if(this.prefix.equals("st")) {
+							this.isState = true;
+						} else {
+							throw new InvalidNotationException("unrecognized input prefix: " + this.prefix);
+						}
+					}
+					// get input options
+					for(int i=0; i<parsedArgs.options.size(); i++) {
+						Argument opt = parsedArgs.options.get(i);
+						int intIndex = 0;
+						switch(opt) {
+							case NUM_HANDS:
+								this.numHands = parsedArgs.ints.get(intIndex++);
+								i++;
+								break;
+							case START_HAND:
+								this.startHand = parsedArgs.ints.get(intIndex++);
+								i++;
+								break;
+							case KEEP_ZEROES:
+								this.keepZeroes = true;
+								break;
+							default:
+								throw new ParseError("option '" + opt.longForm + "' is not an input option");
+						}
+					}
+					break;
+				case TO_SITESWAP:
+					this.to = getChain(-1);
+					this.from = getChain(-1);
+					// fall through
+				case TRANSITION:
+					this.from = getChain(-2);
+					this.isTransitionChain = true;
+					break;
+				default:
+					// error
+					Util.printf("IMPOSSIBLE ERROR IN ChainInput()", Util.DebugLevel.ERROR);
+					System.exit(1);
+			}
 		}
-
-		void parseArgs(String[] args) throws ParseError {
-			boolean expectingNotation = false;
-			for(String str : args) {
-				if(expectingNotation) {
-					this.newSingleInputChain(str);
-					expectingNotation = false;
-					continue;
-				}
-				Argument arg = Argument.fromStr(str);
-				switch(arg) {
-					case INPUT:
-						expectingNotation = true;
-						break;
-					case TRANSITION:
-						if(this.chains.size() < 2) {
-							throw new ParseError("need at least two inputs to compute a transition");
+		void createLink() throws InvalidNotationException, IncompatibleNumberOfHandsException {
+			if(this.isTransitionChain) {
+				// TODO
+			} else {
+				if(this.prefix != null) {
+					if(this.isState) {
+						this.notatedState = NotatedState.parse(this.inputNotation, this.numHands, this.startHand);
+					} else {
+						this.notatedSiteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand);
+					}
+				} else {
+					try {
+						this.notatedSiteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand);
+					} catch(InvalidSiteswapNotationException e) {
+						try {
+							this.notatedState = NotatedState.parse(this.inputNotation, this.numHands, this.startHand);
+						} catch(InvalidStateNotationException e2) {
+							throw new InvalidNotationException("could not interpret input '" + this.inputNotation + "' as valid siteswap or state notation");
 						}
-						// create new chain for the transition
-						Link from = this.chains.get(-2).getLastLink();
-						Link to = this.chains.get(-1).getLastLink();
-						this.newDoubleInputChain(from, to);
-						break;
-					case INVALID_TOKEN:
-						throw new ParseError("invalid token: '" + str + "'");
-					default:
-						if(this.chains.size() == 0) {
-							throw new ParseError("need input");
-						}
-						// pass argument to most recent chain
-						this.chains.get(-1).parseArg(str);
-						break;
+					}
 				}
 			}
 		}
-
-		Chain newSingleInputChain(String str) {
-			Chain ret = new Chain(str);
-			this.chains.add(ret);
-			return ret;
+		public String toString() {
+			if(this.isTransitionChain) {
+				return "todo";
+			} else {
+				if(this.isState) {
+					return this.notatedState.print();
+				} else {
+					return this.notatedSiteswap.print();
+				}
+			}
 		}
+	}
 
-		Chain newDoubleInputChain(Chain from, Chain to) {
-			Chain ret = new Chain(from, to);
-			this.chains.add(ret);
-			return ret;
+	class Chain {
+		ChainInput input;
+		List<Link> links;
+		Chain() {
+			this.links = new ArrayList<>();
 		}
-
+		Chain(ChainInput input) throws InvalidNotationException {
+			this.input = input;
+		}
+		Link getLastLink() {
+			return this.links.get(-1);
+		}
+		void addArg(ArgumentCollection arg) {
+		}
+		void execute() throws InvalidNotationException, IncompatibleNumberOfHandsException {
+			// make first link
+			this.input.createLink();
+			Util.printf(this.input, Util.DebugLevel.DEBUG);
+		}
 		class Link {
 			boolean isState;
 			Siteswap siteswap;
 			State state;
 		}
-
-		class InputLink extends Link {
-			String notation;
-		}
-
-		class Chain {
-			Link[] inputs;
-			List<Link> links;
-
-			// for literal input
-			Chain(String notation) {
-				this.inputs = new Link[1];
-				this.links = new ArrayList<>();
-			}
-
-			// for transitions
-			Chain(Chain from, Chain to) {
-				this.inputs = new Link[2];
-			}
-
-			Link getLastLink() {
-				return this.links.get(-1);
-			}
-
-			void parseArg(String arg) {
-			}
-
-		}
-
-		void execute() {
-		}
-
 	}
+
+	Chain getChain(int index) {
+		if(index < 0) {
+			index += this.chains.size();
+		}
+		return this.chains.get(index);
+	}
+
+	void run() throws InvalidNotationException, IncompatibleNumberOfHandsException {
+		for(int i=0; i<this.chains.size(); i++) {
+			this.getChain(i).execute();
+		}
+	}
+
+}
+
+public class Main {
 
 	public static void main(String[] args) {
 		Command command = null;
 		try {
-			command = new Command(args);
-			command.execute();
+			command = new Command();
+			command.parseArgs(args);
+			command.run();
 		} catch(SiteswapException e) {
 			Util.printf(e.getMessage(), Util.DebugLevel.ERROR);
 		}
