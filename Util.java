@@ -10,6 +10,9 @@ public class Util {
 		DEBUG
 	}
 	public static DebugLevel debugLevel = DebugLevel.INFO;
+	public static void printf(Object toPrint) {
+		printf(toPrint, DebugLevel.INFO);
+	}
 	public static void printf(Object toPrint, DebugLevel minLevel) {
 		if(debugLevel.compareTo(minLevel) >= 0) {
 			PrintStream ps; 
