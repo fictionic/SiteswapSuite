@@ -241,10 +241,11 @@ class Command {
 					System.exit(1);
 			}
 		}
-		void createLink() throws InvalidNotationException, IncompatibleNumberOfHandsException {
+		void process() throws InvalidNotationException, IncompatibleNumberOfHandsException {
 			if(this.isTransitionChain) {
 				// TODO
 			} else {
+				// if state or siteswap was explicitly indicated
 				if(this.prefix != null) {
 					if(this.isState) {
 						this.notatedState = NotatedState.parse(this.inputNotation, this.numHands, this.startHand);
@@ -254,9 +255,11 @@ class Command {
 				} else {
 					try {
 						this.notatedSiteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand);
+						this.isState = false;
 					} catch(InvalidSiteswapNotationException e) {
 						try {
 							this.notatedState = NotatedState.parse(this.inputNotation, this.numHands, this.startHand);
+							this.isState = true;
 						} catch(InvalidStateNotationException e2) {
 							throw new InvalidNotationException("could not interpret input '" + this.inputNotation + "' as valid siteswap or state notation");
 						}
@@ -264,10 +267,21 @@ class Command {
 				}
 			}
 		}
+		Link getLink() {
+			Link ret = new Link();
+			ret.isState = this.isState;
+			if(this.isState) {
+				ret.state = this.notatedState.state;
+			} else {
+				ret.siteswap = this.notatedSiteswap.siteswap;
+			}
+			return ret;
+		}
 		public String print() {
 			StringBuilder ret = new StringBuilder("INPUT "); ret.append(this.index); ret.append(":\n");
 			if(this.isTransitionChain) {
-				ret.append("todo");
+				ret.append(" type: transition\n");
+				ret.append("[TODO]\n");
 			} else {
 				if(this.isState) {
 					ret.append(" type: state\n");
@@ -295,45 +309,82 @@ class Command {
 			}
 			return ret.toString();
 		}
-		// for debugging
-		public String toString() {
-			String ret = "index " + this.index;
-			if(this.isTransitionChain) {
-				ret += " (todo)";
-			} else {
-				if(this.isState) {
-					ret += " " + this.notatedState.print();
-				} else {
-					ret += " " + this.notatedSiteswap.print();
-				}
-			}
-			return ret;
-		}
+	}
+
+	class Link {
+		boolean isState;
+		Siteswap siteswap;
+		State state;
 	}
 
 	class Chain {
 		ChainInput input;
+		int length;
 		List<Link> links;
+		List<ParsedArguments> infos;
+		List<ParsedArguments> operations;
+		boolean acceptingInputOptions = true;
 		Chain() {
+			this.length = 0;
 			this.links = new ArrayList<>();
+			this.infos = new ArrayList<>();
+			this.operations = new ArrayList<>();
 		}
 		Chain(ChainInput input) throws InvalidNotationException {
+			this();
 			this.input = input;
 		}
 		Link getLastLink() {
 			return this.links.get(-1);
 		}
-		void addArg(ArgumentCollection arg) {
+		void addArg(ArgumentCollection arg) throws ParseError {
+			if(this.acceptingInputOptions) {
+				if(arg.head.role == Argument.Role.INPUT_ROLE) {
+					this.addInputArg(arg);
+				} else {
+					this.acceptingInputOptions = false;
+					this.addNonInputArg(arg);
+				}
+			} else {
+				if(arg.head.role == Argument.Role.INPUT_ROLE) {
+					throw new ParseError("input options must come before all others");
+				} else {
+					this.addNonInputArg(arg);
+				}
+			}
+		}
+		void addInputArg(ArgumentCollection arg) {
+			switch(arg.head) {
+				case NUM_HANDS:
+					this.input.numHands = arg.followUpInt;
+					break;
+				case START_HAND:
+					this.input.startHand = arg.followUpInt;
+					break;
+				case KEEP_ZEROES:
+					this.input.keepZeroes = true;
+					break;
+				default:
+					break;
+			}
+		}
+		void addNonInputArg(ArgumentCollection arg) {
+			switch(arg.head) {
+				case INFO:
+					break;
+
+			}
 		}
 		void execute() throws InvalidNotationException, IncompatibleNumberOfHandsException {
+			// process
+			this.input.process();
 			// make first link
-			this.input.createLink();
-			Util.printf(this.input.print(), Util.DebugLevel.DEBUG);
-		}
-		class Link {
-			boolean isState;
-			Siteswap siteswap;
-			State state;
+			this.links.add(this.input.getLink());
+			// print input info
+			Util.printf(this.input.print(), Util.DebugLevel.INFO);
+			// run through infos and operations, making links
+			for(int i=0; i<this.length; i++) {
+			}
 		}
 	}
 
