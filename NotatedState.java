@@ -13,6 +13,9 @@ public abstract class NotatedState {
 	}
 
 	public static NotatedState parse(String inputNotation, int numHands, int startHand) throws InvalidStateNotationException, IncompatibleNumberOfHandsException {
+		if(startHand == -1) {
+			startHand = 0;
+		}
 		// determine type of notation
 		StateNotation notationType = StateNotation.analyze(inputNotation);
 		if(notationType == StateNotation.SIMPLE) {

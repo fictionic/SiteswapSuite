@@ -140,6 +140,9 @@ public abstract class NotatedSiteswap {
 
 	// build a Siteswap from a notation string and pair it with the determined NotationType
 	public static NotatedSiteswap parse(String inputNotation, int numHands, int startHand) throws InvalidSiteswapNotationException, IncompatibleNumberOfHandsException {
+		if(startHand == -1) {
+			startHand = 0;
+		}
 		SiteswapNotation n;
 		try {
 			n = SiteswapNotation.analyze(inputNotation);
