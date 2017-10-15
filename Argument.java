@@ -1,65 +1,74 @@
 package siteswapsuite;
 
-enum ArgumentType {
-	FLAG,
-	REQUIRES_INT,
-	REQUIRES_STRING,
-	TAKES_OPTIONS;
-}
-
 // cmdline tokens
 enum Argument {
 	// global options
-	ENABLE_DEBUG('d', "debug", ArgumentType.TAKES_OPTIONS),
+	ENABLE_DEBUG('d', "debug", Requires.REQUIRES_NONE, Role.OTHER_ROLE),
 	// input indicator
-	INPUT('i', "input", ArgumentType.REQUIRES_STRING),
+	INPUT('i', "input", Requires.REQUIRES_STRING, Role.INPUT_ROLE),
 	// input options
-	NUM_HANDS('h', "numHands", ArgumentType.REQUIRES_INT),
-	START_HAND('H', "startHand", ArgumentType.REQUIRES_INT),
-	KEEP_ZEROES('z', "keepZeroes", ArgumentType.FLAG),
+	NUM_HANDS('h', "numHands", Requires.REQUIRES_INT, Role.INPUT_ROLE),
+	START_HAND('H', "startHand", Requires.REQUIRES_INT, Role.INPUT_ROLE),
+	KEEP_ZEROES('z', "keepZeroes", Requires.REQUIRES_NONE, Role.INPUT_ROLE),
 	// info items
-	INFO('\0', "info", ArgumentType.REQUIRES_STRING),
-	CAPACITY('c', "capacity", ArgumentType.FLAG),
-	VALIDITY('v', "validity", ArgumentType.FLAG),
-	PRIMALITY('P', "primality", ArgumentType.FLAG),
-	DIFFICULTY('d', "difficulty", ArgumentType.FLAG),
+	INFO('\0', "info", Requires.REQUIRES_NONE, Role.INFO_ROLE),
+	CAPACITY('c', "capacity", Requires.REQUIRES_NONE, Role.INFO_ROLE),
+	VALIDITY('v', "validity", Requires.REQUIRES_NONE, Role.INFO_ROLE),
+	PRIMALITY('P', "primality", Requires.REQUIRES_NONE, Role.INFO_ROLE),
+	DIFFICULTY('d', "difficulty", Requires.REQUIRES_NONE, Role.INFO_ROLE),
 	// operations
-	OPS('\0', "ops", ArgumentType.REQUIRES_STRING),
-	INVERT('V', "invert", ArgumentType.FLAG),
-	SPRING('p', "spring", ArgumentType.FLAG),
-	INFINITIZE('f', "infinitize", ArgumentType.FLAG),
-	UNINFINITIZE('F', "unInfinitize", ArgumentType.FLAG),
-	ANTITOSSIFY('a', "antitossify", ArgumentType.FLAG),
-	UNANTITOSSIFY('A', "unAntitossify", ArgumentType.FLAG),
-	ANTINEGATE('N', "antiNegate", ArgumentType.FLAG),
-	TO_STATE('s', "state", ArgumentType.FLAG),
+	OPS('\0', "ops", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	INVERT('V', "invert", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	SPRING('p', "spring", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	INFINITIZE('f', "infinitize", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	UNINFINITIZE('F', "unInfinitize", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	ANTITOSSIFY('a', "antitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	UNANTITOSSIFY('A', "unAntitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	ANTINEGATE('N', "antiNegate", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	TO_STATE('s', "state", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	// 'big' operations
-	TO_SITESWAP('S', "siteswap", ArgumentType.TAKES_OPTIONS),
-	TRANSITION('T', "transition", ArgumentType.TAKES_OPTIONS),
+	TO_SITESWAP('S', "siteswap", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	TRANSITION('T', "transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	// transition options
-	MIN_TRANSITION_LENGTH('l', "minTransitionLength", ArgumentType.REQUIRES_INT),
-	MAX_TRANSITIONS('m', "maxTransitions", ArgumentType.REQUIRES_INT),
-	SELECT_TRANSITION('o', "selectTransition", ArgumentType.REQUIRES_INT),
-	ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allowExtraSqueezeCatches", ArgumentType.FLAG),
-	GENERATE_BALL_ANTIBALL_PAIRS('g', "generateBallAntiballPairs", ArgumentType.FLAG),
-	UN_ANTITOSSIFY_TRANSITIONS('A', "unAntitossifyTransitions", ArgumentType.FLAG),
-	DISPLAY_GENERAL_TRANSITION('G', "displayGeneralTransition", ArgumentType.FLAG),
+	MIN_TRANSITION_LENGTH('l', "minTransitionLength", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
+	MAX_TRANSITIONS('m', "maxTransitions", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
+	SELECT_TRANSITION('o', "selectTransition", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
+	ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allowExtraSqueezeCatches", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	GENERATE_BALL_ANTIBALL_PAIRS('g', "generateBallAntiballPairs", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	UN_ANTITOSSIFY_TRANSITIONS('A', "unAntitossifyTransitions", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	DISPLAY_GENERAL_TRANSITION('G', "displayGeneralTransition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	// literal values
-	LITERAL_INT('\0', null, null),
-	LITERAL_STRING('\0', null, null),
+	LITERAL_INT('\0', null, null, null),
+	LITERAL_STRING('\0', null, null, null),
 	// invalid
-	INVALID_TOKEN('\0', null, null);
+	INVALID_TOKEN('\0', null, null, null);
 
 	// fields
 	char shortForm;
 	String longForm;
-	ArgumentType type;
+	Requires requires;
+	Role role;
+
+	enum Requires {
+		REQUIRES_NONE,
+		REQUIRES_INT,
+		REQUIRES_STRING;
+	}
+
+	enum Role {
+		INPUT_ROLE,
+		INFO_ROLE,
+		OPERATION_ROLE,
+		TRANSITION_ROLE,
+		OTHER_ROLE;
+	}
 
 	// constructor
-	private Argument(char shortForm, String longForm, ArgumentType type) {
+	private Argument(char shortForm, String longForm, Requires requires, Role role) {
 		this.shortForm = shortForm;
 		this.longForm = longForm;
-		this.type = type;
+		this.requires = requires;
+		this.role = role;
 	}
 
 	static Argument parseLongOptionName(String str) {

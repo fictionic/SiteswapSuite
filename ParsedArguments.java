@@ -64,10 +64,10 @@ class ParsedArguments {
 				}
 				ret.tail.add(curArg);
 				// add inline arg if present
-				if(curArg.type == ArgumentType.REQUIRES_STRING) {
+				if(curArg.requires == Argument.Requires.REQUIRES_STRING) {
 					ret.tail.add(Argument.LITERAL_STRING);
 					ret.strings.add(inlineArg);
-				} else if(curArg.type == ArgumentType.REQUIRES_INT) {
+				} else if(curArg.requires == Argument.Requires.REQUIRES_INT) {
 					ret.tail.add(Argument.LITERAL_INT);
 					int intArg = Integer.parseInt(inlineArg);
 					ret.ints.add(intArg);
@@ -79,9 +79,9 @@ class ParsedArguments {
 	public String toString() {
 		String ret = "";
 		ret += this.head.toString();
-		if(this.head.type == ArgumentType.REQUIRES_INT) {
+		if(this.head.requires == Argument.Requires.REQUIRES_INT) {
 			ret += " " + this.followUpInt;
-		} else if(this.head.type == ArgumentType.REQUIRES_STRING) {
+		} else if(this.head.requires == Argument.Requires.REQUIRES_STRING) {
 			ret += " " + this.followUpString;
 		}
 		int intIndex = 0;

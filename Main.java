@@ -75,10 +75,10 @@ class ArgumentCollection {
 				}
 				ret.options.add(curArg);
 				// add inline arg if present
-				if(curArg.type == ArgumentType.REQUIRES_STRING) {
+				if(curArg.requires == Argument.Requires.REQUIRES_STRING) {
 					ret.options.add(Argument.LITERAL_STRING);
 					ret.strings.add(inlineArg);
-				} else if(curArg.type == ArgumentType.REQUIRES_INT) {
+				} else if(curArg.requires == Argument.Requires.REQUIRES_INT) {
 					ret.options.add(Argument.LITERAL_INT);
 					int intArg = Integer.parseInt(inlineArg);
 					ret.ints.add(intArg);
@@ -91,9 +91,9 @@ class ArgumentCollection {
 	public String toString() {
 		String ret = "";
 		ret += this.head.toString();
-		if(this.head.type == ArgumentType.REQUIRES_INT) {
+		if(this.head.requires == Argument.Requires.REQUIRES_INT) {
 			ret += " " + this.followUpInt;
-		} else if(this.head.type == ArgumentType.REQUIRES_STRING) {
+		} else if(this.head.requires == Argument.Requires.REQUIRES_STRING) {
 			ret += " " + this.followUpString;
 		}
 		int intIndex = 0;
@@ -125,9 +125,9 @@ class Command {
 		for(int i=0; i<args.length; i++) {
 			str = args[i];
 			ArgumentCollection parseResult = ArgumentCollection.parse(str);
-			ArgumentType headType = parseResult.head.type;
+			Argument.Requires headType = parseResult.head.requires;
 			// collect follow-up if necessary
-			if(headType == ArgumentType.REQUIRES_INT) {
+			if(headType == Argument.Requires.REQUIRES_INT) {
 				if(i+1 == args.length) {
 					throw new ParseError("argument '" + args[i] + "' requires integer follow-up");
 				}
@@ -137,7 +137,7 @@ class Command {
 				} catch(NumberFormatException e) {
 					throw new ParseError("follow-up '" + args[i] + "' cannot be coerced into an integer");
 				}
-			} else if(headType == ArgumentType.REQUIRES_STRING) {
+			} else if(headType == Argument.Requires.REQUIRES_STRING) {
 				if(i+1 == args.length) {
 					throw new ParseError("argument '" + args[i] + "' requires string follow-up");
 				}
@@ -172,7 +172,6 @@ class Command {
 		}
 	}
 
-	@SuppressWarnings("fallthrough")
 	class ChainInput {
 		int index;
 		boolean isTransitionChain;
@@ -188,6 +187,7 @@ class Command {
 		// if double input
 		Chain from, to;
 		// constructors
+		@SuppressWarnings("fallthrough")
 		ChainInput(ArgumentCollection parsedArgs) throws ParseError, InvalidNotationException {
 			this.index = chains.size();
 			// check what type of input we have
