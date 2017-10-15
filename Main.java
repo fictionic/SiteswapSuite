@@ -87,6 +87,7 @@ class ArgumentCollection {
 		}
 		return ret;
 	}
+	// for debugging
 	public String toString() {
 		String ret = "";
 		ret += this.head.toString();
@@ -118,6 +119,7 @@ class Command {
 		this.chains = new ArrayList<>();
 	}
 
+	@SuppressWarnings("fallthrough")
 	void parseArgs(String[] args) throws ParseError, InvalidNotationException {
 		String str;
 		for(int i=0; i<args.length; i++) {
@@ -142,21 +144,18 @@ class Command {
 				i++;
 				parseResult.followUpString = args[i];
 			}
-			Util.printf(parseResult, Util.DebugLevel.DEBUG);
 			// deal with meaning of argument
 			ChainInput chainInput;
 			switch(parseResult.head) {
 				case ENABLE_DEBUG:
 					Util.debugLevel = Util.DebugLevel.DEBUG;
 					break;
-				case INPUT:
-					chainInput = new ChainInput(parseResult);
-					this.chains.add(new Chain(chainInput));
-					break;
 				case TRANSITION:
 					if(this.chains.size() < 2) {
 						throw new ParseError("need at least two inputs to compute a transition");
 					}
+					// fallthrough
+				case INPUT:
 					chainInput = new ChainInput(parseResult);
 					this.chains.add(new Chain(chainInput));
 					break;
@@ -173,7 +172,9 @@ class Command {
 		}
 	}
 
+	@SuppressWarnings("fallthrough")
 	class ChainInput {
+		int index;
 		boolean isTransitionChain;
 		// if single input
 		String inputNotation;
@@ -182,12 +183,13 @@ class Command {
 		NotatedSiteswap notatedSiteswap;
 		NotatedState notatedState;
 		int numHands = -1;
-		int startHand = 0;
+		int startHand = -1;
 		boolean keepZeroes = false;
 		// if double input
 		Chain from, to;
 		// constructors
 		ChainInput(ArgumentCollection parsedArgs) throws ParseError, InvalidNotationException {
+			this.index = chains.size();
 			// check what type of input we have
 			switch(parsedArgs.head) {
 				case INPUT:
@@ -228,7 +230,7 @@ class Command {
 				case TO_SITESWAP:
 					this.to = getChain(-1);
 					this.from = getChain(-1);
-					// fall through
+					// fallthrough
 				case TRANSITION:
 					this.from = getChain(-2);
 					this.isTransitionChain = true;
@@ -262,16 +264,50 @@ class Command {
 				}
 			}
 		}
-		public String toString() {
+		public String print() {
+			StringBuilder ret = new StringBuilder("INPUT "); ret.append(this.index); ret.append(":\n");
 			if(this.isTransitionChain) {
-				return "todo";
+				ret.append("todo");
 			} else {
 				if(this.isState) {
-					return this.notatedState.print();
+					ret.append(" type: state\n");
 				} else {
-					return this.notatedSiteswap.print();
+					ret.append(" type: siteswap\n");
+				}
+				ret.append(" notation: '"); ret.append(this.inputNotation); ret.append("'\n");
+				if(this.numHands != -1) {
+					ret.append(" numHands: ");
+					ret.append(this.numHands);
+					ret.append("\n");
+				}
+				if(this.startHand != -1) {
+					ret.append(" startHand: ");
+					ret.append(this.startHand);
+					ret.append("\n");
+				}
+				if(this.isState) {
+					ret.append(" parsed: "); ret.append(this.notatedState.state); ret.append("\n");
+					ret.append(" notated: "); ret.append(this.notatedState.print());
+				} else {
+					ret.append(" parsed: "); ret.append(this.notatedSiteswap.siteswap); ret.append("\n");
+					ret.append(" notated: "); ret.append(this.notatedSiteswap.print());
 				}
 			}
+			return ret.toString();
+		}
+		// for debugging
+		public String toString() {
+			String ret = "index " + this.index;
+			if(this.isTransitionChain) {
+				ret += " (todo)";
+			} else {
+				if(this.isState) {
+					ret += " " + this.notatedState.print();
+				} else {
+					ret += " " + this.notatedSiteswap.print();
+				}
+			}
+			return ret;
 		}
 	}
 
@@ -292,7 +328,7 @@ class Command {
 		void execute() throws InvalidNotationException, IncompatibleNumberOfHandsException {
 			// make first link
 			this.input.createLink();
-			Util.printf(this.input, Util.DebugLevel.DEBUG);
+			Util.printf(this.input.print(), Util.DebugLevel.DEBUG);
 		}
 		class Link {
 			boolean isState;
