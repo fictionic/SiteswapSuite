@@ -119,8 +119,7 @@ class Command {
 		this.chains = new ArrayList<>();
 	}
 
-	@SuppressWarnings("fallthrough")
-	void parseArgs(String[] args) throws ParseError, InvalidNotationException {
+	void parseArgs(String[] args) throws ParseError, InvalidNotationException, IncompatibleNumberOfHandsException {
 		String str;
 		for(int i=0; i<args.length; i++) {
 			str = args[i];
@@ -154,7 +153,9 @@ class Command {
 					if(this.chains.size() < 2) {
 						throw new ParseError("need at least two inputs to compute a transition");
 					}
-					// fallthrough
+					chainInput = new ChainInput(parseResult);
+					this.chains.add(new Chain(chainInput));
+					break;
 				case INPUT:
 					chainInput = new ChainInput(parseResult);
 					this.chains.add(new Chain(chainInput));
@@ -186,8 +187,8 @@ class Command {
 		boolean keepZeroes = false;
 		// if double input
 		Chain from, to;
+		Link link;
 		// constructors
-		@SuppressWarnings("fallthrough")
 		ChainInput(ArgumentCollection parsedArgs) throws ParseError, InvalidNotationException {
 			this.index = chains.size();
 			// check what type of input we have
@@ -230,8 +231,10 @@ class Command {
 				case TO_SITESWAP:
 					this.to = getChain(-1);
 					this.from = getChain(-1);
-					// fallthrough
+					this.isTransitionChain = false;
+					break;
 				case TRANSITION:
+					this.to = getChain(-1);
 					this.from = getChain(-2);
 					this.isTransitionChain = true;
 					break;
@@ -244,6 +247,8 @@ class Command {
 		void process() throws InvalidNotationException, IncompatibleNumberOfHandsException {
 			if(this.isTransitionChain) {
 				// TODO
+				Util.printf("transition mechanics not yet implemented from cmdline", Util.DebugLevel.ERROR);
+				System.exit(1);
 			} else {
 				// if state or siteswap was explicitly indicated
 				if(this.prefix != null) {
@@ -266,22 +271,20 @@ class Command {
 					}
 				}
 			}
-		}
-		Link getLink() {
-			Link ret = new Link();
-			ret.isState = this.isState;
-			if(this.isState) {
-				ret.state = this.notatedState.state;
+			// create link
+			this.link = new Link();
+			this.link.isState = this.isState;
+			if(this.link.isState) {
+				this.link.state = this.notatedState.state;
 			} else {
-				ret.siteswap = this.notatedSiteswap.siteswap;
+				this.link.siteswap = this.notatedSiteswap.siteswap;
 			}
-			return ret;
 		}
 		public String print() {
 			StringBuilder ret = new StringBuilder("INPUT "); ret.append(this.index); ret.append(":\n");
 			if(this.isTransitionChain) {
 				ret.append(" type: transition\n");
-				ret.append("[TODO]\n");
+				ret.append(" [TODO]\n");
 			} else {
 				if(this.isState) {
 					ret.append(" type: state\n");
@@ -315,34 +318,91 @@ class Command {
 		boolean isState;
 		Siteswap siteswap;
 		State state;
+		List<Argument> infos;
+		Argument operation;
+		Link() {
+			this.infos = new ArrayList<>();
+		}
+		String printInfo() {
+			StringBuilder ret = new StringBuilder();
+			ret.append("LINK:\n");
+			if(this.isState) {
+				ret.append(" type:   state\n");
+				ret.append(" parsed: " + this.state.toString() + "\n");
+			} else {
+				ret.append(" type: siteswap\n");
+				ret.append(" parsed: " + this.siteswap.toString() + "\n");
+			}
+			for(Argument infoArg : this.infos) {
+				switch(infoArg) {
+					case CAPACITY:
+						ExtendedFraction capacity;
+						if(this.isState) {
+							// not implemented
+							capacity = new ExtendedFraction(new ExtendedInteger(0), 1);
+						} else {
+							capacity = this.siteswap.numBalls();
+						}
+						ret.append(" capacity: " + capacity.toString() + "\n");
+						break;
+					case VALIDITY:
+						boolean validity;
+						if(this.isState) {
+							validity = (this.state.repeatedLength == 0);
+						} else {
+							validity = this.siteswap.isValid();
+						}
+						ret.append(" validity: " + validity + "\n");
+						break;
+					case PRIMALITY:
+						boolean primality;
+						if(this.isState) {
+							ret.append(" primality: n/a\n");
+						} else {
+							ret.append(" primality: " + this.siteswap.isPrime() + "\n");
+						}
+						break;
+					case DIFFICULTY:
+						ExtendedFraction difficulty;
+						if(this.isState) {
+							ret.append(" difficulty: n/a\n");
+						} else {
+							ret.append(" difficulty: " + this.siteswap.difficulty().toString() + "\n");
+						}
+						break;
+					default:
+						break;
+				}
+			}
+			return ret.toString();
+		}
 	}
 
 	class Chain {
 		ChainInput input;
-		int length;
 		List<Link> links;
-		List<ParsedArguments> infos;
-		List<ParsedArguments> operations;
-		boolean acceptingInputOptions = true;
+		boolean acceptingInputOptions;
 		Chain() {
-			this.length = 0;
 			this.links = new ArrayList<>();
-			this.infos = new ArrayList<>();
-			this.operations = new ArrayList<>();
+			this.acceptingInputOptions = true;
 		}
 		Chain(ChainInput input) throws InvalidNotationException {
 			this();
 			this.input = input;
 		}
 		Link getLastLink() {
-			return this.links.get(-1);
+			return this.links.get(this.links.size()-1);
 		}
-		void addArg(ArgumentCollection arg) throws ParseError {
+		void addArg(ArgumentCollection arg) throws ParseError, InvalidNotationException, IncompatibleNumberOfHandsException {
 			if(this.acceptingInputOptions) {
 				if(arg.head.role == Argument.Role.INPUT_ROLE) {
 					this.addInputArg(arg);
 				} else {
 					this.acceptingInputOptions = false;
+					// make first link
+					this.input.process();
+					this.links.add(this.input.link);
+					// add argument
 					this.addNonInputArg(arg);
 				}
 			} else {
@@ -369,22 +429,87 @@ class Command {
 			}
 		}
 		void addNonInputArg(ArgumentCollection arg) {
-			switch(arg.head) {
-				case INFO:
+			switch(arg.head.role) {
+				case INFO_ROLE:
+					if(arg.head == Argument.INFO) {
+						this.getLastLink().infos.addAll(arg.options);
+					} else {
+						this.getLastLink().infos.add(arg.head);
+					}
+					break;
+				case OPERATION_ROLE:
+					if(arg.head == Argument.OPS) {
+						for(Argument op : arg.options) {
+							this.getLastLink().operation = op;
+							this.links.add(new Link());
+						}
+					} else {
+						this.getLastLink().operation = arg.head;
+						this.links.add(new Link());
+					}
+					break;
+				default:
 					break;
 
 			}
 		}
 		void execute() throws InvalidNotationException, IncompatibleNumberOfHandsException {
-			// process
-			this.input.process();
-			// make first link
-			this.links.add(this.input.getLink());
+			// process if necessary
+			if(this.acceptingInputOptions) {
+				this.input.process();
+				this.links.add(this.input.link);
+				this.acceptingInputOptions = false;
+			}
 			// print input info
 			Util.printf(this.input.print(), Util.DebugLevel.INFO);
-			// run through infos and operations, making links
-			for(int i=0; i<this.length; i++) {
+			// assemble chain by executing operations
+			for(int i=0; i<this.links.size()-1; i++) {
+				Link link = this.links.get(i);
+				// print info
+				Util.printf(link.printInfo());
+				// next link (holds result of operation)
+				Link newLink = this.links.get(i+1);
+				if(link.isState) {
+					// TODO
+					Util.printf("dunno what to do when link is a state", Util.DebugLevel.ERROR);
+				} else {
+					if(link.operation == Argument.TO_STATE) {
+						newLink.isState = true;
+						newLink.state = new State(link.siteswap);
+					} else {
+						newLink.isState = false;
+						newLink.siteswap = link.siteswap.deepCopy();
+						// compute operations
+						switch(link.operation) {
+							case INVERT:
+								newLink.siteswap.invert();
+								break;
+							case SPRING:
+								Util.printf("sprung not yet implemented", Util.DebugLevel.ERROR);
+								break;
+							case INFINITIZE:
+								newLink.siteswap.infinitize();
+								break;
+							case UNINFINITIZE:
+								newLink.siteswap.unInfinitize();
+								break;
+							case ANTITOSSIFY:
+								newLink.siteswap.antitossify();
+								break;
+							case UNANTITOSSIFY:
+								newLink.siteswap.unAntitossify();
+								break;
+							case ANTINEGATE:
+								newLink.siteswap.antiNegate();
+								break;
+							default:
+								break;
+						}
+					}
+				}
 			}
+			// print info for last link
+			Util.printf(this.getLastLink().printInfo());
 		}
 	}
 
