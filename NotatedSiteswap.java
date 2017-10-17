@@ -94,7 +94,7 @@ public abstract class NotatedSiteswap {
 			case ASYNCHRONOUS:
 				return new OneHandedNotatedSiteswap(ss);
 			case SYNCHRONOUS:
-				return new TwoHandedAsyncNotatedSiteswap(ss);
+				return new TwoHandedSyncNotatedSiteswap(ss);
 			default: // case PASSING
 				return new NotatedPassingSiteswap(ss);
 		}
