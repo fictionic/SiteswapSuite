@@ -304,12 +304,13 @@ class Command {
 				}
 				if(this.isState) {
 					ret.append(" parsed: "); ret.append(this.notatedState.state); ret.append("\n");
-					ret.append(" notated: "); ret.append(this.notatedState.print());
+					ret.append(" notated: "); ret.append(this.notatedState.print()); ret.append("\n");
 				} else {
 					ret.append(" parsed: "); ret.append(this.notatedSiteswap.siteswap); ret.append("\n");
-					ret.append(" notated: "); ret.append(this.notatedSiteswap.print());
+					ret.append(" notated: "); ret.append(this.notatedSiteswap.print()); ret.append("\n");
 				}
 			}
+			ret.append("-----\n");
 			return ret.toString();
 		}
 	}
