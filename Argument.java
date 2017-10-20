@@ -3,7 +3,7 @@ package siteswapsuite;
 // cmdline tokens
 enum Argument {
 	// global options
-	ENABLE_DEBUG('d', "debug", Requires.REQUIRES_NONE, Role.OTHER_ROLE),
+	ENABLE_DEBUG('D', "debug", Requires.REQUIRES_NONE, Role.OTHER_ROLE),
 	// input indicator
 	INPUT('i', "input", Requires.REQUIRES_STRING, Role.INPUT_ROLE),
 	// input options
@@ -26,9 +26,16 @@ enum Argument {
 	UNANTITOSSIFY('A', "unAntitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	ANTINEGATE('N', "antiNegate", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	TO_STATE('s', "state", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	// 'big' operations
 	TO_SITESWAP('S', "siteswap", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	// operations that take multiple inputs
 	TRANSITION('T', "transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	/* COMBINE
+	 * APPEND
+	 * */
+	// misc operations
+	/*
+	 * EXTRACT_ORBIT
+	 */
 	// transition options
 	MIN_TRANSITION_LENGTH('l', "minTransitionLength", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
 	MAX_TRANSITIONS('m', "maxTransitions", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
