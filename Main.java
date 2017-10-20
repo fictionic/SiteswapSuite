@@ -187,7 +187,6 @@ class Command {
 		boolean keepZeroes = false;
 		// if double input
 		Chain from, to;
-		Link link;
 		// constructors
 		ChainInput(ArgumentCollection parsedArgs) throws ParseError, InvalidNotationException {
 			this.index = chains.size();
@@ -271,14 +270,16 @@ class Command {
 					}
 				}
 			}
-			// create link
-			this.link = new Link();
-			this.link.isState = this.isState;
-			if(this.link.isState) {
-				this.link.state = this.notatedState.state;
+		}
+		Link getLink() {
+			Link link = new Link();
+			link.isState = this.isState;
+			if(link.isState) {
+				link.notatedState = this.notatedState;
 			} else {
-				this.link.siteswap = this.notatedSiteswap.siteswap;
+				link.notatedSiteswap = this.notatedSiteswap;
 			}
+			return link;
 		}
 		public String print() {
 			StringBuilder ret = new StringBuilder("INPUT "); ret.append(this.index); ret.append(":\n");
@@ -286,11 +287,7 @@ class Command {
 				ret.append(" type: transition\n");
 				ret.append(" [TODO]\n");
 			} else {
-				if(this.isState) {
-					ret.append(" type: state\n");
-				} else {
-					ret.append(" type: siteswap\n");
-				}
+				ret.append(" type: literal\n");
 				ret.append(" notation: '"); ret.append(this.inputNotation); ret.append("'\n");
 				if(this.numHands != -1) {
 					ret.append(" numHands: ");
@@ -302,23 +299,17 @@ class Command {
 					ret.append(this.startHand);
 					ret.append("\n");
 				}
-				if(this.isState) {
-					ret.append(" parsed: "); ret.append(this.notatedState.state); ret.append("\n");
-					ret.append(" notated: "); ret.append(this.notatedState.print()); ret.append("\n");
-				} else {
-					ret.append(" parsed: "); ret.append(this.notatedSiteswap.siteswap); ret.append("\n");
-					ret.append(" notated: "); ret.append(this.notatedSiteswap.print()); ret.append("\n");
-				}
 			}
-			ret.append("-----\n");
+			// remove final newline cuz println
+			ret.deleteCharAt(ret.length()-1);
 			return ret.toString();
 		}
 	}
 
 	class Link {
 		boolean isState;
-		Siteswap siteswap;
-		State state;
+		NotatedSiteswap notatedSiteswap;
+		NotatedState notatedState;
 		List<Argument> infos;
 		Argument operation;
 		Link() {
@@ -326,13 +317,13 @@ class Command {
 		}
 		String printInfo() {
 			StringBuilder ret = new StringBuilder();
-			ret.append("LINK:\n");
+			ret.append("---> OBJ:\n");
 			if(this.isState) {
 				ret.append(" type:   state\n");
-				ret.append(" parsed: " + this.state.toString() + "\n");
+				ret.append(" parsed: " + this.notatedState.state.toString() + "\n");
 			} else {
 				ret.append(" type: siteswap\n");
-				ret.append(" parsed: " + this.siteswap.toString() + "\n");
+				ret.append(" parsed: " + this.notatedSiteswap.siteswap.toString() + "\n");
 			}
 			for(Argument infoArg : this.infos) {
 				switch(infoArg) {
@@ -342,16 +333,16 @@ class Command {
 							// not implemented
 							capacity = new ExtendedFraction(new ExtendedInteger(0), 1);
 						} else {
-							capacity = this.siteswap.numBalls();
+							capacity = this.notatedSiteswap.siteswap.numBalls();
 						}
 						ret.append(" capacity: " + capacity.toString() + "\n");
 						break;
 					case VALIDITY:
 						boolean validity;
 						if(this.isState) {
-							validity = (this.state.repeatedLength == 0);
+							validity = (this.notatedState.state.repeatedLength == 0);
 						} else {
-							validity = this.siteswap.isValid();
+							validity = this.notatedSiteswap.siteswap.isValid();
 						}
 						ret.append(" validity: " + validity + "\n");
 						break;
@@ -360,7 +351,7 @@ class Command {
 						if(this.isState) {
 							ret.append(" primality: n/a\n");
 						} else {
-							ret.append(" primality: " + this.siteswap.isPrime() + "\n");
+							ret.append(" primality: " + this.notatedSiteswap.siteswap.isPrime() + "\n");
 						}
 						break;
 					case DIFFICULTY:
@@ -368,13 +359,15 @@ class Command {
 						if(this.isState) {
 							ret.append(" difficulty: n/a\n");
 						} else {
-							ret.append(" difficulty: " + this.siteswap.difficulty().toString() + "\n");
+							ret.append(" difficulty: " + this.notatedSiteswap.siteswap.difficulty().toString() + "\n");
 						}
 						break;
 					default:
 						break;
 				}
 			}
+			// remove final newline cuz println
+			ret.deleteCharAt(ret.length()-1);
 			return ret.toString();
 		}
 	}
@@ -402,7 +395,7 @@ class Command {
 					this.acceptingInputOptions = false;
 					// make first link
 					this.input.process();
-					this.links.add(this.input.link);
+					this.links.add(this.input.getLink());
 					// add argument
 					this.addNonInputArg(arg);
 				}
@@ -458,7 +451,7 @@ class Command {
 			// process if necessary
 			if(this.acceptingInputOptions) {
 				this.input.process();
-				this.links.add(this.input.link);
+				this.links.add(this.input.getLink());
 				this.acceptingInputOptions = false;
 			}
 			// print input info
@@ -474,34 +467,36 @@ class Command {
 					// TODO
 					Util.printf("dunno what to do when link is a state", Util.DebugLevel.ERROR);
 				} else {
+					// print each operation in the chain
+					Util.printf("---> " + link.operation.toString() + " ", false);
 					if(link.operation == Argument.TO_STATE) {
 						newLink.isState = true;
-						newLink.state = new State(link.siteswap);
+						newLink.notatedState = NotatedState.assembleAutomatic(new State(link.notatedSiteswap.siteswap));
 					} else {
 						newLink.isState = false;
-						newLink.siteswap = link.siteswap.deepCopy();
+						newLink.notatedSiteswap = link.notatedSiteswap.deepCopy();
 						// compute operations
 						switch(link.operation) {
 							case INVERT:
-								newLink.siteswap.invert();
+								newLink.notatedSiteswap.siteswap.invert();
 								break;
 							case SPRING:
 								Util.printf("sprung not yet implemented", Util.DebugLevel.ERROR);
 								break;
 							case INFINITIZE:
-								newLink.siteswap.infinitize();
+								newLink.notatedSiteswap.siteswap.infinitize();
 								break;
 							case UNINFINITIZE:
-								newLink.siteswap.unInfinitize();
+								newLink.notatedSiteswap.siteswap.unInfinitize();
 								break;
 							case ANTITOSSIFY:
-								newLink.siteswap.antitossify();
+								newLink.notatedSiteswap.siteswap.antitossify();
 								break;
 							case UNANTITOSSIFY:
-								newLink.siteswap.unAntitossify();
+								newLink.notatedSiteswap.siteswap.unAntitossify();
 								break;
 							case ANTINEGATE:
-								newLink.siteswap.antiNegate();
+								newLink.notatedSiteswap.siteswap.antiNegate();
 								break;
 							default:
 								break;
