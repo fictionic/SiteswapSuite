@@ -300,8 +300,6 @@ class Command {
 					ret.append("\n");
 				}
 			}
-			// remove final newline cuz println
-			ret.deleteCharAt(ret.length()-1);
 			return ret.toString();
 		}
 	}
@@ -366,8 +364,6 @@ class Command {
 						break;
 				}
 			}
-			// remove final newline cuz println
-			ret.deleteCharAt(ret.length()-1);
 			return ret.toString();
 		}
 	}
@@ -455,12 +451,12 @@ class Command {
 				this.acceptingInputOptions = false;
 			}
 			// print input info
-			Util.printf(this.input.print(), Util.DebugLevel.INFO);
+			Util.printf(this.input.print(), Util.DebugLevel.INFO, false);
 			// assemble chain by executing operations
 			for(int i=0; i<this.links.size()-1; i++) {
 				Link link = this.links.get(i);
 				// print info
-				Util.printf(link.printInfo());
+				Util.printf(link.printInfo(), false);
 				// next link (holds result of operation)
 				Link newLink = this.links.get(i+1);
 				if(link.isState) {
@@ -503,6 +499,7 @@ class Command {
 						}
 					}
 				}
+				// Util.printf("=====");
 			}
 			// print info for last link
 			Util.printf(this.getLastLink().printInfo());
