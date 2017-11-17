@@ -15,7 +15,7 @@ pure-ss:
 
 notation:
 	javac -d . SiteswapNotation.java NotatedSiteswap.java StateNotation.java NotatedState.java \
-		CompatibleNotatedSiteswapPair.java CompatibleNotatedObjectPair.java ContextualizedNotatedTransitionList.java
+		CompatibleNotatedObjectPair.java ContextualizedNotatedTransitionList.java
 
 main:
 	javac -d . Argument.java ParsedArguments.java Main.java 
