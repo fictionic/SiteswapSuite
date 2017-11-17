@@ -245,7 +245,22 @@ class Command {
 		}
 		void process() throws InvalidNotationException, IncompatibleNumberOfHandsException {
 			if(this.isTransitionChain) {
-				// TODO
+				// IN PROGRESS
+				// assemble Candidates
+				CompatibleNotatedObjectPair.Candidate c1, c2;
+				// for now just take output from two most recent Chains as inputs
+				Link l1 = getChain(-3).getLastLink(), l2 = getChain(-2).getLastLink();
+				if(l1.isState) {
+					c1 = new CompatibleNotatedObjectPair.Candidate(l1.notatedState);
+				} else {
+					c1 = new CompatibleNotatedObjectPair.Candidate(l1.notatedSiteswap);
+				}
+				if(l2.isState) {
+					c2 = new CompatibleNotatedObjectPair.Candidate(l2.notatedState);
+				} else {
+					c2 = new CompatibleNotatedObjectPair.Candidate(l2.notatedSiteswap);
+				}
+				CompatibleNotatedObjectPair pair = new CompatibleNotatedObjectPair(c1, c2);
 				Util.printf("transition mechanics not yet implemented from cmdline", Util.DebugLevel.ERROR);
 				System.exit(1);
 			} else {
@@ -315,12 +330,11 @@ class Command {
 		}
 		String printInfo() {
 			StringBuilder ret = new StringBuilder();
-			ret.append("---> OBJ:\n");
 			if(this.isState) {
-				ret.append(" type:   state\n");
+				ret.append("---> state:\n");
 				ret.append(" parsed: " + this.notatedState.state.toString() + "\n");
 			} else {
-				ret.append(" type: siteswap\n");
+				ret.append("---> siteswap:\n");
 				ret.append(" parsed: " + this.notatedSiteswap.siteswap.toString() + "\n");
 			}
 			for(Argument infoArg : this.infos) {
@@ -328,7 +342,7 @@ class Command {
 					case CAPACITY:
 						ExtendedFraction capacity;
 						if(this.isState) {
-							// not implemented
+							Util.printf("warning: capacity not yet implemented for states", Util.DebugLevel.ERROR);
 							capacity = new ExtendedFraction(new ExtendedInteger(0), 1);
 						} else {
 							capacity = this.notatedSiteswap.siteswap.numBalls();
@@ -461,7 +475,7 @@ class Command {
 				Link newLink = this.links.get(i+1);
 				if(link.isState) {
 					// TODO
-					Util.printf("dunno what to do when link is a state", Util.DebugLevel.ERROR);
+					Util.printf("dunno what to do when link is a state (yet)", Util.DebugLevel.ERROR);
 				} else {
 					// print each operation in the chain
 					Util.printf("---> " + link.operation.toString() + " ", false);
