@@ -7,6 +7,10 @@ public abstract class NotatedState {
 	State state;
 	StateNotation notationType;
 
+	public StateNotation notationType() {
+		return this.notationType;
+	}
+
 	private NotatedState(int numHands) {
 		this.state = new State(numHands);
 		this.notationType = null; //???
