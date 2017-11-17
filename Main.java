@@ -269,11 +269,11 @@ class Command {
 					if(this.isState) {
 						this.notatedState = NotatedState.parse(this.inputNotation, this.numHands, this.startHand);
 					} else {
-						this.notatedSiteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand);
+						this.notatedSiteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand, this.keepZeroes);
 					}
 				} else {
 					try {
-						this.notatedSiteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand);
+						this.notatedSiteswap = NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand, this.keepZeroes);
 						this.isState = false;
 					} catch(InvalidSiteswapNotationException e) {
 						try {
