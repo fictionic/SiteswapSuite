@@ -7,9 +7,9 @@ enum Argument {
 	// input indicator
 	INPUT('i', "input", Requires.REQUIRES_STRING, Role.INPUT_ROLE),
 	// input options
-	NUM_HANDS('h', "numHands", Requires.REQUIRES_INT, Role.INPUT_ROLE),
-	START_HAND('H', "startHand", Requires.REQUIRES_INT, Role.INPUT_ROLE),
-	KEEP_ZEROES('z', "keepZeroes", Requires.REQUIRES_NONE, Role.INPUT_ROLE),
+	NUM_HANDS('h', "num-hands", Requires.REQUIRES_INT, Role.INPUT_ROLE),
+	START_HAND('H', "start-hand", Requires.REQUIRES_INT, Role.INPUT_ROLE),
+	KEEP_ZEROES('z', "keep-zeroes", Requires.REQUIRES_NONE, Role.INPUT_ROLE),
 	// info items
 	INFO('\0', "info", Requires.REQUIRES_NONE, Role.INFO_ROLE),
 	CAPACITY('c', "capacity", Requires.REQUIRES_NONE, Role.INFO_ROLE),
@@ -21,10 +21,10 @@ enum Argument {
 	INVERT('V', "invert", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	SPRING('p', "spring", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	INFINITIZE('f', "infinitize", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	UNINFINITIZE('F', "unInfinitize", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	UNINFINITIZE('F', "un-infinitize", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	ANTITOSSIFY('a', "antitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	UNANTITOSSIFY('A', "unAntitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	ANTINEGATE('N', "antiNegate", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	UNANTITOSSIFY('A', "un-antitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	ANTINEGATE('N', "anti-negate", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	TO_STATE('s', "state", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	TO_SITESWAP('S', "siteswap", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	// operations that take multiple inputs
@@ -37,13 +37,13 @@ enum Argument {
 	 * EXTRACT_ORBIT
 	 */
 	// transition options
-	MIN_TRANSITION_LENGTH('l', "minTransitionLength", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
-	MAX_TRANSITIONS('m', "maxTransitions", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
-	SELECT_TRANSITION('o', "selectTransition", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
-	ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allowExtraSqueezeCatches", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
-	GENERATE_BALL_ANTIBALL_PAIRS('g', "generateBallAntiballPairs", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
-	UN_ANTITOSSIFY_TRANSITIONS('A', "unAntitossifyTransitions", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
-	DISPLAY_GENERAL_TRANSITION('G', "displayGeneralTransition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	MIN_TRANSITION_LENGTH('l', "min-transition-length", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
+	MAX_TRANSITIONS('m', "max-transitions", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
+	SELECT_TRANSITION('o', "select-transition", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
+	ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allow-extra-squeeze-catches", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	GENERATE_BALL_ANTIBALL_PAIRS('g', "generate-ball-antiball-pairs", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	UN_ANTITOSSIFY_TRANSITIONS('A', "un-antitossify-transitions", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	DISPLAY_GENERAL_TRANSITION('G', "display-general-transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	// literal values
 	LITERAL_INT('\0', null, null, null),
 	LITERAL_STRING('\0', null, null, null),
