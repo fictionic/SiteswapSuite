@@ -2,15 +2,6 @@ package siteswapsuite;
 
 import java.util.regex.Pattern;
 
-class InvalidSiteswapNotationException extends InvalidNotationException {
-	InvalidSiteswapNotationException(String s) {
-		super(s);
-	}
-	public String getMessage() {
-		return "ERROR: string `" + s + "' is not valid siteswap notation";
-	}
-}
-
 public enum SiteswapNotation { 
 
 	EMPTY(0), ASYNCHRONOUS(1), SYNCHRONOUS(2), MIXED(2), PASSING(4);

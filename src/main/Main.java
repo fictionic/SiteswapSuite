@@ -119,7 +119,7 @@ class Command {
 		this.chains = new ArrayList<>();
 	}
 
-	void parseArgs(String[] args) throws ParseError, InvalidNotationException, IncompatibleNumberOfHandsException {
+	void parseArgs(String[] args) throws ParseError, InvalidNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
 		String str;
 		for(int i=0; i<args.length; i++) {
 			str = args[i];
@@ -175,7 +175,7 @@ class Command {
 
 	class ChainInput {
 		int index;
-		boolean isTransitionChain;
+		boolean isTransitionInput;
 		// if single input
 		String inputNotation;
 		String prefix = null;
@@ -187,6 +187,9 @@ class Command {
 		boolean keepZeroes = false;
 		// if double input
 		Chain from, to;
+		int maxTransitions = -1;
+		boolean allowExtraSqueezeCatches = false;
+		boolean generateBallAntiballPairs = false;
 		// constructors
 		ChainInput(ArgumentCollection parsedArgs) throws ParseError, InvalidNotationException {
 			this.index = chains.size();
@@ -230,12 +233,12 @@ class Command {
 				case TO_SITESWAP:
 					this.to = getChain(-1);
 					this.from = getChain(-1);
-					this.isTransitionChain = false;
+					this.isTransitionInput = false;
 					break;
 				case TRANSITION:
 					this.to = getChain(-1);
 					this.from = getChain(-2);
-					this.isTransitionChain = true;
+					this.isTransitionInput = true;
 					break;
 				default:
 					// error
@@ -243,24 +246,35 @@ class Command {
 					System.exit(1);
 			}
 		}
-		void process() throws InvalidNotationException, IncompatibleNumberOfHandsException {
-			if(this.isTransitionChain) {
+		void getTransitionOptions(ArgumentCollection parsedArgs) throws ParseError {
+			int intIndex = 0;
+			for(int i=0; i<parsedArgs.options.size(); i++) {
+				Argument opt = parsedArgs.options.get(i);
+				switch(opt) {
+					case MAX_TRANSITIONS:
+						this.numHands = parsedArgs.ints.get(intIndex++);
+						i++;
+						break;
+					case ALLOW_EXTRA_SQUEEZE_CATCHES:
+						this.allowExtraSqueezeCatches = true;
+						break;
+					case GENERATE_BALL_ANTIBALL_PAIRS:
+						this.generateBallAntiballPairs = true;
+						break;
+					default:
+						throw new ParseError("option '" + opt.longForm + "' is not a transition option");
+				}
+			}
+		}
+		void process() throws InvalidNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
+			if(this.isTransitionInput) {
 				// IN PROGRESS
-				// assemble Candidates
-				CompatibleNotatedObjectPair.Candidate c1, c2;
 				// for now just take output from two most recent Chains as inputs
 				Link l1 = getChain(-3).getLastLink(), l2 = getChain(-2).getLastLink();
-				if(l1.isState) {
-					c1 = new CompatibleNotatedObjectPair.Candidate(l1.notatedState);
-				} else {
-					c1 = new CompatibleNotatedObjectPair.Candidate(l1.notatedSiteswap);
-				}
-				if(l2.isState) {
-					c2 = new CompatibleNotatedObjectPair.Candidate(l2.notatedState);
-				} else {
-					c2 = new CompatibleNotatedObjectPair.Candidate(l2.notatedSiteswap);
-				}
-				CompatibleNotatedObjectPair pair = new CompatibleNotatedObjectPair(c1, c2);
+				State from = l1.notatedState.state;
+				State to = l2.notatedState.state; // nullpointerexception when links are siteswaps. need to wait on notation overhaul
+				TransitionFinder tf = new TransitionFinder(from, to);
+				TransitionResults tr = tf.findTransitions(this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
 				Util.printf("transition mechanics not yet implemented from cmdline", Util.DebugLevel.ERROR);
 				System.exit(1);
 			} else {
@@ -298,7 +312,7 @@ class Command {
 		}
 		public String print() {
 			StringBuilder ret = new StringBuilder("INPUT "); ret.append(this.index); ret.append(":\n");
-			if(this.isTransitionChain) {
+			if(this.isTransitionInput) {
 				ret.append(" type: transition\n");
 				ret.append(" [TODO]\n");
 			} else {
@@ -397,9 +411,10 @@ class Command {
 		Link getLastLink() {
 			return this.links.get(this.links.size()-1);
 		}
-		void addArg(ArgumentCollection arg) throws ParseError, InvalidNotationException, IncompatibleNumberOfHandsException {
+		void addArg(ArgumentCollection arg) throws ParseError, InvalidNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
 			if(this.acceptingInputOptions) {
-				if(arg.head.role == Argument.Role.INPUT_ROLE) {
+				if((this.input.isTransitionInput && arg.head.role == Argument.Role.TRANSITION_ROLE)
+						|| (!this.input.isTransitionInput && arg.head.role == Argument.Role.INPUT_ROLE)) {
 					this.addInputArg(arg);
 				} else {
 					this.acceptingInputOptions = false;
@@ -457,7 +472,7 @@ class Command {
 
 			}
 		}
-		void execute() throws InvalidNotationException, IncompatibleNumberOfHandsException {
+		void execute() throws InvalidNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
 			// process if necessary
 			if(this.acceptingInputOptions) {
 				this.input.process();
@@ -527,7 +542,7 @@ class Command {
 		return this.chains.get(index);
 	}
 
-	void run() throws InvalidNotationException, IncompatibleNumberOfHandsException {
+	void run() throws InvalidNotationException, IncompatibleNumberOfHandsException, ImpossibleTransitionException {
 		for(int i=0; i<this.chains.size(); i++) {
 			this.getChain(i).execute();
 		}

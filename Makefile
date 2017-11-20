@@ -1,32 +1,31 @@
-all: util exception math pure-ss notation main package
+all: util siteswap notation transition main package
+
+SOURCE_DIR=src
+
+JAVAC_COMMAND=javac -d build -sourcepath ${SOURCE_DIR} -classpath build
 
 package:
-	mkdir -p bin
-	jar -cfe bin/SiteswapSuite.jar siteswapsuite/Main siteswapsuite/*.class
-
-exception:
-	javac -d . SiteswapException.java InvalidNotationException.java
-
-math:
-	javac -d . InfinityType.java ExtendedInteger.java ExtendedFraction.java
-
-pure-ss:
-	javac -d . Toss.java Siteswap.java State.java Transition.java 
-
-notation:
-	javac -d . SiteswapNotation.java NotatedSiteswap.java StateNotation.java NotatedState.java \
-		CompatibleNotatedObjectPair.java ContextualizedNotatedTransitionList.java
-
-main:
-	javac -d . Argument.java ParsedArguments.java Main.java 
+	jar cfe build/SiteswapSuite.jar siteswapsuite.Main -C build .
 
 util:
-	javac -d . Util.java
+	${JAVAC_COMMAND} ${SOURCE_DIR}/util/*.java
+
+siteswap:
+	${JAVAC_COMMAND} ${SOURCE_DIR}/siteswap/*.java
+
+transition:
+	${JAVAC_COMMAND} ${SOURCE_DIR}/transition/*.java
+
+notation:
+	${JAVAC_COMMAND} ${SOURCE_DIR}/notation/*.java
+
+main:
+	${JAVAC_COMMAND} ${SOURCE_DIR}/main/Argument.java src/main/ParsedArguments.java src/main/Main.java 
 
 clean:
-	rm -r siteswapsuite
-	rm SiteswapSuite.jar
+	rm -f build/siteswapsuite/*.class
+	rm -f build/SiteswapSuite.jar
 
 test:
-	# javac -d . Test.java
-	javac -d . ArgumentParser.java
+	#${JAVAC_COMMAND} src/Test.java
+	${JAVAC_COMMAND} src/ArgumentParser.java

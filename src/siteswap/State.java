@@ -226,15 +226,15 @@ public class State {
 		return this.getFiniteNode(b).getChargeAtHand(h);
 	}
 
-	public Siteswap getTransitionToSelf(int minTransitionLength) {
-		Siteswap ret = null;
-		try {
-			ret = Transition.compute(this, this, minTransitionLength, false, false).unInfinitize(1).get(0);
-		} catch(ImpossibleTransitionException e) {
-			Util.printf("ERROR: Impossible error in State.java: " + e.getMessage(), Util.DebugLevel.ERROR);
-		}
-		return ret;
-	}
+	// public Siteswap getTransitionToSelf(int minTransitionLength) {
+	// 	Siteswap ret = null;
+	// 	try {
+	// 		ret = Transition.compute(this, this, minTransitionLength, false, false).unInfinitize(1).get(0);
+	// 	} catch(ImpossibleTransitionException e) {
+	// 		Util.printf("ERROR: Impossible error in State.java: " + e.getMessage(), Util.DebugLevel.ERROR);
+	// 	}
+	// 	return ret;
+	// }
 
 	public boolean equals(State other) {
 		if(other == null)
