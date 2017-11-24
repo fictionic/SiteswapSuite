@@ -188,6 +188,7 @@ class Command {
 		// if double input
 		Chain from, to;
 		int maxTransitions = -1;
+		int minTransitionLength = -1;
 		boolean allowExtraSqueezeCatches = false;
 		boolean generateBallAntiballPairs = false;
 		// constructors
@@ -274,7 +275,7 @@ class Command {
 				State from = l1.notatedState.state;
 				State to = l2.notatedState.state; // nullpointerexception when links are siteswaps. need to wait on notation overhaul
 				TransitionFinder tf = new TransitionFinder(from, to);
-				TransitionResults tr = tf.findTransitions(this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
+				TransitionResults tr = tf.findTransitions(this.minTransitionLength, this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
 				Util.printf("transition mechanics not yet implemented from cmdline", Util.DebugLevel.ERROR);
 				System.exit(1);
 			} else {
@@ -491,6 +492,7 @@ class Command {
 				if(link.isState) {
 					// TODO
 					Util.printf("dunno what to do when link is a state (yet)", Util.DebugLevel.ERROR);
+					System.exit(1);
 				} else {
 					// print each operation in the chain
 					Util.printf("---> " + link.operation.toString() + " ", false);
