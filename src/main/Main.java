@@ -191,6 +191,8 @@ class Command {
 		int minTransitionLength = -1;
 		boolean allowExtraSqueezeCatches = false;
 		boolean generateBallAntiballPairs = false;
+		boolean unAntitossifyTransitions = false;
+		int selectTransition = 0;
 		// constructors
 		ChainInput(ArgumentCollection parsedArgs) throws ParseError, InvalidNotationException {
 			this.index = chains.size();
@@ -272,12 +274,21 @@ class Command {
 				// IN PROGRESS
 				// for now just take output from two most recent Chains as inputs
 				Link l1 = getChain(-3).getLastLink(), l2 = getChain(-2).getLastLink();
-				State from = l1.notatedState.state;
-				State to = l2.notatedState.state; // nullpointerexception when links are siteswaps. need to wait on notation overhaul
+				State from = l1.getState();
+				State to = l2.getState();
 				TransitionFinder tf = new TransitionFinder(from, to);
 				TransitionResults tr = tf.findTransitions(this.minTransitionLength, this.maxTransitions, this.allowExtraSqueezeCatches, this.generateBallAntiballPairs);
-				Util.printf("transition mechanics not yet implemented from cmdline", Util.DebugLevel.ERROR);
-				System.exit(1);
+				if(this.unAntitossifyTransitions) {
+					// tr.unAntitossify(prefix, suffix);
+				}
+				GeneralizedTransition gt = tr.getGeneralizedTransition();
+				List<Siteswap> transitions = tr.getTransitions();
+				Util.printf("\\---> TRANSITION:", Util.DebugLevel.INFO);
+				for(Siteswap ss : transitions) {
+					Util.printf(ss, Util.DebugLevel.INFO);
+				}
+				// save one as output
+				this.notatedSiteswap = NotatedSiteswap.assembleAutomatic(transitions.get(this.selectTransition));
 			} else {
 				// if state or siteswap was explicitly indicated
 				if(this.prefix != null) {
@@ -305,9 +316,9 @@ class Command {
 			Link link = new Link();
 			link.isState = this.isState;
 			if(link.isState) {
-				link.notatedState = this.notatedState;
+				link.state = this.notatedState.state;
 			} else {
-				link.notatedSiteswap = this.notatedSiteswap;
+				link.siteswap = this.notatedSiteswap.siteswap;
 			}
 			return link;
 		}
@@ -336,21 +347,28 @@ class Command {
 
 	class Link {
 		boolean isState;
-		NotatedSiteswap notatedSiteswap;
-		NotatedState notatedState;
+		Siteswap siteswap;
+		State state;
 		List<Argument> infos;
 		Argument operation;
 		Link() {
 			this.infos = new ArrayList<>();
 		}
+		State getState() {
+			if(this.isState) {
+				return this.state;
+			} else {
+				return new State(this.siteswap);
+			}
+		}
 		String printInfo() {
 			StringBuilder ret = new StringBuilder();
 			if(this.isState) {
 				ret.append("---> state:\n");
-				ret.append(" parsed: " + this.notatedState.state.toString() + "\n");
+				ret.append(" parsed: " + this.state.toString() + "\n");
 			} else {
 				ret.append("---> siteswap:\n");
-				ret.append(" parsed: " + this.notatedSiteswap.siteswap.toString() + "\n");
+				ret.append(" parsed: " + this.siteswap.toString() + "\n");
 			}
 			for(Argument infoArg : this.infos) {
 				switch(infoArg) {
@@ -360,16 +378,16 @@ class Command {
 							Util.printf("warning: capacity not yet implemented for states", Util.DebugLevel.ERROR);
 							capacity = new ExtendedFraction(new ExtendedInteger(0), 1);
 						} else {
-							capacity = this.notatedSiteswap.siteswap.numBalls();
+							capacity = this.siteswap.numBalls();
 						}
 						ret.append(" capacity: " + capacity.toString() + "\n");
 						break;
 					case VALIDITY:
 						boolean validity;
 						if(this.isState) {
-							validity = (this.notatedState.state.repeatedLength == 0);
+							validity = (this.state.repeatedLength == 0);
 						} else {
-							validity = this.notatedSiteswap.siteswap.isValid();
+							validity = this.siteswap.isValid();
 						}
 						ret.append(" validity: " + validity + "\n");
 						break;
@@ -378,7 +396,7 @@ class Command {
 						if(this.isState) {
 							ret.append(" primality: n/a\n");
 						} else {
-							ret.append(" primality: " + this.notatedSiteswap.siteswap.isPrime() + "\n");
+							ret.append(" primality: " + this.siteswap.isPrime() + "\n");
 						}
 						break;
 					case DIFFICULTY:
@@ -386,7 +404,7 @@ class Command {
 						if(this.isState) {
 							ret.append(" difficulty: n/a\n");
 						} else {
-							ret.append(" difficulty: " + this.notatedSiteswap.siteswap.difficulty().toString() + "\n");
+							ret.append(" difficulty: " + this.siteswap.difficulty().toString() + "\n");
 						}
 						break;
 					default:
@@ -444,6 +462,9 @@ class Command {
 				case KEEP_ZEROES:
 					this.input.keepZeroes = true;
 					break;
+				case SELECT_TRANSITION:
+					this.input.selectTransition = arg.followUpInt;
+					break;
 				default:
 					break;
 			}
@@ -498,32 +519,32 @@ class Command {
 					Util.printf("---> " + link.operation.toString() + " ", false);
 					if(link.operation == Argument.TO_STATE) {
 						newLink.isState = true;
-						newLink.notatedState = NotatedState.assembleAutomatic(new State(link.notatedSiteswap.siteswap));
+						newLink.state = new State(link.siteswap);
 					} else {
 						newLink.isState = false;
-						newLink.notatedSiteswap = link.notatedSiteswap.deepCopy();
+						newLink.siteswap = link.siteswap.deepCopy();
 						// compute operations
 						switch(link.operation) {
 							case INVERT:
-								newLink.notatedSiteswap.siteswap.invert();
+								newLink.siteswap.invert();
 								break;
 							case SPRING:
 								Util.printf("sprung not yet implemented", Util.DebugLevel.ERROR);
 								break;
 							case INFINITIZE:
-								newLink.notatedSiteswap.siteswap.infinitize();
+								newLink.siteswap.infinitize();
 								break;
 							case UNINFINITIZE:
-								newLink.notatedSiteswap.siteswap.unInfinitize();
+								newLink.siteswap.unInfinitize();
 								break;
 							case ANTITOSSIFY:
-								newLink.notatedSiteswap.siteswap.antitossify();
+								newLink.siteswap.antitossify();
 								break;
 							case UNANTITOSSIFY:
-								newLink.notatedSiteswap.siteswap.unAntitossify();
+								newLink.siteswap.unAntitossify();
 								break;
 							case ANTINEGATE:
-								newLink.notatedSiteswap.siteswap.antiNegate();
+								newLink.siteswap.antiNegate();
 								break;
 							default:
 								break;

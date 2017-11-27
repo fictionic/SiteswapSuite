@@ -11,16 +11,16 @@ public class TransitionFinder {
 			throw new ImpossibleTransitionException();
 		}
 		// make copies of the states, so as not to muck up the originals
-		this.numHands = this.from.numHands();
+		this.numHands = from.numHands();
 		this.from = from.deepCopy();
 		this.to = to.deepCopy();
 
 		// equalize the state lengths
-		if(from.finiteLength() < to.finiteLength())
-			from.getFiniteNode(to.finiteLength() - 1);
-		else if (from.finiteLength() > to.finiteLength())
-			to.getFiniteNode(from.finiteLength() - 1);
-
+		if(this.from.finiteLength() < this.to.finiteLength()) {
+			this.from.getFiniteNode(this.to.finiteLength() - 1);
+		} else if (this.from.finiteLength() > this.to.finiteLength()) {
+			this.to.getFiniteNode(this.from.finiteLength() - 1);
+		}
 
 	}
 
@@ -31,7 +31,7 @@ public class TransitionFinder {
 			generalizedTransition = new GeneralizedTransition(from.numHands());
 		} else {
 			if(!allowExtraSqueezeCatches && !generateBallAntiballPairs) {
-				generalizedTransition = findStandardTransition(minTransitionLength);
+				generalizedTransition = this.findStandardTransition(minTransitionLength);
 			} else {
 				Util.printf("ERROR: non-standard transition options not yet supported", Util.DebugLevel.ERROR);
 				System.exit(1);
@@ -46,14 +46,14 @@ public class TransitionFinder {
 
 		int b = 0; // index of beat in output siteswap
 
-		Util.printf("s1: " + from.toString(), Util.DebugLevel.DEBUG);
-		Util.printf("s2: " + to.toString(), Util.DebugLevel.DEBUG);
+		Util.printf("s1: " + this.from.toString(), Util.DebugLevel.DEBUG);
+		Util.printf("s2: " + this.to.toString(), Util.DebugLevel.DEBUG);
 
 		State.DiffSum diffs;
 		int futureCatches = 0;
 		int futureAnticatches = 0;
 
-		diffs = from.diffSums(to); // compute difference sum
+		diffs = this.from.diffSums(this.to); // compute difference sum
 		Util.printf(diffs, Util.DebugLevel.DEBUG);
 
 		int ballNumDiff = (diffs.catches - diffs.antiCatches) - (diffs.tosses - diffs.antiTosses);
@@ -73,31 +73,31 @@ public class TransitionFinder {
 			transition.appendEmptyBeat();
 			// see if we can catch new balls/antiballs
 			for(int h=0; h<numHands; h++) {
-				if(from.getChargeAtBeatAtHand(0,h) == 0) {
-					Util.printf(to.getChargeAtBeatAtHand(0,h), Util.DebugLevel.DEBUG);
-					if(ballNumDiffNegative < 0 && to.getChargeAtBeatAtHand(0,h) < 0) {
+				if(this.from.getChargeAtBeatAtHand(0,h) == 0) {
+					Util.printf(this.to.getChargeAtBeatAtHand(0,h), Util.DebugLevel.DEBUG);
+					if(ballNumDiffNegative < 0 && this.to.getChargeAtBeatAtHand(0,h) < 0) {
 						Util.printf("catching new antiball at beat " + b, Util.DebugLevel.DEBUG);
 						transition.addInfiniteAntitoss(b, h, InfinityType.NEGATIVE_INFINITY);
-						from.decChargeOfNowNodeAtHand(h);
+						this.from.decChargeOfNowNodeAtHand(h);
 						ballNumDiffNegative++;
-					} else if(ballNumDiffPositive > 0 && to.getChargeAtBeatAtHand(0,h) > 0) {
+					} else if(ballNumDiffPositive > 0 && this.to.getChargeAtBeatAtHand(0,h) > 0) {
 						Util.printf("catching new ball at beat " + b, Util.DebugLevel.DEBUG);
 						transition.addInfiniteToss(b, h, InfinityType.NEGATIVE_INFINITY);
-						from.incChargeOfNowNodeAtHand(h);
+						this.from.incChargeOfNowNodeAtHand(h);
 						ballNumDiffPositive--;
 					}
 				}
 			}
 			// shift goal state backward by one beat, and match lengths
 			Util.printf("shifting", Util.DebugLevel.DEBUG);
-			to.shiftBackward();
-			from.getFiniteNode(to.finiteLength() - 1);
-			Util.printf("s1: " + from.toString(), Util.DebugLevel.DEBUG);
-			Util.printf("s2: " + to.toString(), Util.DebugLevel.DEBUG);
+			this.to.shiftBackward();
+			this.from.getFiniteNode(this.to.finiteLength() - 1);
+			Util.printf("s1: " + this.from.toString(), Util.DebugLevel.DEBUG);
+			Util.printf("s2: " + this.to.toString(), Util.DebugLevel.DEBUG);
 
 			// make tosses to match charges in nodes between states
 			for(int h=0; h<numHands; h++) {
-				int chargeAtHand = from.getChargeAtBeatAtHand(0, h);
+				int chargeAtHand = this.from.getChargeAtBeatAtHand(0, h);
 				while(chargeAtHand > 0) {
 					Util.printf("performing toss at beat " + b, Util.DebugLevel.DEBUG);
 					transition.addInfiniteToss(b, h, InfinityType.POSITIVE_INFINITY);
@@ -118,13 +118,13 @@ public class TransitionFinder {
 				}
 			}
 			Util.printf("advancing time", Util.DebugLevel.DEBUG);
-			from.advanceTime();
-			to.advanceTime();
+			this.from.advanceTime();
+			this.to.advanceTime();
 			b++;
 
-			Util.printf("s1: " + from.toString(), Util.DebugLevel.DEBUG);
-			Util.printf("s2: " + to.toString(), Util.DebugLevel.DEBUG);
-			diffs = from.diffSums(to);
+			Util.printf("s1: " + this.from.toString(), Util.DebugLevel.DEBUG);
+			Util.printf("s2: " + this.to.toString(), Util.DebugLevel.DEBUG);
+			diffs = this.from.diffSums(this.to);
 			Util.printf(diffs, Util.DebugLevel.DEBUG);
 			Util.printf("futureCatches: " + futureCatches, Util.DebugLevel.DEBUG);
 			Util.printf("futureAnticatches: " + futureAnticatches, Util.DebugLevel.DEBUG);
@@ -145,9 +145,9 @@ public class TransitionFinder {
 		Util.printf("FINDING CATCHES!", Util.DebugLevel.DEBUG);
 
 		// find catches!
-		while(from.finiteLength() > 0) {
+		while(this.from.finiteLength() > 0) {
 			for(int h=0; h<numHands; h++) {
-				int diff = to.getChargeAtBeatAtHand(0, h) - from.getChargeAtBeatAtHand(0, h);
+				int diff = this.to.getChargeAtBeatAtHand(0, h) - this.from.getChargeAtBeatAtHand(0, h);
 				if(diff > 0) {
 					Util.printf("catching ball at beat " + b, Util.DebugLevel.DEBUG);
 					transition.addInfiniteToss(b, h, InfinityType.NEGATIVE_INFINITY);
@@ -158,8 +158,8 @@ public class TransitionFinder {
 			}
 			b++;
 			transition.appendEmptyBeat();
-			from.advanceTime();
-			to.advanceTime();
+			this.from.advanceTime();
+			this.to.advanceTime();
 		}
 		Util.printf("found general transition:", Util.DebugLevel.DEBUG);
 		Util.printf(transition, Util.DebugLevel.DEBUG);
