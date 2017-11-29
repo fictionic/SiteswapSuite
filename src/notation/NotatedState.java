@@ -171,8 +171,22 @@ public abstract class NotatedState {
 	}
 
 	public String print() {
-		return "[not yet implemented]";
+		StringBuilder ret = new StringBuilder();
+		State.Node curNode = this.state.nowNode;
+		for(int i=0; i<this.state.finiteLength; i++) {
+			ret.append(curNode.getChargeAtHand(0));
+			curNode = curNode.prev;
+		}
+		if(this.state.repeatedLength > 0) {
+			ret.append(":");
+			for(int i=0; i<this.state.repeatedLength; i++) {
+				ret.append(curNode.getChargeAtHand(0));
+				curNode = curNode.prev;
+			}
+		}
+		return ret.toString();
 	}
+
 
 	public static void main(String[] args) {
 		try {
