@@ -20,7 +20,7 @@ notation:
 	${JAVAC_COMMAND} ${SOURCE_DIR}/notation/*.java
 
 main:
-	${JAVAC_COMMAND} ${SOURCE_DIR}/main/Argument.java src/main/ParsedArguments.java src/main/Main.java 
+	${JAVAC_COMMAND} ${SOURCE_DIR}/main/*.java
 
 clean:
 	rm -f build/siteswapsuite/*.class

@@ -5,17 +5,23 @@ import java.util.List;
 public class TransitionResults {
 
 	private int numHands;
+	private int selectTransition;
 	private List<Siteswap> transitions;
 	private GeneralizedTransition generalizedTransition;
 
-	public TransitionResults(GeneralizedTransition generalizedTransition, int maxTransitions) {
+	public TransitionResults(GeneralizedTransition generalizedTransition, int maxTransitions, int selectTransition) {
 		this.generalizedTransition = generalizedTransition;
-		this.transitions = this.generalizedTransition.unInfinitize(maxTransitions);
+		this.transitions = generalizedTransition.unInfinitize(maxTransitions);
 		this.numHands = this.generalizedTransition.numHands();
+		this.selectTransition = selectTransition;
 	}
 
 	public List<Siteswap> getTransitions() {
 		return this.transitions;
+	}
+
+	public Siteswap getSelectedTransition() {
+		return this.transitions.get(this.selectTransition);
 	}
 
 	public GeneralizedTransition getGeneralizedTransition() {

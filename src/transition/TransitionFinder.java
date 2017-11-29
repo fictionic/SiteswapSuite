@@ -24,21 +24,21 @@ public class TransitionFinder {
 
 	}
 
-	public TransitionResults findTransitions(int minTransitionLength, int maxTransitions, boolean allowExtraSqueezeCatches, boolean generateBallAntiballPairs) {
+	public TransitionResults findTransitions(TransitionOptions options) {
 		GeneralizedTransition generalizedTransition;
 		// see if either state is empty
 		if(from.finiteLength() == 0 || to.finiteLength() == 0) {
 			generalizedTransition = new GeneralizedTransition(from.numHands());
 		} else {
-			if(!allowExtraSqueezeCatches && !generateBallAntiballPairs) {
-				generalizedTransition = this.findStandardTransition(minTransitionLength);
+			if(!options.allowExtraSqueezeCatches && !options.generateBallAntiballPairs) {
+				generalizedTransition = this.findStandardTransition(options.minTransitionLength);
 			} else {
 				Util.printf("ERROR: non-standard transition options not yet supported", Util.DebugLevel.ERROR);
 				System.exit(1);
 				return null;
 			}
 		}
-		return new TransitionResults(generalizedTransition, maxTransitions);
+		return new TransitionResults(generalizedTransition, options.maxTransitions, options.selectTransition);
 	}
 
 	private GeneralizedTransition findStandardTransition(int minLength) {

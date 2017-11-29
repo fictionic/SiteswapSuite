@@ -124,7 +124,7 @@ public class GeneralizedTransition extends Siteswap {
 		List<List<Integer>> antiTossPerms = findAllPermutations(numAnticatches + extraAntitosses);
 		// combine into final list of transitions! (to be processed by a different class shortly...)
 		List<Siteswap> ret = new ArrayList<Siteswap>();
-		for(int t1=0; t1<tossPerms.size(); t1++) {
+loop:	for(int t1=0; t1<tossPerms.size(); t1++) {
 			for(int t2=0; t2<antiTossPerms.size(); t2++) {
 				int totalFlatAnyTossIndex = 0;
 				List<Integer> curTossPerm = tossPerms.get(t1);
@@ -133,7 +133,7 @@ public class GeneralizedTransition extends Siteswap {
 				int flatAntitossIndex = 0;
 				Siteswap curSS = new Siteswap(numHands);
 				if(maxTransitions != -1 && maxTransitions <= 0) {
-					return ret;
+					break loop;
 				}
 				for(int b=0; b<eventualPeriod; b++) {
 					curSS.appendEmptyBeat();
@@ -162,6 +162,7 @@ public class GeneralizedTransition extends Siteswap {
 				}
 			}
 		}
+		Util.printf("returning:", Util.DebugLevel.DEBUG);
 		Util.printf(ret, Util.DebugLevel.DEBUG);
 		return ret;
 	}
@@ -175,7 +176,7 @@ public class GeneralizedTransition extends Siteswap {
 	}
 
 	private static List<List<Integer>> findAllPermutationsHelper(List<Integer> list) {
-		if(list.size() == 0) { 
+		if(list.size() == 0) {
 			List<List<Integer>> result = new ArrayList<List<Integer>>();
 			result.add(new ArrayList<Integer>());
 			return result;

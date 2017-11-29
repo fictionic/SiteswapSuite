@@ -3,7 +3,9 @@ package siteswapsuite;
 // cmdline tokens
 enum Argument {
 	// global options
-	ENABLE_DEBUG('D', "debug", Requires.REQUIRES_NONE, Role.OTHER_ROLE),
+	ENABLE_DEBUG('D', "debug", Requires.REQUIRES_NONE, Role.DEBUG_ROLE),
+	ENABLE_DEBUG_MAIN('\0', "main", Requires.REQUIRES_NONE, Role.DEBUG_ROLE),
+	ENABLE_DEBUG_SITESWAP('\0', "siteswap", Requires.REQUIRES_NONE, Role.DEBUG_ROLE),
 	// input indicator
 	INPUT('i', "input", Requires.REQUIRES_STRING, Role.INPUT_ROLE),
 	// input options
@@ -25,8 +27,8 @@ enum Argument {
 	ANTITOSSIFY('a', "antitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	UNANTITOSSIFY('A', "un-antitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
 	ANTINEGATE('N', "anti-negate", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	TO_STATE('s', "state", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	TO_SITESWAP('S', "siteswap", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	TO_STATE('s', "to-state", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
+	TO_SITESWAP('S', "to-siteswap", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	// operations that take multiple inputs
 	TRANSITION('T', "transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	/* COMBINE
@@ -37,13 +39,13 @@ enum Argument {
 	 * EXTRACT_ORBIT
 	 */
 	// transition options
-	MIN_TRANSITION_LENGTH('l', "min-transition-length", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
+	MIN_TRANSITION_LENGTH('l', "min-length", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
 	MAX_TRANSITIONS('m', "max-transitions", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
 	SELECT_TRANSITION('o', "select-transition", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
 	ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allow-extra-squeeze-catches", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	GENERATE_BALL_ANTIBALL_PAIRS('g', "generate-ball-antiball-pairs", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	UN_ANTITOSSIFY_TRANSITIONS('A', "un-antitossify-transitions", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
-	DISPLAY_GENERAL_TRANSITION('G', "display-general-transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	DISPLAY_GENERAL_TRANSITION('G', "display-generalized-transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	// literal values
 	LITERAL_INT('\0', null, null, null),
 	LITERAL_STRING('\0', null, null, null),
@@ -67,6 +69,7 @@ enum Argument {
 		INFO_ROLE,
 		OPERATION_ROLE,
 		TRANSITION_ROLE,
+		DEBUG_ROLE,
 		OTHER_ROLE;
 	}
 
