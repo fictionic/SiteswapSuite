@@ -51,7 +51,7 @@ public class State {
 			boolean isAllZeros;
 
 			// compute the finite portion of the state
-			// --> simulate juggling the pattern until the state 
+			// --> simulate juggling the pattern until the state
 			//     doesn't change from one period to the next
 			do {
 				Util.printf("", Util.DebugLevel.DEBUG);
@@ -464,15 +464,15 @@ public class State {
 			return new Node(this);
 		}
 		private class Charge {
-			private int value;
+			private Integer value;
 			private Charge() { this.value = 0; }
 			private Charge(int newValue) { this.value = newValue; }
 			private void set(int newValue) { this.value = newValue; }
 			private void inc() { this.value++; }
 			private void dec() { this.value--; }
 			//public String toString() { return Integer.toString(this.value); }
-			public String toString() { 
-				return "" + this.value;
+			public String toString() {
+				return this.value.toString();
 			}
 		}
 	}
