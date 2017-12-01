@@ -346,15 +346,19 @@ public class Main {
 				}
 			}
 
-			void process() throws ImpossibleTransitionException {
+			void process() throws IncompatibleNumberOfHandsException, ImpossibleTransitionException {
 				Util.printf("processing " + this, Util.DebugLevel.DEBUG);
 				this.getToFromIndeces();
 				Link l1 = getChain(this.fromIndex).getLastLink(), l2 = getChain(this.toIndex).getLastLink();
 				State from = l1.getState();
 				State to = l2.getState();
+				if(from.numHands() != to.numHands()) {
+					throw new IncompatibleNumberOfHandsException();
+				}
 				TransitionFinder tf = new TransitionFinder(from, to);
 				TransitionResults tr = tf.findTransitions(this.transitionOptions);
 				if(this.unAntitossifyTransitions) {
+					Util.printf("WARNING: un-antitossify-transitions not yet implemented", Util.DebugLevel.ERROR);
 					// tr.unAntitossify(prefix, suffix);
 				}
 				this.generalizedTransition = tr.getGeneralizedTransition();
