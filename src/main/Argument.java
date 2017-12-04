@@ -31,7 +31,7 @@ public enum Argument {
 	// operations that take multiple inputs
 	TRANSITION('T', "transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	/* COMBINE
-	 * APPEND
+	 * CONCATENATE
 	 * */
 	// misc operations
 	/*
@@ -45,12 +45,7 @@ public enum Argument {
 	ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allow-extra-squeeze-catches", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	GENERATE_BALL_ANTIBALL_PAIRS('g', "generate-ball-antiball-pairs", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
 	UN_ANTITOSSIFY_TRANSITIONS('A', "un-antitossify-transitions", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
-	DISPLAY_GENERAL_TRANSITION('G', "display-generalized-transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
-	// literal values
-	LITERAL_INT('\0', null, null, null),
-	LITERAL_STRING('\0', null, null, null),
-	// invalid
-	INVALID_TOKEN('\0', null, null, null);
+	DISPLAY_GENERAL_TRANSITION('G', "display-generalized-transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE);
 
 	// fields
 	char shortForm;
@@ -81,22 +76,22 @@ public enum Argument {
 		this.role = role;
 	}
 
-	static Argument parseLongOptionName(String str) {
+	static Argument parseLongOptionName(String str) throws ParseError {
 		for(Argument opt : Argument.values()) {
 			if(str.equals(opt.longForm)) {
 				return opt;
 			}
 		}
-		return INVALID_TOKEN;
+		throw new ParseError("invalid token: '" + str + "'");
 	}
 
-	static Argument parseShortOptionName(char ch) {
+	static Argument parseShortOptionName(char ch) throws ParseError {
 		for(Argument opt : Argument.values()) {
 			if(ch == opt.shortForm) {
 				return opt;
 			}
 		}
-		return INVALID_TOKEN;
+		throw new ParseError("invalid token: '" + ch + "'");
 	}
 
 }

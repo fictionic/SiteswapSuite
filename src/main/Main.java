@@ -54,9 +54,6 @@ public class Main {
 				switch(parseResult.head) {
 					case ENABLE_DEBUG:
 						for(Argument arg : parseResult.options) {
-							if(arg == Argument.INVALID_TOKEN) {
-								throw new ParseError("invalid token: '" + str + "'");
-							}
 							if(arg.role != Argument.Role.DEBUG_ROLE) {
 								throw new ParseError("option " + arg + " is not a valid debug scope specifier");
 							}
@@ -96,8 +93,6 @@ public class Main {
 						}
 						this.chains.add(this.createChain(parseResult));
 						break;
-					case INVALID_TOKEN:
-						throw new ParseError("invalid token: '" + str + "'");
 					default:
 						if(this.chains.size() == 0) {
 							throw new ParseError("argument '" + str + "' must be applied to an input");
