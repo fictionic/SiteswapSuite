@@ -1,7 +1,6 @@
 package siteswapsuite;
 
-// cmdline tokens
-enum Argument {
+public enum Argument {
 	// global options
 	ENABLE_DEBUG('D', "debug", Requires.REQUIRES_NONE, Role.DEBUG_ROLE),
 	ENABLE_DEBUG_MAIN('\0', "main", Requires.REQUIRES_NONE, Role.DEBUG_ROLE),
@@ -37,6 +36,7 @@ enum Argument {
 	// misc operations
 	/*
 	 * EXTRACT_ORBIT
+	 * JUGGLE
 	 */
 	// transition options
 	MIN_TRANSITION_LENGTH('l', "min-length", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
@@ -100,5 +100,3 @@ enum Argument {
 	}
 
 }
-
-

@@ -53,7 +53,6 @@ public class Main {
 				ChainInput chainInput;
 				switch(parseResult.head) {
 					case ENABLE_DEBUG:
-						Util.debugLevel = Util.DebugLevel.DEBUG;
 						for(Argument arg : parseResult.options) {
 							if(arg == Argument.INVALID_TOKEN) {
 								throw new ParseError("invalid token: '" + str + "'");
@@ -266,7 +265,7 @@ public class Main {
 		class TransitionInput extends ChainInput {
 			int fromIndex = -1, toIndex = -1;
 			TransitionOptions transitionOptions;
-			boolean displayGeneralTransition = false;
+			boolean displayGeneralizedTransition = false;
 			boolean unAntitossifyTransitions = false;
 			List<Siteswap> transitions;
 			GeneralizedTransition generalizedTransition;
@@ -299,8 +298,9 @@ public class Main {
 						case SELECT_TRANSITION:
 							this.transitionOptions.selectTransition = parsedArgs.ints.get(intIndex++);
 							i++;
+							break;
 						case DISPLAY_GENERAL_TRANSITION:
-							this.displayGeneralTransition = true;
+							this.displayGeneralizedTransition = true;
 							break;
 						default:
 							throw new ParseError("transition option '" + opt.longForm + "' is not yet supported");
@@ -329,7 +329,7 @@ public class Main {
 						this.transitionOptions.selectTransition = parsedArgs.followUpInt;
 						break;
 					case DISPLAY_GENERAL_TRANSITION:
-						this.displayGeneralTransition = true;
+						this.displayGeneralizedTransition = true;
 						break;
 					default:
 						throw new ParseError("transition option '" + parsedArgs.head.longForm + "' is not yet supported");
@@ -379,7 +379,7 @@ public class Main {
 				ret.append(" type: transition\n");
 				ret.append(" from: output "); ret.append(this.fromIndex); ret.append("\n");
 				ret.append(" to: output "); ret.append(this.toIndex); ret.append("\n");
-				if(this.displayGeneralTransition) {
+				if(this.displayGeneralizedTransition) {
 					ret.append(" generalized transition: ");
 					NotatedSiteswap throwsPortion = NotatedSiteswap.assembleAutomatic(this.generalizedTransition.getThrowsPortion());
 					ret.append(throwsPortion.print());
