@@ -50,6 +50,34 @@ class Command {
 		this.chains.add(new Chain(argChain));
 	}
 
+	static TransitionOptions readTransitionArgs(List<ArgWithFollowUp> transitionArgs) {
+		TransitionOptions transitionOptions = new TransitionOptions();
+		// parse transition options
+		for(ArgWithFollowUp transitionArg : transitionArgs) {
+			switch(transitionArg.arg) {
+				case MIN_TRANSITION_LENGTH:
+					transitionOptions.minTransitionLength = transitionArg.followUpInt;
+					break;
+				case MAX_TRANSITIONS:
+					transitionOptions.maxTransitions = transitionArg.followUpInt;
+					break;
+				case ALLOW_EXTRA_SQUEEZE_CATCHES:
+					transitionOptions.allowExtraSqueezeCatches = true;
+					break;
+				case GENERATE_BALL_ANTIBALL_PAIRS:
+					transitionOptions.generateBallAntiballPairs = true;
+					break;
+				case SELECT_TRANSITION:
+					transitionOptions.selectTransition = transitionArg.followUpInt;
+					break;
+				default:
+					assert false;
+					break;
+			}
+		}
+		return transitionOptions;
+	}
+
 	class Chain {
 		int index;
 		ChainInput input;
@@ -124,27 +152,18 @@ class Command {
 					this.isTransition = true;
 					this.fromIndex = index - 2;
 					this.toIndex = index - 1;
-					this.transitionOptions = new TransitionOptions();
-					// parse transition options
+					// get general transition options
+					this.transitionOptions = Command.readTransitionArgs(input.tail);
+					// get other transition options
 					for(ArgWithFollowUp transitionArg : input.tail) {
 						switch(transitionArg.arg) {
-							case MIN_TRANSITION_LENGTH:
-								this.transitionOptions.minTransitionLength = transitionArg.followUpInt;
+							case DISPLAY_GENERAL_TRANSITION:
+								this.displayGeneralizedTransition = true;
 								break;
-							case MAX_TRANSITIONS:
-								this.transitionOptions.maxTransitions = transitionArg.followUpInt;
-								break;
-							case ALLOW_EXTRA_SQUEEZE_CATCHES:
-								this.transitionOptions.allowExtraSqueezeCatches = true;
-								break;
-							case GENERATE_BALL_ANTIBALL_PAIRS:
-								this.transitionOptions.generateBallAntiballPairs = true;
-								break;
-							case SELECT_TRANSITION:
-								this.transitionOptions.selectTransition = transitionArg.followUpInt;
+							case UNANTITOSSIFY:
+								this.unAntitossifyTransitions = true;
 								break;
 							default:
-								assert false;
 								break;
 						}
 					}
@@ -404,7 +423,19 @@ class Command {
 				if(curLink.siteswapOrState.isState) {
 					switch(curLink.operation.head.arg) {
 						case TO_SITESWAP:
-							// TODO
+							TransitionOptions transitionOptions = Command.readTransitionArgs(curLink.operation.tail);
+							// make minTransitionLength = 1 by default cuz you probably don't want an empty siteswap
+							if(transitionOptions.minTransitionLength == -1) {
+								transitionOptions.minTransitionLength = 1;
+							}
+							State prevState = prevLink.siteswapOrState.getState();
+							try {
+								TransitionFinder tf = new TransitionFinder(prevState, prevState);
+								TransitionResults tr = tf.findTransitions(transitionOptions);
+								curLink.siteswapOrState = new SiteswapOrState(tr.getSelectedTransition());
+							} catch(ImpossibleTransitionException e) {
+								Util.ErrorOut(e);
+							}
 							break;
 						default:
 							// TODO make a better exception class for this?

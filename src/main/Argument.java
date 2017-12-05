@@ -1,8 +1,8 @@
 package siteswapsuite;
 
 public enum Argument {
-	// global options
-	ENABLE_DEBUG('D', "debug", Role.FIRST, Role.DEBUG, FollowUp.NONE),
+	// debug stuff
+	ENABLE_DEBUG('\0', "debug", Role.FIRST, Role.DEBUG, FollowUp.NONE),
 	ENABLE_DEBUG_MAIN('\0', "main", Role.DEBUG, FollowUp.NONE),
 	ENABLE_DEBUG_SITESWAP('\0', "siteswap", Role.DEBUG, FollowUp.NONE),
 	// input indicator
