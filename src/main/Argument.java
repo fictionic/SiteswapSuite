@@ -89,7 +89,7 @@ public enum Argument {
 				return opt;
 			}
 		}
-		throw new ParseError("unrecognized argument name: " + str + "'");
+		throw new ParseError("unrecognized argument name: '" + str + "'");
 	}
 
 	static Argument parseShortOptionName(char ch) throws ParseError {
