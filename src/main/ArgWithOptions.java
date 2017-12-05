@@ -67,41 +67,48 @@ public class ArgWithOptions {
 			}
 			// get role that all options must have
 			Argument.Role optionsRole = parseResult.head.arg.optionsRole;
-			for(String subArg : optionsStr.split(",")) {
+			for(String subArgStr : optionsStr.split(",")) {
 				// parse inline arguments to options
-				int sepIndex = subArg.indexOf('=');
-				String inlineFollowUp = null;
+				int sepIndex = subArgStr.indexOf('=');
+				String subArgStrHead;
+				String inlineFollowUp;
 				if(sepIndex > -1) {
-					String[] subArgSplit = subArg.split("=", 2);
-					subArg = subArgSplit[0];
+					String[] subArgSplit = subArgStr.split("=", 2);
+					subArgStrHead = subArgSplit[0];
 					inlineFollowUp = subArgSplit[1];
-				}
-				ArgWithFollowUp curArg;
-				Argument curArgHead;
-				if(subArg.length() == 1) {
-					curArgHead = Argument.parseShortOptionName(subArg.charAt(0));
 				} else {
-					curArgHead = Argument.parseLongOptionName(subArg);
+					subArgStrHead = subArgStr;
+					inlineFollowUp = null;
+				}
+				ArgWithFollowUp subArg;
+				Argument subArgHead;
+				if(subArgStrHead.length() == 1) {
+					subArgHead = Argument.parseShortOptionName(subArgStrHead.charAt(0));
+				} else {
+					subArgHead = Argument.parseLongOptionName(subArgStrHead);
 				}
 				// check role
-				if(curArgHead.ownRole != optionsRole) {
-					throw new ParseError("argument '" + subArg + "' is not a valid option for '" + headStrFull + "'");
+				if(subArgHead.ownRole != optionsRole) {
+					throw new ParseError("argument '" + subArgStrHead + "' is not a valid option for '" + headStrFull + "'");
 				}
 				// add inline follow-up if required and present
-				if(curArgHead.requires == Argument.FollowUp.STRING) {
+				if(subArgHead.requires == Argument.FollowUp.STRING) {
 					if(inlineFollowUp == null) {
-						throw new ParseError("argument '" + subArg + "' requires string follow-up");
+						throw new ParseError("argument '" + subArgStrHead + "' requires string follow-up");
 					}
-					curArg = new ArgWithFollowUp(curArgHead, inlineFollowUp);
-				} else if(curArgHead.requires == Argument.FollowUp.INT) {
+					subArg = new ArgWithFollowUp(subArgHead, inlineFollowUp);
+				} else if(subArgHead.requires == Argument.FollowUp.INT) {
 					if(inlineFollowUp == null) {
-						throw new ParseError("argument '" + subArg + "' requires integer follow-up");
+						throw new ParseError("argument '" + subArgStrHead + "' requires integer follow-up");
 					}
-					curArg = new ArgWithFollowUp(curArgHead, Integer.parseInt(inlineFollowUp));
+					subArg = new ArgWithFollowUp(subArgHead, Integer.parseInt(inlineFollowUp));
 				} else {
-					curArg = new ArgWithFollowUp(curArgHead);
+					if(inlineFollowUp != null) {
+						throw new ParseError("argument '" + subArgStrHead + "' takes no follow-up");
+					}
+					subArg = new ArgWithFollowUp(subArgHead);
 				}
-				parseResult.tail.add(curArg);
+				parseResult.tail.add(subArg);
 			}
 		}
 		return parseResult;
