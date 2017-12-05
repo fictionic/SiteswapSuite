@@ -62,7 +62,7 @@ public class ArgTree {
 					if(parsedArg.head.arg == Argument.OPS) {
 						// add a link for each operation to last chain
 						for(ArgWithFollowUp operationArg : parsedArg.tail) {
-							argTree.addOperationArg(operationArg);
+							argTree.addOperationArg(new ArgWithOptions(operationArg));
 						}
 					} else { // Argument.INFO
 						// add all info args to last link of last chain
@@ -75,7 +75,7 @@ public class ArgTree {
 					if(argTree.argChains.size() == 0) {
 						throw new ParseError("argument '" + parsedArg.head.arg + "' must appear after an input argument");
 					}
-					argTree.addOperationArg(parsedArg.head);
+					argTree.addOperationArg(parsedArg);
 					break;
 				case INFO:
 					if(argTree.argChains.size() == 0) {
@@ -98,7 +98,7 @@ public class ArgTree {
 		this.argChains.add(new ArgChain(parsedArg));
 	}
 
-	private void addOperationArg(ArgWithFollowUp operationArg) {
+	private void addOperationArg(ArgWithOptions operationArg) {
 		this.getLastChain().newLink(operationArg);
 	}
 
@@ -115,14 +115,14 @@ public class ArgTree {
 		List<ArgLink> argLinks;
 
 		ArgChain(ArgWithOptions chainInput) {
-			this.input= chainInput;
+			this.input = chainInput;
 			this.argLinks = new ArrayList<>();
 			// add first link, with null operation
 			// (infos to print about unmodified input go here)
 			this.newLink(null);
 		}
 
-		void newLink(ArgWithFollowUp operation) {
+		void newLink(ArgWithOptions operation) {
 			this.argLinks.add(new ArgLink(operation));
 		}
 
@@ -131,10 +131,10 @@ public class ArgTree {
 		}
 
 		class ArgLink {
-			ArgWithFollowUp operation;
+			ArgWithOptions operation;
 			List<ArgWithFollowUp> infoArgs;
 
-			ArgLink(ArgWithFollowUp operation) {
+			ArgLink(ArgWithOptions operation) {
 				this.operation = operation;
 				this.infoArgs = new ArrayList<>();
 			}

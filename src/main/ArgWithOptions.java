@@ -10,6 +10,11 @@ public class ArgWithOptions {
 	ArgWithOptions() {
 		this.tail = new ArrayList<>();
 	}
+	
+	ArgWithOptions(ArgWithFollowUp head) {
+		this();
+		this.head = head;
+	}
 
 	static ArgWithOptions parse(String argString) throws ParseError {
 		ArgWithOptions parseResult = new ArgWithOptions();

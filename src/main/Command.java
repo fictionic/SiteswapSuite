@@ -254,7 +254,7 @@ class Command {
 
 		class Link {
 			SiteswapOrState siteswapOrState;
-			ArgWithFollowUp operation;
+			ArgWithOptions operation;
 			List<ArgWithFollowUp> infos;
 
 			Link() {
@@ -402,17 +402,17 @@ class Command {
 				// first copy prev link's ss-object into new link
 				curLink.siteswapOrState = prevLink.siteswapOrState.deepCopy();
 				if(curLink.siteswapOrState.isState) {
-					switch(curLink.operation.arg) {
+					switch(curLink.operation.head.arg) {
 						case TO_SITESWAP:
 							// TODO
 							break;
 						default:
 							// TODO make a better exception class for this?
-							Util.ErrorOut(new ParseError("operation '" + curLink.operation.arg + "' cannot be applied to states"));
+							Util.ErrorOut(new ParseError("operation '" + curLink.operation.head.arg + "' cannot be applied to states"));
 							break;
 					}
 				} else {
-					switch(curLink.operation.arg) {
+					switch(curLink.operation.head.arg) {
 						case TO_STATE:
 							curLink.siteswapOrState = new SiteswapOrState(curLink.siteswapOrState.getState());
 							break;
@@ -436,7 +436,7 @@ class Command {
 							break;
 						default:
 							// TODO make a better exception class for this?
-							Util.ErrorOut(new ParseError("operation '" + curLink.operation.arg + "' cannot be applied to siteswaps"));
+							Util.ErrorOut(new ParseError("operation '" + curLink.operation.head.arg + "' cannot be applied to siteswaps"));
 							break;
 					}
 				}

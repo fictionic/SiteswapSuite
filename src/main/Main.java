@@ -6,7 +6,6 @@ public class Main {
 		try {
 			// assemble cmdline args into tree structure
 			ArgTree argTree = ArgTree.parseArgTree(args);
-			Util.printf(argTree);
 			// convert argument tree into parallel command tree
 			Command command = new Command(argTree);
 			// run command
