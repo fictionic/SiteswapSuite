@@ -79,7 +79,23 @@ public class Util {
 			}
 			String toPrint;
 			if(minLevel == DebugLevel.DEBUG) {
-				toPrint = callingClassName + ": " + objectStr;
+				if(objectStr.indexOf('\n') != -1) {
+					StringBuilder builder = new StringBuilder();
+					String[] lines = objectStr.split("\n");
+					if(lines.length > 0) {
+						for(String line : lines) {
+							builder.append(callingClassName + ": " + line + "\n");
+						}
+					} else {
+						for(char c : objectStr.toCharArray()) {
+							builder.append(callingClassName + ": \n");
+						}
+					}
+					builder.deleteCharAt(builder.length()-1);
+					toPrint = builder.toString();
+				} else {
+					toPrint = callingClassName + ": " + objectStr;
+				}
 			} else {
 				toPrint = objectStr;
 			}
