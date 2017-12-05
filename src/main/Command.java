@@ -64,12 +64,13 @@ class Command {
 			for(ArgTree.ArgChain.ArgLink argLink : argChain.argLinks) {
 				this.links.add(new Link(argLink));
 			}
+
 		}
 
 		class ChainInput {
 			boolean isTransition;
 			NotatedSiteswapOrState notatedSiteswapOrState;
-			boolean isState; // cuz we can't create a nssors until we have a notatedobject
+			boolean isState; // cuz we can't create a ^nssors until we have a notatedobject
 
 			// literal input stuff
 			String prefix;
@@ -237,7 +238,6 @@ class Command {
 						ret.append(this.startHand);
 						ret.append("\n");
 					}
-					return ret.toString();
 				}
 				return ret.toString();
 			}
@@ -384,18 +384,6 @@ class Command {
 				}
 			}
 
-			String print() {
-				StringBuilder ret = new StringBuilder();
-				ret.append("OUTPUT: \n");
-				if(this.isState) {
-					ret.append(" state: " );
-					ret.append(this.notatedState.print());
-				} else {
-					ret.append(" siteswap: " );
-					ret.append(this.notatedSiteswap.print());
-				}
-				return ret.toString();
-			}
 		}
 
 		void execute() {
@@ -457,6 +445,20 @@ class Command {
 			for(Link link : this.links) {
 				Util.printf(link.print(), Util.DebugLevel.INFO, false);
 			}
+			// get output
+			StringBuilder ret = new StringBuilder();
+			ret.append("OUTPUT: \n");
+			Link lastLink = this.getLastLink();
+			// for now just use assembleAutomatic
+			if(lastLink.siteswapOrState.isState) {
+				ret.append(" state: " );
+				ret.append(NotatedState.assembleAutomatic(lastLink.siteswapOrState.state).print());
+			} else {
+				ret.append(" siteswap: " );
+				ret.append(NotatedSiteswap.assembleAutomatic(lastLink.siteswapOrState.siteswap).print());
+			}
+			// print output
+			Util.printf(ret.toString(), Util.DebugLevel.INFO);
 		}
 
 	}
