@@ -27,6 +27,10 @@ class Command {
 							Util.debugClasses.add(Siteswap.class.getName());
 							Util.debugClasses.add(State.class.getName());
 							break;
+						case ENABLE_DEBUG_TRANSITION:
+							Util.debugClasses.add(TransitionFinder.class.getName());
+							Util.debugClasses.add(TransitionResults.class.getName());
+							break;
 						default:
 							throw new Error("impossible error in Command.fromArgTree");
 					}
