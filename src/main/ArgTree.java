@@ -13,9 +13,10 @@ public class ArgTree {
 		this.globalArgs = new ArrayList<>();
 	}
 
-	private static List<ArgWithOptions> parseArgsToFlatList(String[] args) throws ParseError {
-		List<ArgWithOptions> flatList = new ArrayList<>();
+	public static ArgTree parseArgTree(String[] args) throws ParseError {
+		ArgTree argTree = new ArgTree();
 		for(int i=0; i<args.length; i++) {
+			// parse arg into object
 			String arg = args[i];
 			ArgWithOptions parsedArg = ArgWithOptions.parse(arg);
 			// add follow-up if required and present
@@ -35,15 +36,7 @@ public class ArgTree {
 					throw new ParseError("argument '" + args[i-1] + "' requires string follow-up");
 				}
 			}
-			flatList.add(parsedArg);
-		}
-		return flatList;
-	}
-
-	public static ArgTree parseArgTree(String[] args) throws ParseError {
-		List<ArgWithOptions> flatList = parseArgsToFlatList(args);
-		ArgTree argTree = new ArgTree();
-		for(ArgWithOptions parsedArg : flatList) {
+			// deal with meaning of arg
 			switch(parsedArg.head.arg.ownRole) {
 				case FIRST:
 					if(argTree.argChains.size() == 0) {

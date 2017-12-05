@@ -48,13 +48,13 @@ public class ArgWithOptions {
 		// parse headStr
 		Argument headArg;
 		if(isLongOption) {
-			headArg = Argument.parseLongOptionName(headStr);
+			headArg = Argument.parseLongOptionName(headStr, null);
 		} else {
 			// make sure it's only 1 char long
 			if(headStr.length() > 1) {
 				throw new ParseError("invalid token: '" + argString + "'");
 			}
-			headArg = Argument.parseShortOptionName(headStr.charAt(0));
+			headArg = Argument.parseShortOptionName(headStr.charAt(0), null);
 		}
 		parseResult.head = new ArgWithFollowUp(headArg);
 		// parse optionsStr
@@ -88,13 +88,9 @@ public class ArgWithOptions {
 				ArgWithFollowUp subArg;
 				Argument subArgHead;
 				if(subArgStrHead.length() == 1) {
-					subArgHead = Argument.parseShortOptionName(subArgStrHead.charAt(0));
+					subArgHead = Argument.parseShortOptionName(subArgStrHead.charAt(0), headArg.optionsRole);
 				} else {
-					subArgHead = Argument.parseLongOptionName(subArgStrHead);
-				}
-				// check role
-				if(subArgHead.ownRole != optionsRole) {
-					throw new ParseError("argument '" + subArgStrHead + "' is not a valid option for '" + headStrFull + "'");
+					subArgHead = Argument.parseLongOptionName(subArgStrHead, headArg.optionsRole);
 				}
 				// add inline follow-up if required and present
 				if(subArgHead.requires == Argument.FollowUp.STRING) {

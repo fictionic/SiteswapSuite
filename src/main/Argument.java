@@ -82,19 +82,32 @@ public enum Argument {
 		this(shortForm, longForm, ownRole, null, requires);
 	}
 
-	static Argument parseLongOptionName(String str) throws ParseError {
+	static Argument parseLongOptionName(String str, Role targetRole) throws ParseError {
+		boolean foundButWrongRole = false;
 		for(Argument opt : Argument.values()) {
 			if(str.equals(opt.longForm)) {
-				return opt;
+				if(targetRole == null || opt.ownRole == targetRole || (targetRole == Role.FIRST && opt.ownRole == Role.INPUT)) {
+					return opt;
+				} else {
+					foundButWrongRole = true;
+				}
 			}
+		}
+		if(foundButWrongRole) {
+			throw new ParseError("argument '" + str + "' is not a valid in this context");
 		}
 		throw new ParseError("unrecognized argument name: '" + str + "'");
 	}
 
-	static Argument parseShortOptionName(char ch) throws ParseError {
+	static Argument parseShortOptionName(char ch, Role targetRole) throws ParseError {
+		boolean foundButWrongRole = false;
 		for(Argument opt : Argument.values()) {
 			if(ch == opt.shortForm) {
-				return opt;
+				if(targetRole == null || opt.ownRole == targetRole || (targetRole == Role.FIRST && opt.ownRole == Role.INPUT)) {
+					return opt;
+				} else {
+					foundButWrongRole = true;
+				}
 			}
 		}
 		throw new ParseError("unrecognized argument name: '" + ch + "'");
