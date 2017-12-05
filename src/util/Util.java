@@ -8,6 +8,12 @@ import java.util.HashSet;
 import java.util.Arrays;
 
 public class Util {
+
+	public static void ErrorOut(SiteswapException e) {
+		System.err.println(e.getMessage());
+		System.exit(1);
+	}
+
 	public static enum DebugLevel {
 		QUIET,
 		ERROR,
@@ -15,7 +21,7 @@ public class Util {
 		DEBUG
 	}
 
-	public static Set<String> debugClasses = new HashSet<>();
+	public static Set<String> debugClasses = null;
 	public static DebugLevel debugLevel = DebugLevel.INFO;
 
 	private static String getCallingClassName() {
@@ -47,7 +53,18 @@ public class Util {
 
 	// master method
 	private static void printf(Object object, DebugLevel minLevel, boolean newLine, String callingClassName) {
-		if((minLevel == DebugLevel.DEBUG && debugClasses.contains(callingClassName)) || Util.debugLevel.compareTo(minLevel) >= 0) {
+		boolean shouldPrint = false;
+		if(minLevel == DebugLevel.DEBUG) {
+			if(debugClasses == null) {
+				return;
+			}
+			if(debugClasses.isEmpty() || debugClasses.contains(callingClassName)) {
+				shouldPrint = true;
+			}
+		} else if(Util.debugLevel.compareTo(minLevel) >= 0) {
+			shouldPrint = true;
+		}
+		if(shouldPrint) {
 			PrintStream ps;
 			if(minLevel == DebugLevel.DEBUG || minLevel == DebugLevel.ERROR) {
 				ps = System.err;
