@@ -11,41 +11,58 @@ public class ArgParseResult {
 		this.tail = new ArrayList<>();
 	}
 
-	static ArgParseResult parse(String str) throws ParseError {
-		ArgParseResult ret = new ArgParseResult();
+	static ArgParseResult parse(String argString) throws ParseError {
+		ArgParseResult parseResult = new ArgParseResult();
 		boolean isLongOption;
 		String headStr;
-		String optionsStr = null;
+		String optionsStr;
 		// make sure it's an argument
-		if(str.charAt(0) == '-') {
+		if(argString.charAt(0) == '-') {
+			String argStringStripped;
 			// see if it's a long name
-			if(str.charAt(1) == '-') {
+			if(argString.charAt(1) == '-') {
 				isLongOption = true;
-				str = str.substring(2, str.length());
+				argStringStripped = argString.substring(2, argString.length());
 			} else {
 				isLongOption = false;
-				str = str.substring(1, str.length());
+				argStringStripped = argString.substring(1, argString.length());
 			}
 			// strip out inline options
-			int sepIndex = str.indexOf(':');
+			int sepIndex = argStringStripped.indexOf(':');
 			if(sepIndex > -1) {
-				headStr = str.substring(0, sepIndex);
-				optionsStr = str.substring(sepIndex+1, str.length());
+				headStr = argStringStripped.substring(0, sepIndex);
+				optionsStr = argStringStripped.substring(sepIndex+1, argStringStripped.length());
 			} else {
-				headStr = str;
+				headStr = argStringStripped;
+				optionsStr = null;
 			}
 		} else {
 			// invalid token
-			throw new ParseError("invalid token: '" + str + "'");
+			throw new ParseError("invalid token: '" + argString + "'");
 		}
 		// parse headStr
+		Argument headArg;
 		if(isLongOption) {
-			ret.head = new ArgContainer(Argument.parseLongOptionName(headStr));
+			headArg = Argument.parseLongOptionName(headStr);
 		} else {
-			ret.head = new ArgContainer(Argument.parseShortOptionName(str.charAt(0)));
+			headArg = Argument.parseShortOptionName(headStr.charAt(0));
 		}
+		parseResult.head = new ArgContainer(headArg);
 		// parse optionsStr
 		if(optionsStr != null && optionsStr.length() > 0) {
+			// for error printing (yes this is a stupid way of getting this string)
+			String headStrFull;
+			if(isLongOption) {
+				headStrFull = "--" + headStr;
+			} else {
+				headStrFull = "-" + headStr;
+			}
+			// make sure the head arg allows options
+			if(parseResult.head.arg.optionsRole == null) {
+				throw new ParseError("argument '" + headStrFull + "' does not take options");
+			}
+			// get role that all options must have
+			Argument.Role optionsRole = parseResult.head.arg.optionsRole;
 			for(String subArg : optionsStr.split(",")) {
 				// parse inline arguments to options
 				int sepIndex = subArg.indexOf('=');
@@ -62,13 +79,17 @@ public class ArgParseResult {
 				} else {
 					curArgHead = Argument.parseLongOptionName(subArg);
 				}
+				// check role
+				if(curArgHead.ownRole != optionsRole) {
+					throw new ParseError("argument '" + subArg + "' is not a valid option for '" + headStrFull + "'");
+				}
 				// add inline follow-up if required and present
-				if(curArgHead.requires == Argument.Requires.REQUIRES_STRING) {
+				if(curArgHead.requires == Argument.FollowUp.STRING) {
 					if(inlineFollowUp == null) {
 						throw new ParseError("argument '" + subArg + "' requires string follow-up");
 					}
 					curArg = new ArgContainer(curArgHead, inlineFollowUp);
-				} else if(curArgHead.requires == Argument.Requires.REQUIRES_INT) {
+				} else if(curArgHead.requires == Argument.FollowUp.INT) {
 					if(inlineFollowUp == null) {
 						throw new ParseError("argument '" + subArg + "' requires integer follow-up");
 					}
@@ -76,10 +97,10 @@ public class ArgParseResult {
 				} else {
 					curArg = new ArgContainer(curArgHead);
 				}
-				ret.tail.add(curArg);
+				parseResult.tail.add(curArg);
 			}
 		}
-		return ret;
+		return parseResult;
 	}
 
 	// for debugging
@@ -94,11 +115,11 @@ public class ArgParseResult {
 			}
 			ret.deleteCharAt(ret.length()-1);
 		}
-		Argument.Requires requires = this.head.arg.requires;
-		if(requires == Argument.Requires.REQUIRES_INT) {
+		Argument.FollowUp requires = this.head.arg.requires;
+		if(requires == Argument.FollowUp.INT) {
 			ret.append(" ");
 			ret.append(this.head.followUpInt);
-		} else if(requires == Argument.Requires.REQUIRES_STRING) {
+		} else if(requires == Argument.FollowUp.STRING) {
 			ret.append(" ");
 			ret.append(this.head.followUpString);
 		}

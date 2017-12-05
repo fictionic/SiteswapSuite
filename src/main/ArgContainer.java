@@ -22,10 +22,10 @@ class ArgContainer {
 	public String toString() {
 		StringBuilder ret = new StringBuilder();
 		ret.append(this.arg.toString());
-		if(this.arg.requires == Argument.Requires.REQUIRES_INT) {
+		if(this.arg.requires == Argument.FollowUp.INT) {
 			ret.append("=");
 			ret.append(this.followUpInt);
-		} else if(this.arg.requires == Argument.Requires.REQUIRES_INT) {
+		} else if(this.arg.requires == Argument.FollowUp.INT) {
 			ret.append("=");
 			ret.append(this.followUpString);
 		}

@@ -4,16 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.lang.NumberFormatException;
 
-class ParseError extends SiteswapException {
-	String message;
-	ParseError(String message) {
-		this.message = "ERROR: " + message;
-	}
-	public String getMessage() {
-		return this.message;
-	}
-}
-
 public class Main {
 
 	static class Command {
@@ -30,9 +20,9 @@ public class Main {
 				str = args[i];
 				Util.printf(str, Util.DebugLevel.DEBUG);
 				ArgumentCollection parseResult = ArgumentCollection.parse(str);
-				Argument.Requires headType = parseResult.head.requires;
+				Argument.FollowUp headType = parseResult.head.requires;
 				// collect follow-up if necessary
-				if(headType == Argument.Requires.REQUIRES_INT) {
+				if(headType == Argument.FollowUp.INT) {
 					if(i+1 == args.length) {
 						throw new ParseError("argument '" + args[i] + "' requires integer follow-up");
 					}
@@ -42,7 +32,7 @@ public class Main {
 					} catch(NumberFormatException e) {
 						throw new ParseError("follow-up '" + args[i] + "' cannot be coerced into an integer");
 					}
-				} else if(headType == Argument.Requires.REQUIRES_STRING) {
+				} else if(headType == Argument.FollowUp.STRING) {
 					if(i+1 == args.length) {
 						throw new ParseError("argument '" + args[i] + "' requires string follow-up");
 					}

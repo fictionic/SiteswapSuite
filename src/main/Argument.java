@@ -2,34 +2,34 @@ package siteswapsuite;
 
 public enum Argument {
 	// global options
-	ENABLE_DEBUG('D', "debug", Requires.REQUIRES_NONE, Role.DEBUG_ROLE),
-	ENABLE_DEBUG_MAIN('\0', "main", Requires.REQUIRES_NONE, Role.DEBUG_ROLE),
-	ENABLE_DEBUG_SITESWAP('\0', "siteswap", Requires.REQUIRES_NONE, Role.DEBUG_ROLE),
+	ENABLE_DEBUG('D', "debug", Role.FIRST, Role.DEBUG, FollowUp.NONE),
+	ENABLE_DEBUG_MAIN('\0', "main", Role.DEBUG, FollowUp.NONE),
+	ENABLE_DEBUG_SITESWAP('\0', "siteswap", Role.DEBUG, FollowUp.NONE),
 	// input indicator
-	INPUT('i', "input", Requires.REQUIRES_STRING, Role.INPUT_ROLE),
+	INPUT('i', "input", Role.INPUT, Role.INPUT_OPTION_LITERAL, FollowUp.STRING),
 	// input options
-	NUM_HANDS('h', "num-hands", Requires.REQUIRES_INT, Role.INPUT_ROLE),
-	START_HAND('H', "start-hand", Requires.REQUIRES_INT, Role.INPUT_ROLE),
-	KEEP_ZEROES('z', "keep-zeroes", Requires.REQUIRES_NONE, Role.INPUT_ROLE),
+	NUM_HANDS('h', "num-hands", Role.INPUT_OPTION_LITERAL, FollowUp.INT),
+	START_HAND('H', "start-hand", Role.INPUT_OPTION_LITERAL, FollowUp.INT),
+	KEEP_ZEROES('z', "keep-zeroes", Role.INPUT_OPTION_LITERAL, FollowUp.NONE),
 	// info items
-	INFO('\0', "info", Requires.REQUIRES_NONE, Role.INFO_ROLE),
-	CAPACITY('c', "capacity", Requires.REQUIRES_NONE, Role.INFO_ROLE),
-	VALIDITY('v', "validity", Requires.REQUIRES_NONE, Role.INFO_ROLE),
-	PRIMALITY('P', "primality", Requires.REQUIRES_NONE, Role.INFO_ROLE),
-	DIFFICULTY('d', "difficulty", Requires.REQUIRES_NONE, Role.INFO_ROLE),
+	INFO('\0', "info", Role.CHAIN, Role.INFO, FollowUp.NONE),
+	CAPACITY('c', "capacity", Role.INFO, FollowUp.NONE),
+	VALIDITY('v', "validity", Role.INFO, FollowUp.NONE),
+	PRIMALITY('P', "primality", Role.INFO, FollowUp.NONE),
+	DIFFICULTY('d', "difficulty", Role.INFO, FollowUp.NONE),
 	// operations
-	OPS('\0', "ops", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	INVERT('V', "invert", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	SPRING('p', "spring", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	INFINITIZE('f', "infinitize", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	UNINFINITIZE('F', "un-infinitize", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	ANTITOSSIFY('a', "antitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	UNANTITOSSIFY('A', "un-antitossify", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	ANTINEGATE('N', "anti-negate", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	TO_STATE('s', "to-state", Requires.REQUIRES_NONE, Role.OPERATION_ROLE),
-	TO_SITESWAP('S', "to-siteswap", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	OPS('\0', "ops", Role.CHAIN, Role.OPERATION, FollowUp.NONE),
+	INVERT('V', "invert", Role.OPERATION, FollowUp.NONE),
+	SPRING('p', "spring", Role.OPERATION, FollowUp.NONE),
+	INFINITIZE('f', "infinitize", Role.OPERATION, FollowUp.NONE),
+	UNINFINITIZE('F', "un-infinitize", Role.OPERATION, FollowUp.NONE),
+	ANTITOSSIFY('a', "antitossify", Role.OPERATION, FollowUp.NONE),
+	UNANTITOSSIFY('A', "un-antitossify", Role.OPERATION, FollowUp.NONE),
+	ANTINEGATE('N', "anti-negate", Role.OPERATION, FollowUp.NONE),
+	TO_STATE('s', "to-state", Role.OPERATION, FollowUp.NONE),
+	TO_SITESWAP('S', "to-siteswap", Role.OPERATION, Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
 	// operations that take multiple inputs
-	TRANSITION('T', "transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
+	TRANSITION('T', "transition", Role.INPUT, Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
 	/* COMBINE
 	 * CONCATENATE
 	 * */
@@ -39,41 +39,48 @@ public enum Argument {
 	 * JUGGLE
 	 */
 	// transition options
-	MIN_TRANSITION_LENGTH('l', "min-length", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
-	MAX_TRANSITIONS('m', "max-transitions", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
-	SELECT_TRANSITION('o', "select-transition", Requires.REQUIRES_INT, Role.TRANSITION_ROLE),
-	ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allow-extra-squeeze-catches", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
-	GENERATE_BALL_ANTIBALL_PAIRS('g', "generate-ball-antiball-pairs", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
-	UN_ANTITOSSIFY_TRANSITIONS('A', "un-antitossify-transitions", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE),
-	DISPLAY_GENERAL_TRANSITION('G', "display-generalized-transition", Requires.REQUIRES_NONE, Role.TRANSITION_ROLE);
+	MIN_OPTION_TRANSITION_LENGTH('l', "min-length", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
+	MAX_OPTION_TRANSITIONS('m', "max-transitions", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
+	SELECT_TRANSITION('o', "select-transition", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
+	ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allow-extra-squeeze-catches", Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
+	GENERATE_BALL_ANTIBALL_PAIRS('g', "generate-ball-antiball-pairs", Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
+	UN_ANTITOSSIFY_OPTION_TRANSITIONS('A', "un-antitossify-transitions", Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
+	DISPLAY_GENERAL_OPTION_TRANSITION('G', "display-generalized-transition", Role.INPUT_OPTION_TRANSITION, FollowUp.NONE);
 
 	// fields
 	char shortForm;
 	String longForm;
-	Requires requires;
-	Role role;
+	Role ownRole, optionsRole;
+	FollowUp requires;
 
-	enum Requires {
-		REQUIRES_NONE,
-		REQUIRES_INT,
-		REQUIRES_STRING;
+	static enum Role {
+		FIRST, // must appear before options of all other roles
+		INPUT, // begins new chain
+		INPUT_OPTION_LITERAL, // only as options to --input
+		INPUT_OPTION_TRANSITION, // only as options to --transition or --to-siteswap
+		CHAIN, // only within a chain
+		OPERATION, // only within a chain or as options to --ops
+		INFO, // only within a chain or as options to --info
+		DEBUG; // only as options to --debug
 	}
 
-	enum Role {
-		INPUT_ROLE,
-		INFO_ROLE,
-		OPERATION_ROLE,
-		TRANSITION_ROLE,
-		DEBUG_ROLE,
-		OTHER_ROLE;
+	static enum FollowUp {
+		NONE,
+		INT,
+		STRING;
 	}
 
 	// constructor
-	private Argument(char shortForm, String longForm, Requires requires, Role role) {
+	private Argument(char shortForm, String longForm, Role ownRole, Role optionsRole, FollowUp requires) {
 		this.shortForm = shortForm;
 		this.longForm = longForm;
+		this.ownRole = ownRole;
+		this.optionsRole = optionsRole;
 		this.requires = requires;
-		this.role = role;
+	}
+	// shorthand
+	private Argument(char shortForm, String longForm, Role ownRole, FollowUp requires) {
+		this(shortForm, longForm, ownRole, null, requires);
 	}
 
 	static Argument parseLongOptionName(String str) throws ParseError {
@@ -82,7 +89,7 @@ public enum Argument {
 				return opt;
 			}
 		}
-		throw new ParseError("invalid token: '" + str + "'");
+		throw new ParseError("unrecognized argument name: " + str + "'");
 	}
 
 	static Argument parseShortOptionName(char ch) throws ParseError {
@@ -91,7 +98,7 @@ public enum Argument {
 				return opt;
 			}
 		}
-		throw new ParseError("invalid token: '" + ch + "'");
+		throw new ParseError("unrecognized argument name: '" + ch + "'");
 	}
 
 }
