@@ -3,16 +3,16 @@ package siteswapsuite;
 import java.util.List;
 import java.util.ArrayList;
 
-public class ArgParseResult {
-	ArgContainer head;
-	List<ArgContainer> tail;
+public class ArgWithOptions {
+	ArgWithFollowUp head;
+	List<ArgWithFollowUp> tail;
 
-	ArgParseResult() {
+	ArgWithOptions() {
 		this.tail = new ArrayList<>();
 	}
 
-	static ArgParseResult parse(String argString) throws ParseError {
-		ArgParseResult parseResult = new ArgParseResult();
+	static ArgWithOptions parse(String argString) throws ParseError {
+		ArgWithOptions parseResult = new ArgWithOptions();
 		boolean isLongOption;
 		String headStr;
 		String optionsStr;
@@ -45,9 +45,13 @@ public class ArgParseResult {
 		if(isLongOption) {
 			headArg = Argument.parseLongOptionName(headStr);
 		} else {
+			// make sure it's only 1 char long
+			if(headStr.length() > 1) {
+				throw new ParseError("invalid token: '" + argString + "'");
+			}
 			headArg = Argument.parseShortOptionName(headStr.charAt(0));
 		}
-		parseResult.head = new ArgContainer(headArg);
+		parseResult.head = new ArgWithFollowUp(headArg);
 		// parse optionsStr
 		if(optionsStr != null && optionsStr.length() > 0) {
 			// for error printing (yes this is a stupid way of getting this string)
@@ -72,7 +76,7 @@ public class ArgParseResult {
 					subArg = subArgSplit[0];
 					inlineFollowUp = subArgSplit[1];
 				}
-				ArgContainer curArg;
+				ArgWithFollowUp curArg;
 				Argument curArgHead;
 				if(subArg.length() == 1) {
 					curArgHead = Argument.parseShortOptionName(subArg.charAt(0));
@@ -88,14 +92,14 @@ public class ArgParseResult {
 					if(inlineFollowUp == null) {
 						throw new ParseError("argument '" + subArg + "' requires string follow-up");
 					}
-					curArg = new ArgContainer(curArgHead, inlineFollowUp);
+					curArg = new ArgWithFollowUp(curArgHead, inlineFollowUp);
 				} else if(curArgHead.requires == Argument.FollowUp.INT) {
 					if(inlineFollowUp == null) {
 						throw new ParseError("argument '" + subArg + "' requires integer follow-up");
 					}
-					curArg = new ArgContainer(curArgHead, Integer.parseInt(inlineFollowUp));
+					curArg = new ArgWithFollowUp(curArgHead, Integer.parseInt(inlineFollowUp));
 				} else {
-					curArg = new ArgContainer(curArgHead);
+					curArg = new ArgWithFollowUp(curArgHead);
 				}
 				parseResult.tail.add(curArg);
 			}
@@ -109,7 +113,7 @@ public class ArgParseResult {
 		ret.append(this.head.arg.toString());
 		if(this.tail.size() > 0) {
 			ret.append(":");
-			for(ArgContainer option : this.tail) {
+			for(ArgWithFollowUp option : this.tail) {
 				ret.append(option.toString());
 				ret.append(",");
 			}

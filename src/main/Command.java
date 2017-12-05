@@ -1,0 +1,470 @@
+package siteswapsuite;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
+
+class Command {
+
+	List<Chain> chains;
+
+	public Command(ArgTree argTree) {
+		this.chains = new ArrayList<>();
+		// deal with global args
+		Util.printf("adding global args", Util.DebugLevel.DEBUG);
+		for(ArgWithOptions globalArg : argTree.globalArgs) {
+			if(globalArg.head.arg == Argument.ENABLE_DEBUG) {
+				Util.debugClasses = new HashSet<>();
+				for(ArgWithFollowUp debugArg : globalArg.tail) {
+					switch(debugArg.arg) {
+						case ENABLE_DEBUG_MAIN:
+							Util.debugClasses.add(Main.class.getName());
+							Util.debugClasses.add(Command.class.getName());
+							Util.debugClasses.add(ArgTree.class.getName());
+							break;
+						case ENABLE_DEBUG_SITESWAP:
+							Util.debugClasses.add(Toss.class.getName());
+							Util.debugClasses.add(Siteswap.class.getName());
+							Util.debugClasses.add(State.class.getName());
+							break;
+						default:
+							throw new Error("impossible error in Command.fromArgTree");
+					}
+				}
+			}
+		}
+		// construct chains
+		for(ArgTree.ArgChain argChain : argTree.argChains) {
+			this.addChain(argChain);
+		}
+	}
+
+	Chain getChain(int index) {
+		if(index < 0) {
+			index += this.chains.size();
+		}
+		return this.chains.get(index);
+	}
+
+	void addChain(ArgTree.ArgChain argChain) {
+		this.chains.add(new Chain(argChain));
+	}
+
+	class Chain {
+		int index;
+		ChainInput input;
+		List<Link> links;
+
+		Chain(ArgTree.ArgChain argChain) {
+			this.index = chains.size();
+			Util.printf("creating chain #" + this.index, Util.DebugLevel.DEBUG);
+			this.input = new ChainInput(argChain.input);
+			this.links = new ArrayList<>();
+			// add links
+			for(ArgTree.ArgChain.ArgLink argLink : argChain.argLinks) {
+				this.links.add(new Link(argLink));
+			}
+		}
+
+		class ChainInput {
+			boolean isTransition;
+			NotatedSiteswapOrState notatedSiteswapOrState;
+			boolean isState; // cuz we can't create a nssors until we have a notatedobject
+
+			// literal input stuff
+			String prefix;
+			String inputNotation;
+			int numHands = -1;
+			int startHand = -1;
+			boolean keepZeroes = false;
+
+			// transition input stuff
+			int fromIndex = -1, toIndex = -1;
+			TransitionOptions transitionOptions;
+			boolean displayGeneralizedTransition = false;
+			boolean unAntitossifyTransitions = false;
+			List<Siteswap> transitions;
+			GeneralizedTransition generalizedTransition;
+
+			ChainInput(ArgWithOptions input) {
+				if(input.head.arg == Argument.INPUT) {
+					this.isTransition = false;
+					this.inputNotation = input.head.followUpString;
+					// check for notation type indicators
+					if(this.inputNotation.length() > 2 && this.inputNotation.charAt(2) == ':') {
+						this.prefix = this.inputNotation.substring(0,2);
+						this.inputNotation = this.inputNotation.substring(3,this.inputNotation.length());
+						if(this.prefix.equals("ss")) {
+							this.isState = false;
+						} else if(this.prefix.equals("st")) {
+							this.isState = true;
+						} else {
+							Util.ErrorOut(new InvalidNotationException("unrecognized input prefix: " + this.prefix));
+						}
+					}
+					// parse input options
+					for(ArgWithFollowUp inputArg : input.tail) {
+						switch(inputArg.arg) {
+							case NUM_HANDS:
+								this.numHands = inputArg.followUpInt;
+								break;
+							case START_HAND:
+								this.startHand = inputArg.followUpInt;
+								break;
+							case KEEP_ZEROES:
+								this.keepZeroes = true;
+								break;
+							default:
+								assert false;
+								break;
+						}
+					}
+				} else {
+					this.isTransition = true;
+					this.fromIndex = index - 2;
+					this.toIndex = index - 1;
+					this.transitionOptions = new TransitionOptions();
+					// parse transition options
+					for(ArgWithFollowUp transitionArg : input.tail) {
+						switch(transitionArg.arg) {
+							case MIN_TRANSITION_LENGTH:
+								this.transitionOptions.minTransitionLength = transitionArg.followUpInt;
+								break;
+							case MAX_TRANSITIONS:
+								this.transitionOptions.maxTransitions = transitionArg.followUpInt;
+								break;
+							case ALLOW_EXTRA_SQUEEZE_CATCHES:
+								this.transitionOptions.allowExtraSqueezeCatches = true;
+								break;
+							case GENERATE_BALL_ANTIBALL_PAIRS:
+								this.transitionOptions.generateBallAntiballPairs = true;
+								break;
+							case SELECT_TRANSITION:
+								this.transitionOptions.selectTransition = transitionArg.followUpInt;
+								break;
+							default:
+								assert false;
+								break;
+						}
+					}
+				}
+			}
+
+			void process() {
+				Util.printf("processing input #" + index, Util.DebugLevel.DEBUG);
+				if(this.isTransition) {
+					Link l1 = getChain(this.fromIndex).getLastLink(), l2 = getChain(this.toIndex).getLastLink();
+					State from = l1.siteswapOrState.getState();
+					State to = l2.siteswapOrState.getState();
+					if(from.numHands() != to.numHands()) {
+						Util.ErrorOut(new IncompatibleNumberOfHandsException());
+					}
+					try {
+						TransitionFinder tf = new TransitionFinder(from, to);
+						TransitionResults tr = tf.findTransitions(this.transitionOptions);
+						if(this.unAntitossifyTransitions) {
+							Util.printf("WARNING: un-antitossify-transitions not yet implemented", Util.DebugLevel.ERROR);
+							// tr.unAntitossify(prefix, suffix);
+						}
+						this.generalizedTransition = tr.getGeneralizedTransition();
+						this.transitions = tr.getTransitions();
+						// save one as output
+						this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedSiteswap.assembleAutomatic(tr.getSelectedTransition()));
+					} catch(ImpossibleTransitionException e) {
+						Util.ErrorOut(e);
+					}
+				} else {
+					try {
+						if(this.prefix != null) {
+							// if state or siteswap was explicitly indicated, parse accordingly
+							if(this.isState) {
+								this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedState.parse(this.inputNotation, this.numHands, this.startHand));
+							} else {
+								this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand, this.keepZeroes));
+							}
+						} else {
+							// otherwise try both
+							try {
+								this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand, this.keepZeroes));
+							} catch(InvalidSiteswapNotationException e) {
+								try {
+									this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedState.parse(this.inputNotation, this.numHands, this.startHand));
+								} catch(InvalidStateNotationException e2) {
+									throw new InvalidNotationException("could not interpret input '" + this.inputNotation + "' as valid siteswap or state notation");
+								}
+							}
+						}
+					} catch(InvalidNotationException | IncompatibleNumberOfHandsException e) {
+						Util.ErrorOut(e);
+					}
+				}
+			}
+
+			public String print() {
+				StringBuilder ret = new StringBuilder("INPUT "); ret.append(index); ret.append(":\n");
+				if(this.isTransition) {
+					ret.append(" type: transition\n");
+					ret.append(" from: output "); ret.append(this.fromIndex); ret.append("\n");
+					ret.append(" to: output "); ret.append(this.toIndex); ret.append("\n");
+					if(this.displayGeneralizedTransition) {
+						ret.append(" generalized transition: ");
+						NotatedSiteswap throwsPortion = NotatedSiteswap.assembleAutomatic(this.generalizedTransition.getThrowsPortion());
+						ret.append(throwsPortion.print());
+						NotatedSiteswap catchesPortion = NotatedSiteswap.assembleAutomatic(this.generalizedTransition.getCatchesPortion());
+						ret.append("{");
+						ret.append(catchesPortion.print());
+						ret.append("}\n");
+					}
+					ret.append(" results:\n");
+					for(int i=0; i<this.transitions.size(); i++) {
+						Siteswap ss = this.transitions.get(i);
+						ret.append("  " + ss.toString());
+						if(i == this.transitionOptions.selectTransition) {
+							ret.append(" --->");
+						}
+						ret.append("\n");
+					}
+				} else {
+					ret.append(" type: literal\n");
+					ret.append(" notation: '"); ret.append(this.inputNotation); ret.append("'\n");
+					if(this.numHands != -1) {
+						ret.append(" numHands: ");
+						ret.append(this.numHands);
+						ret.append("\n");
+					}
+					if(this.startHand != -1) {
+						ret.append(" startHand: ");
+						ret.append(this.startHand);
+						ret.append("\n");
+					}
+					return ret.toString();
+				}
+				return ret.toString();
+			}
+
+		}
+
+		void addLink(ArgTree.ArgChain.ArgLink argLink) {
+			this.links.add(new Link(argLink));
+		}
+
+		Link getLastLink() {
+			return this.links.get(this.links.size()-1);
+		}
+
+		class Link {
+			SiteswapOrState siteswapOrState;
+			ArgWithFollowUp operation;
+			List<ArgWithFollowUp> infos;
+
+			Link() {
+				this.infos = new ArrayList<>();
+			}
+
+			Link(ArgTree.ArgChain.ArgLink argLink) {
+				this();
+				this.operation = argLink.operation;
+				this.infos = argLink.infoArgs;
+			}
+
+			String print() {
+				StringBuilder ret = new StringBuilder();
+				if(this.operation != null) {
+					ret.append("---> " + this.operation.toString() + " ");
+				}
+				if(this.siteswapOrState.isState) {
+					ret.append("---> state:\n");
+					ret.append(" parsed: " + this.siteswapOrState.state.toString() + "\n");
+				} else {
+					ret.append("---> siteswap:\n");
+					ret.append(" parsed: " + this.siteswapOrState.siteswap.toString() + "\n");
+				}
+				for(ArgWithFollowUp infoArg : this.infos) {
+					switch(infoArg.arg) {
+						case CAPACITY:
+							ExtendedFraction capacity;
+							if(this.siteswapOrState.isState) {
+								capacity = this.siteswapOrState.state.numBalls();
+							} else {
+								capacity = this.siteswapOrState.siteswap.numBalls();
+							}
+							ret.append(" capacity: " + capacity.toString() + "\n");
+							break;
+						case VALIDITY:
+							boolean validity;
+							if(this.siteswapOrState.isState) {
+								validity = (this.siteswapOrState.state.repeatedLength == 0);
+							} else {
+								validity = this.siteswapOrState.siteswap.isValid();
+							}
+							ret.append(" validity: " + validity + "\n");
+							break;
+						case PRIMALITY:
+							boolean primality;
+							if(this.siteswapOrState.isState) {
+								ret.append(" primality: n/a\n");
+							} else {
+								ret.append(" primality: " + this.siteswapOrState.siteswap.isPrime() + "\n");
+							}
+							break;
+						case DIFFICULTY:
+							ExtendedFraction difficulty;
+							if(this.siteswapOrState.isState) {
+								ret.append(" difficulty: n/a\n");
+							} else {
+								ret.append(" difficulty: " + this.siteswapOrState.siteswap.difficulty().toString() + "\n");
+							}
+							break;
+						default:
+							break;
+					}
+				}
+				return ret.toString();
+			}
+
+		}
+
+		class SiteswapOrState {
+			boolean isState;
+			Siteswap siteswap;
+			State state;
+			SiteswapOrState(State state) {
+				this.isState = true;
+				this.state = state;
+			}
+			SiteswapOrState(Siteswap siteswap) {
+				this.isState = false;
+				this.siteswap = siteswap;
+			}
+			State getState() {
+				if(this.isState) {
+					return this.state;
+				} else {
+					return new State(this.siteswap);
+				}
+			}
+			SiteswapOrState deepCopy() {
+				if(this.isState) {
+					return new SiteswapOrState(this.state.deepCopy());
+				} else {
+					return new SiteswapOrState(this.siteswap.deepCopy());
+				}
+			}
+		}
+
+		class NotatedSiteswapOrState {
+			boolean isState;
+			NotatedSiteswap notatedSiteswap;
+			NotatedState notatedState;
+
+			NotatedSiteswapOrState(SiteswapOrState siteswapOrState) {
+				this.isState = siteswapOrState.isState;
+				if(this.isState) {
+					this.notatedState = NotatedState.assembleAutomatic(siteswapOrState.state);
+				} else {
+					this.notatedSiteswap = NotatedSiteswap.assembleAutomatic(siteswapOrState.siteswap);
+				}
+			}
+
+			NotatedSiteswapOrState(NotatedSiteswap notatedSiteswap) {
+				this.isState = false;
+				this.notatedSiteswap = notatedSiteswap;
+			}
+
+			NotatedSiteswapOrState(NotatedState notatedState) {
+				this.isState = true;
+				this.notatedState = notatedState;
+			}
+
+			SiteswapOrState deNotate() {
+				if(this.isState) {
+					return new SiteswapOrState(this.notatedState.state);
+				} else {
+					return new SiteswapOrState(this.notatedSiteswap.siteswap);
+				}
+			}
+
+			String print() {
+				StringBuilder ret = new StringBuilder();
+				ret.append("OUTPUT: \n");
+				if(this.isState) {
+					ret.append(" state: " );
+					ret.append(this.notatedState.print());
+				} else {
+					ret.append(" siteswap: " );
+					ret.append(this.notatedSiteswap.print());
+				}
+				return ret.toString();
+			}
+		}
+
+		void execute() {
+			Util.printf("executing chain #" + this.index, Util.DebugLevel.DEBUG);
+			// process input
+			this.input.process();
+			// print input info
+			Util.printf(this.input.print(), Util.DebugLevel.INFO, false);
+			// compute all links
+			// first link
+			SiteswapOrState inputSiteswapOrState = this.input.notatedSiteswapOrState.deNotate();
+			this.links.get(0).siteswapOrState = inputSiteswapOrState;
+			for(int i=1; i<this.links.size(); i++) {
+				Link prevLink = this.links.get(i-1);
+				Link curLink = this.links.get(i);
+				// first copy prev link's ss-object into new link
+				curLink.siteswapOrState = prevLink.siteswapOrState.deepCopy();
+				if(curLink.siteswapOrState.isState) {
+					switch(curLink.operation.arg) {
+						case TO_SITESWAP:
+							// TODO
+							break;
+						default:
+							// TODO make a better exception class for this?
+							Util.ErrorOut(new ParseError("operation '" + curLink.operation.arg + "' cannot be applied to states"));
+							break;
+					}
+				} else {
+					switch(curLink.operation.arg) {
+						case TO_STATE:
+							curLink.siteswapOrState = new SiteswapOrState(curLink.siteswapOrState.getState());
+							break;
+						case INVERT:
+							curLink.siteswapOrState.siteswap.invert();
+							break;
+						case SPRING:
+							Util.printf("WARNING: sprung not yet implemented", Util.DebugLevel.ERROR);
+							break;
+						case INFINITIZE:
+							curLink.siteswapOrState.siteswap.infinitize();
+							break;
+						case UNINFINITIZE:
+							curLink.siteswapOrState.siteswap.unInfinitize();
+							break;
+						case ANTITOSSIFY:
+							curLink.siteswapOrState.siteswap.antitossify();
+							break;
+						case UNANTITOSSIFY:
+							curLink.siteswapOrState.siteswap.unAntitossify();
+							break;
+						default:
+							// TODO make a better exception class for this?
+							Util.ErrorOut(new ParseError("operation '" + curLink.operation.arg + "' cannot be applied to siteswaps"));
+							break;
+					}
+				}
+			}
+			// print all links
+			for(Link link : this.links) {
+				Util.printf(link.print(), Util.DebugLevel.INFO, false);
+			}
+		}
+
+	}
+
+	public void run() {
+		for(Chain chain : this.chains) {
+			chain.execute();
+		}
+	}
+
+}

@@ -1,20 +1,20 @@
 package siteswapsuite;
 
-class ArgContainer {
+class ArgWithFollowUp {
 	Argument arg;
 	int followUpInt;
 	String followUpString;
 	
-	ArgContainer(Argument arg) {
+	ArgWithFollowUp(Argument arg) {
 		this.arg = arg;
 	}
 
-	ArgContainer(Argument arg, int followUpInt) {
+	ArgWithFollowUp(Argument arg, int followUpInt) {
 		this.arg = arg;
 		this.followUpInt = followUpInt;
 	}
 
-	ArgContainer(Argument arg, String followUpString) {
+	ArgWithFollowUp(Argument arg, String followUpString) {
 		this.arg = arg;
 		this.followUpString = followUpString;
 	}

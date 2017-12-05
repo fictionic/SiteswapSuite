@@ -25,7 +25,6 @@ public enum Argument {
 	UNINFINITIZE('F', "un-infinitize", Role.OPERATION, FollowUp.NONE),
 	ANTITOSSIFY('a', "antitossify", Role.OPERATION, FollowUp.NONE),
 	UNANTITOSSIFY('A', "un-antitossify", Role.OPERATION, FollowUp.NONE),
-	ANTINEGATE('N', "anti-negate", Role.OPERATION, FollowUp.NONE),
 	TO_STATE('s', "to-state", Role.OPERATION, FollowUp.NONE),
 	TO_SITESWAP('S', "to-siteswap", Role.OPERATION, Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
 	// operations that take multiple inputs
@@ -39,13 +38,13 @@ public enum Argument {
 	 * JUGGLE
 	 */
 	// transition options
-	MIN_OPTION_TRANSITION_LENGTH('l', "min-length", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
-	MAX_OPTION_TRANSITIONS('m', "max-transitions", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
+	MIN_TRANSITION_LENGTH('l', "min-length", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
+	MAX_TRANSITIONS('m', "max-transitions", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
 	SELECT_TRANSITION('o', "select-transition", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
 	ALLOW_EXTRA_SQUEEZE_CATCHES('q', "allow-extra-squeeze-catches", Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
 	GENERATE_BALL_ANTIBALL_PAIRS('g', "generate-ball-antiball-pairs", Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
 	UN_ANTITOSSIFY_OPTION_TRANSITIONS('A', "un-antitossify-transitions", Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
-	DISPLAY_GENERAL_OPTION_TRANSITION('G', "display-generalized-transition", Role.INPUT_OPTION_TRANSITION, FollowUp.NONE);
+	DISPLAY_GENERAL_TRANSITION('G', "display-generalized-transition", Role.INPUT_OPTION_TRANSITION, FollowUp.NONE);
 
 	// fields
 	char shortForm;
