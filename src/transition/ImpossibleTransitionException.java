@@ -1,5 +1,7 @@
 package siteswapsuite;
 
 public class ImpossibleTransitionException extends SiteswapException {
-	String message = "ERROR: cannot compute transition between non-finite states";
+	public String getMessage() {
+		return "ERROR: cannot compute transition between non-finite states";
+	}
 }
