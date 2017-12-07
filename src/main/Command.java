@@ -23,8 +23,9 @@ class Command {
 							Util.debugClasses.add(ArgTree.class.getName());
 							break;
 						case ENABLE_DEBUG_SITESWAP:
-							Util.debugClasses.add(Toss.class.getName());
 							Util.debugClasses.add(Siteswap.class.getName());
+							break;
+						case ENABLE_DEBUG_STATE:
 							Util.debugClasses.add(State.class.getName());
 							break;
 						case ENABLE_DEBUG_TRANSITION:

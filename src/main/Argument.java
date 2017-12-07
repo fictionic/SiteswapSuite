@@ -5,6 +5,7 @@ public enum Argument {
 	ENABLE_DEBUG('\0', "debug", Role.FIRST, Role.DEBUG, FollowUp.NONE),
 	ENABLE_DEBUG_MAIN('\0', "main", Role.DEBUG, FollowUp.NONE),
 	ENABLE_DEBUG_SITESWAP('\0', "siteswap", Role.DEBUG, FollowUp.NONE),
+	ENABLE_DEBUG_STATE('\0', "state", Role.DEBUG, FollowUp.NONE),
 	ENABLE_DEBUG_TRANSITION('\0', "transition", Role.DEBUG, FollowUp.NONE),
 	// input indicator
 	INPUT('i', "input", Role.INPUT, Role.INPUT_OPTION_LITERAL, FollowUp.STRING),
