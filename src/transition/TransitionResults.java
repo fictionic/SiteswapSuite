@@ -21,6 +21,11 @@ public class TransitionResults {
 	}
 
 	public Siteswap getSelectedTransition() {
+		// if selectTransition is too big, choose the last one
+		if(this.selectTransition >= this.transitions.size()) {
+			Util.printf("WARNING: not enough transitions to select #" + this.selectTransition + "; selecting last transition instead", Util.DebugLevel.ERROR);
+			this.selectTransition = this.transitions.size() - 1;
+		}
 		return this.transitions.get(this.selectTransition);
 	}
 
