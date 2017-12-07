@@ -531,10 +531,8 @@ class Command {
 							break;
 					}
 				}
-			}
-			// print all links
-			for(Link link : this.links) {
-				Util.printf(link.print(), Util.DebugLevel.INFO, false);
+				// print link
+				Util.printf(curLink.print(), Util.DebugLevel.INFO, false);
 			}
 			// get output
 			StringBuilder ret = new StringBuilder();
