@@ -469,6 +469,7 @@ class Command {
 			// first link
 			SiteswapOrState inputSiteswapOrState = this.input.notatedSiteswapOrState.deNotate();
 			this.links.get(0).siteswapOrState = inputSiteswapOrState;
+			Util.printf(this.links.get(0).print(), Util.DebugLevel.INFO, false);
 			for(int i=1; i<this.links.size(); i++) {
 				Link prevLink = this.links.get(i-1);
 				Link curLink = this.links.get(i);
