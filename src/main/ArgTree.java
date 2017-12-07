@@ -19,30 +19,13 @@ public class ArgTree {
 			// parse arg into object
 			String arg = args[i];
 			ArgWithOptions parsedArg = ArgWithOptions.parse(arg);
-			// add follow-up if required and present
-			Argument.FollowUp requires = parsedArg.head.arg.requires;
-			if(requires == Argument.FollowUp.INT) {
-				try {
-					parsedArg.head.followUpInt = Integer.parseInt(args[++i]);
-				} catch(NumberFormatException e) {
-					throw new ParseError("follow-up '" + args[i-1] + "' cannot be coerced into an integer");
-				} catch(ArrayIndexOutOfBoundsException e) {
-					throw new ParseError("argument '" + args[i-1] + "' requires integer follow-up");
-				}
-			} else if(requires == Argument.FollowUp.STRING) {
-				try {
-					parsedArg.head.followUpString = args[++i];
-				} catch(ArrayIndexOutOfBoundsException e) {
-					throw new ParseError("argument '" + args[i-1] + "' requires string follow-up");
-				}
-			}
 			// deal with meaning of arg
 			switch(parsedArg.head.arg.ownRole) {
 				case FIRST:
 					if(argTree.argChains.size() == 0) {
 						argTree.addGlobalArg(parsedArg);
 					} else {
-						throw new ParseError("argument '" + parsedArg.head.arg + "' must appear before all others");
+						throw new ParseError("argument '" + parsedArg.head.arg.helpString() + "' must appear before all others");
 					}
 					break;
 				case INPUT:
@@ -50,7 +33,7 @@ public class ArgTree {
 					break;
 				case CHAIN:
 					if(argTree.argChains.size() == 0) {
-						throw new ParseError("argument '" + parsedArg.head.arg + "' must appear after an input argument");
+						throw new ParseError("argument '" + parsedArg.head.arg.helpString() + "' must appear after an input argument");
 					}
 					if(parsedArg.head.arg == Argument.OPS) {
 						// add a link for each operation to last chain
@@ -66,18 +49,35 @@ public class ArgTree {
 					break;
 				case OPERATION:
 					if(argTree.argChains.size() == 0) {
-						throw new ParseError("argument '" + parsedArg.head.arg + "' must appear after an input argument");
+						throw new ParseError("argument '" + parsedArg.head.arg.helpString() + "' must appear after an input argument");
 					}
 					argTree.addOperationArg(parsedArg);
 					break;
 				case INFO:
 					if(argTree.argChains.size() == 0) {
-						throw new ParseError("argument '" + parsedArg.head.arg + "' must appear after an input argument");
+						throw new ParseError("argument '" + parsedArg.head.arg.helpString() + "' must appear after an input argument");
 					}
 					argTree.addInfoArg(parsedArg.head);
 					break;
 				default:
-					throw new ParseError("argument '" + parsedArg.head.arg + "' appears in wrong place");
+					throw new ParseError("argument '" + parsedArg.head.arg.helpString(true) + "' is an option; it cannot stand alone");
+			}
+			// add follow-up if required and present
+			Argument.FollowUp requires = parsedArg.head.arg.requires;
+			if(requires == Argument.FollowUp.INT) {
+				try {
+					parsedArg.head.followUpInt = Integer.parseInt(args[++i]);
+				} catch(NumberFormatException e) {
+					throw new ParseError("follow-up '" + args[i-1] + "' cannot be coerced into an integer");
+				} catch(ArrayIndexOutOfBoundsException e) {
+					throw new ParseError("argument '" + parsedArg.head.arg.helpString() + "' requires integer follow-up");
+				}
+			} else if(requires == Argument.FollowUp.STRING) {
+				try {
+					parsedArg.head.followUpString = args[++i];
+				} catch(ArrayIndexOutOfBoundsException e) {
+					throw new ParseError("argument '" + parsedArg.head.arg.helpString() + "' requires string follow-up");
+				}
 			}
 		}
 		return argTree;

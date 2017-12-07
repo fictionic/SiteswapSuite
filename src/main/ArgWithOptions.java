@@ -10,7 +10,7 @@ public class ArgWithOptions {
 	ArgWithOptions() {
 		this.tail = new ArrayList<>();
 	}
-	
+
 	ArgWithOptions(ArgWithFollowUp head) {
 		this();
 		this.head = head;
@@ -68,7 +68,7 @@ public class ArgWithOptions {
 			}
 			// make sure the head arg allows options
 			if(parseResult.head.arg.optionsRole == null) {
-				throw new ParseError("argument '" + headStrFull + "' does not take options");
+				throw new ParseError("argument '" + parseResult.head.arg.helpString() + "' does not take options");
 			}
 			// get role that all options must have
 			Argument.Role optionsRole = parseResult.head.arg.optionsRole;
@@ -95,17 +95,21 @@ public class ArgWithOptions {
 				// add inline follow-up if required and present
 				if(subArgHead.requires == Argument.FollowUp.STRING) {
 					if(inlineFollowUp == null) {
-						throw new ParseError("argument '" + subArgStrHead + "' requires string follow-up");
+						throw new ParseError("option '" + subArgHead.helpString(true) + "' requires string follow-up");
 					}
 					subArg = new ArgWithFollowUp(subArgHead, inlineFollowUp);
 				} else if(subArgHead.requires == Argument.FollowUp.INT) {
 					if(inlineFollowUp == null) {
-						throw new ParseError("argument '" + subArgStrHead + "' requires integer follow-up");
+						throw new ParseError("option '" + subArgHead.helpString(true) + "' requires integer follow-up");
 					}
-					subArg = new ArgWithFollowUp(subArgHead, Integer.parseInt(inlineFollowUp));
+					try {
+						subArg = new ArgWithFollowUp(subArgHead, Integer.parseInt(inlineFollowUp));
+					} catch(NumberFormatException e) {
+						throw new ParseError("follow-up '" + inlineFollowUp + "' cannot be coerced into an integer");
+					}
 				} else {
 					if(inlineFollowUp != null) {
-						throw new ParseError("argument '" + subArgStrHead + "' takes no follow-up");
+						throw new ParseError("option '" + subArgHead.helpString(true) + "' takes no follow-up");
 					}
 					subArg = new ArgWithFollowUp(subArgHead);
 				}

@@ -39,6 +39,8 @@ public enum Argument {
 	 * JUGGLE
 	 */
 	// transition options
+	FROM_INDEX('\0', "from", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
+	TO_INDEX('\0', "to", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
 	MIN_TRANSITION_LENGTH('l', "min-length", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
 	MAX_TRANSITIONS('m', "max-transitions", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
 	SELECT_TRANSITION('o', "select-transition", Role.INPUT_OPTION_TRANSITION, FollowUp.INT),
@@ -85,33 +87,59 @@ public enum Argument {
 
 	static Argument parseLongOptionName(String str, Role targetRole) throws ParseError {
 		boolean foundButWrongRole = false;
+		Argument wrongArg = null;
 		for(Argument opt : Argument.values()) {
 			if(str.equals(opt.longForm)) {
 				if(targetRole == null || opt.ownRole == targetRole || (targetRole == Role.FIRST && opt.ownRole == Role.INPUT)) {
 					return opt;
 				} else {
 					foundButWrongRole = true;
+					wrongArg = opt;
 				}
 			}
 		}
 		if(foundButWrongRole) {
-			throw new ParseError("argument '" + str + "' is not a valid in this context");
+			throw new ParseError("argument '" + wrongArg.helpString(true) + "' is not a valid in this context");
 		}
 		throw new ParseError("unrecognized argument name: '" + str + "'");
 	}
 
 	static Argument parseShortOptionName(char ch, Role targetRole) throws ParseError {
 		boolean foundButWrongRole = false;
+		Argument wrongArg = null;
 		for(Argument opt : Argument.values()) {
 			if(ch == opt.shortForm) {
 				if(targetRole == null || opt.ownRole == targetRole || (targetRole == Role.FIRST && opt.ownRole == Role.INPUT)) {
 					return opt;
 				} else {
 					foundButWrongRole = true;
+					wrongArg = opt;
 				}
 			}
 		}
+		if(foundButWrongRole) {
+			throw new ParseError("argument '" + wrongArg.helpString(true) + "' is not a valid in this context");
+		}
 		throw new ParseError("unrecognized argument name: '" + ch + "'");
+	}
+
+	public String helpString() {
+		return this.helpString(false);
+	}
+	public String helpString(boolean bare) {
+		StringBuilder ret = new StringBuilder();
+		if(this.shortForm != '\0') {
+			if(!bare) {
+				ret.append('-');
+			}
+			ret.append(this.shortForm);
+			ret.append('/');
+		}
+		if(!bare) {
+			ret.append("--");
+		}
+		ret.append(this.longForm);
+		return ret.toString();
 	}
 
 }

@@ -54,28 +54,35 @@ class Command {
 		this.chains.add(new Chain(argChain));
 	}
 
+	// parse transition options, removing them from the input list as we go
+	// (so the caller doesn't have to scan through them again and can get to the
+	// ones that don't get put in a TransitionOptions)
 	static TransitionOptions readTransitionArgs(List<ArgWithFollowUp> transitionArgs) {
 		TransitionOptions transitionOptions = new TransitionOptions();
-		// parse transition options
-		for(ArgWithFollowUp transitionArg : transitionArgs) {
+		for(int i=0; i<transitionArgs.size(); i++) {
+			ArgWithFollowUp transitionArg = transitionArgs.get(i);
 			switch(transitionArg.arg) {
 				case MIN_TRANSITION_LENGTH:
 					transitionOptions.minTransitionLength = transitionArg.followUpInt;
+					transitionArgs.remove(i--);
 					break;
 				case MAX_TRANSITIONS:
 					transitionOptions.maxTransitions = transitionArg.followUpInt;
+					transitionArgs.remove(i--);
 					break;
 				case ALLOW_EXTRA_SQUEEZE_CATCHES:
 					transitionOptions.allowExtraSqueezeCatches = true;
+					transitionArgs.remove(i--);
 					break;
 				case GENERATE_BALL_ANTIBALL_PAIRS:
 					transitionOptions.generateBallAntiballPairs = true;
+					transitionArgs.remove(i--);
 					break;
 				case SELECT_TRANSITION:
 					transitionOptions.selectTransition = transitionArg.followUpInt;
+					transitionArgs.remove(i--);
 					break;
 				default:
-					assert false;
 					break;
 			}
 		}
@@ -161,6 +168,12 @@ class Command {
 					// get other transition options
 					for(ArgWithFollowUp transitionArg : input.tail) {
 						switch(transitionArg.arg) {
+							case FROM_INDEX:
+								this.fromIndex = transitionArg.followUpInt;
+								break;
+							case TO_INDEX:
+								this.toIndex = transitionArg.followUpInt;
+								break;
 							case DISPLAY_GENERAL_TRANSITION:
 								this.displayGeneralizedTransition = true;
 								break;
@@ -177,6 +190,10 @@ class Command {
 			void process() {
 				Util.printf("processing input #" + index, Util.DebugLevel.DEBUG);
 				if(this.isTransition) {
+					// make sure indeces are valid
+					if(this.fromIndex >= index || this.toIndex >= index) {
+						Util.ErrorOut(new ParseError("transition to/from indeces must refer to previous inputs"));
+					}
 					Link l1 = getChain(this.fromIndex).getLastLink(), l2 = getChain(this.toIndex).getLastLink();
 					State from = l1.siteswapOrState.getState();
 					State to = l2.siteswapOrState.getState();
@@ -428,6 +445,13 @@ class Command {
 					switch(curLink.operation.head.arg) {
 						case TO_SITESWAP:
 							TransitionOptions transitionOptions = Command.readTransitionArgs(curLink.operation.tail);
+							// see if any other transition options were passed
+							for(int j=0; j<curLink.operation.tail.size(); j++) {
+								ArgWithFollowUp illegalArg = curLink.operation.tail.get(j);
+								Util.printf("WARNING: operation '" + curLink.operation.head.arg.helpString() + "' does not accept option '" + illegalArg.arg.helpString(true) + "'; ignoring");
+								curLink.operation.tail.remove(j);
+								j--;
+							}
 							// make minTransitionLength = 1 by default cuz you probably don't want an empty siteswap
 							if(transitionOptions.minTransitionLength == -1) {
 								transitionOptions.minTransitionLength = 1;
@@ -443,7 +467,7 @@ class Command {
 							break;
 						default:
 							// TODO make a better exception class for this?
-							Util.ErrorOut(new ParseError("operation '" + curLink.operation.head.arg + "' cannot be applied to states"));
+							Util.ErrorOut(new ParseError("operation '" + curLink.operation.head.arg.helpString() + "' cannot be applied to states"));
 							break;
 					}
 				} else {
