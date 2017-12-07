@@ -89,6 +89,38 @@ class Command {
 		return transitionOptions;
 	}
 
+	public String printTransitionOptions(TransitionOptions transitionOptions) {
+		StringBuilder ret = new StringBuilder();
+		if(transitionOptions.minTransitionLength != -1) {
+			ret.append(Argument.MIN_TRANSITION_LENGTH);
+			ret.append("=");
+			ret.append(transitionOptions.minTransitionLength);
+			ret.append(",");
+		}
+		if(transitionOptions.maxTransitions != -1) {
+			ret.append(Argument.MAX_TRANSITIONS);
+			ret.append("=");
+			ret.append(transitionOptions.maxTransitions);
+			ret.append(",");
+		}
+		if(transitionOptions.allowExtraSqueezeCatches) {
+			ret.append(Argument.ALLOW_EXTRA_SQUEEZE_CATCHES);
+			ret.append(",");
+		}
+		if(transitionOptions.generateBallAntiballPairs) {
+			ret.append(Argument.GENERATE_BALL_ANTIBALL_PAIRS);
+			ret.append(",");
+		}
+		if(transitionOptions.selectTransition != -1) {
+			ret.append(Argument.SELECT_TRANSITION);
+			ret.append("=");
+			ret.append(transitionOptions.selectTransition);
+			ret.append(",");
+		}
+		ret.deleteCharAt(ret.length() - 1);
+		return ret.toString();
+	}
+
 	class Chain {
 		int index;
 		ChainInput input;
