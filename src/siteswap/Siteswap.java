@@ -77,16 +77,23 @@ public class Siteswap {
 	}
 
 	public boolean isValid() {
+		Util.printf("in isValid()", Util.DebugLevel.DEBUG);
+		Util.printf("making copy...", Util.DebugLevel.DEBUG);
+		Util.printf("siteswap: " + this.toString(), Util.DebugLevel.DEBUG);
 		Siteswap toRunOn = this.deepCopy();
 		// turn any `-&`s into catches by pairing them up with `&`s
+		Util.printf("unInfinitizing...", Util.DebugLevel.DEBUG);
 		toRunOn.unInfinitize();
+		Util.printf("siteswap: " + toRunOn.toString(), Util.DebugLevel.DEBUG);
 		// reset inDegree of each site
+		Util.printf("resetting inDegrees to 0...", Util.DebugLevel.DEBUG);
 		for(int b=0; b<toRunOn.sites.size(); b++) {
 			for(int h=0; h<toRunOn.numHands; h++) {
 				toRunOn.getSite(b, h).inDegree = 0;
 			}
 		}
 		// calculate inDegree of each site
+		Util.printf("computing inDegrees...", Util.DebugLevel.DEBUG);
 		Toss curToss;
 		int destBeat;
 		int destHand;
@@ -115,9 +122,9 @@ public class Siteswap {
 		for(int b=0; b<toRunOn.sites.size(); b++) {
 			for(int h=0; h<toRunOn.numHands; h++) {
 				if(toRunOn.getSite(b, h).inDegree != toRunOn.getSite(b, h).outDegree) {
-					Util.printf("b: " + b + ", h: " + h, Util.DebugLevel.DEBUG);
-					Util.printf("in:  " + toRunOn.getSite(b, h).inDegree, Util.DebugLevel.DEBUG);
-					Util.printf("out: " + toRunOn.getSite(b, h).outDegree, Util.DebugLevel.DEBUG);
+					Util.printf("indegree/outdegree mismatch at beat " + b + ", hand " + h + ":", Util.DebugLevel.DEBUG);
+					Util.printf(" indegree: " + toRunOn.getSite(b, h).inDegree, Util.DebugLevel.DEBUG);
+					Util.printf("outdegree: " + toRunOn.getSite(b, h).outDegree, Util.DebugLevel.DEBUG);
 					return false;
 				}
 			}
