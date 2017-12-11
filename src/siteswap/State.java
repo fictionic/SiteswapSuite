@@ -226,41 +226,35 @@ public class State {
 		return this.getFiniteNode(b).getChargeAtHand(h);
 	}
 
-	// public Siteswap getTransitionToSelf(int minTransitionLength) {
-	// 	Siteswap ret = null;
-	// 	try {
-	// 		ret = Transition.compute(this, this, minTransitionLength, false, false).unInfinitize(1).get(0);
-	// 	} catch(ImpossibleTransitionException e) {
-	// 		Util.printf("ERROR: Impossible error in State.java: " + e.getMessage(), Util.DebugLevel.ERROR);
-	// 	}
-	// 	return ret;
-	// }
-
 	public boolean equals(State other) {
-		if(other == null)
+		if(other == null) {
 			return false;
-		if(this.numHands != other.numHands)
+		}
+		if(this.numHands != other.numHands) {
 			return false;
+		}
 		Node thisCurNode = this.nowNode;
 		Node otherCurNode = other.nowNode;
 		while(thisCurNode != null || otherCurNode != null) {
 			if(thisCurNode != null && otherCurNode != null) {
-				if(!thisCurNode.equals(otherCurNode))
+				if(!thisCurNode.equals(otherCurNode)) {
 					return false;
-				else {
+				} else {
 					thisCurNode = thisCurNode.prev;
 					otherCurNode = otherCurNode.prev;
 				}
 			} else if(thisCurNode == null) {
-				if(!otherCurNode.isEmpty())
+				if(!otherCurNode.isEmpty()) {
 					return false;
-				else
+				} else {
 					otherCurNode = otherCurNode.prev;
+				}
 			} else if(otherCurNode == null) {
-				if(!thisCurNode.isEmpty())
+				if(!thisCurNode.isEmpty()) {
 					return false;
-				else
+				} else {
 					thisCurNode = thisCurNode.prev;
+				}
 			}
 		}
 		return true;
