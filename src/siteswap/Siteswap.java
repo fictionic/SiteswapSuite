@@ -115,7 +115,10 @@ public class Siteswap {
 							destBeat += toRunOn.period();
 						}
 						destHand = curToss.destHand();
-						toRunOn.getSite(destBeat, destHand).inDegree += curToss.charge();
+						// check for zero-tosses
+						if(destBeat != b || destHand != h) {
+							toRunOn.getSite(destBeat, destHand).inDegree += curToss.charge();
+						}
 					}
 				}
 			}
@@ -123,10 +126,10 @@ public class Siteswap {
 		// check if each site's inDegree matches its outDegree
 		for(int b=0; b<toRunOn.sites.size(); b++) {
 			for(int h=0; h<toRunOn.numHands; h++) {
-				if(toRunOn.getSite(b, h).inDegree != toRunOn.getSite(b, h).outDegree) {
+				if(toRunOn.getSite(b, h).inDegree != toRunOn.getSite(b, h).outDegree()) {
 					Util.printf("indegree/outdegree mismatch at beat " + b + ", hand " + h + ":", Util.DebugLevel.DEBUG);
 					Util.printf(" indegree: " + toRunOn.getSite(b, h).inDegree, Util.DebugLevel.DEBUG);
-					Util.printf("outdegree: " + toRunOn.getSite(b, h).outDegree, Util.DebugLevel.DEBUG);
+					Util.printf("outdegree: " + toRunOn.getSite(b, h).outDegree(), Util.DebugLevel.DEBUG);
 					return false;
 				}
 			}
@@ -483,21 +486,18 @@ public class Siteswap {
 		private List<Toss> tosses;
 		private int handIndex;
 		private int inDegree;
-		private int outDegree;
 
 		// standard constructor - create an empty site
 		private Site(int handIndex) {
 			this.handIndex = handIndex;
 			this.tosses = new ArrayList<Toss>();
 			this.inDegree = 0;
-			this.outDegree = 0;
 		}
 
 		// for deepCopy
-		private Site(int handIndex, List<Toss> newTosses, int newOutDegree) {
+		private Site(int handIndex, List<Toss> newTosses) {
 			this.handIndex = handIndex;
 			this.tosses = newTosses;
-			this.outDegree = newOutDegree;
 			this.inDegree = 0;
 		}
 
@@ -505,8 +505,20 @@ public class Siteswap {
 			return this.tosses.size();
 		}
 
-		private int outDegree() {
-			return this.outDegree;
+		int getOutdegreeOfToss(Toss toss) {
+			if(!toss.height().isInfinite() && toss.height().finiteValue() == 0 && toss.destHand() == this.handIndex) {
+				return 0;
+			} else {
+				return toss.charge();
+			}
+		}
+
+		int outDegree() {
+			int outdegree = 0;
+			for(Toss toss : this.tosses) {
+				outdegree += this.getOutdegreeOfToss(toss);
+			}
+			return outdegree;
 		}
 
 		Toss getToss(int tossIndex) {
@@ -518,7 +530,6 @@ public class Siteswap {
 
 		Toss removeToss(int tossIndex) {
 			if(!this.isEmpty()) {
-				this.outDegree -= this.tosses.get(tossIndex).charge();
 				return this.tosses.remove(tossIndex);
 			} else {
 				return null;
@@ -527,14 +538,12 @@ public class Siteswap {
 
 		void addToss(Toss toss) {
 			this.tosses.add(toss);
-			this.outDegree += toss.charge();
 		}
 
 		void exchangeToss(int tossIndex, Toss newToss) {
 			if(this.isEmpty()) {
 				Util.printf("ERROR: cannot exchange toss in empty site", Util.DebugLevel.ERROR);
 			} else {
-				this.outDegree += newToss.charge() - this.tosses.get(tossIndex).charge();
 				this.tosses.set(tossIndex, newToss);
 			}
 		}
@@ -548,7 +557,7 @@ public class Siteswap {
 			for(int t=0; t<this.tosses.size(); t++) {
 				newTosses.add(this.tosses.get(t).deepCopy());
 			}
-			return new Site(this.handIndex, newTosses, this.outDegree);
+			return new Site(this.handIndex, newTosses);
 		}
 
 		public String toString() {
