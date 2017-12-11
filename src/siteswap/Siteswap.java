@@ -84,6 +84,8 @@ public class Siteswap {
 		// turn any `-&`s into catches by pairing them up with `&`s
 		Util.printf("unInfinitizing...", Util.DebugLevel.DEBUG);
 		toRunOn.unInfinitize();
+		Util.printf("antitossifying...", Util.DebugLevel.DEBUG);
+		toRunOn.antitossify();
 		Util.printf("siteswap: " + toRunOn.toString(), Util.DebugLevel.DEBUG);
 		// reset inDegree of each site
 		Util.printf("resetting inDegrees to 0...", Util.DebugLevel.DEBUG);
@@ -129,6 +131,7 @@ public class Siteswap {
 				}
 			}
 		}
+		Util.printf("all in/outdegrees match; pattern is valid", Util.DebugLevel.DEBUG);
 		return true;
 	}
 
@@ -386,7 +389,8 @@ public class Siteswap {
 									if(curCatch.charge() == curToss.charge() &&
 											curCatch.height().isInfinite() &&
 											curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
-										this.exchangeToss(b, h, t,  new Toss(0, h2, curToss.isAntitoss()) );
+										Util.printf("found matching catch at same site; combining into zero-toss", Util.DebugLevel.DEBUG);
+										this.exchangeToss(b, h, t,  new Toss(0, h2, curToss.isAntitoss()));
 										this.removeToss(b, h2, t2);
 										break search;
 									}
@@ -400,8 +404,11 @@ public class Siteswap {
 										if(curCatch.charge() == curToss.charge() &&
 												curCatch.height().isInfinite() &&
 												curCatch.height().infiniteValue() == InfinityType.NEGATIVE_INFINITY) {
+											Util.printf("found matching catch at b=" + b2 + ", h=" + h2 + ", t=" + t2 + ": " + curCatch, Util.DebugLevel.DEBUG);
 											this.removeToss(b2, h2, t2);
-											this.exchangeToss(b, h, t, new Toss(b2 - b, h2, curToss.charge() == 1));
+											Toss newToss = new Toss(b2 - b, h2, curToss.charge() == -1);
+											Util.printf("new toss: " + newToss, Util.DebugLevel.DEBUG);
+											this.exchangeToss(b, h, t, newToss);
 											break search;
 										}
 									}
@@ -415,10 +422,6 @@ public class Siteswap {
 	}
 
 	public void antitossify() {
-		Siteswap temp = new Siteswap(this.numHands);
-		for(int i=0; i<this.period(); i++) {
-			temp.appendEmptyBeat();
-		}
 		// loop through beats
 		for(int b=0; b<this.period(); b++) {
 			// loop through hands
@@ -432,28 +435,27 @@ public class Siteswap {
 						if(curToss.height().isInfinite()) {
 							// replace the negative toss with an antitoss in the same site
 							Toss newToss = new Toss(InfinityType.POSITIVE_INFINITY, true);
-							temp.addToss(b, h, newToss);
+							this.exchangeToss(b, h, t, newToss);
 						} else {
 							// add an antitoss to the appropriate site
+							Util.printf("found negative non-infinite toss: " + curToss + " at b=" + b + ",h=" + h + ",t=" + t, Util.DebugLevel.DEBUG);
 							Toss newToss = new Toss(-1 * curToss.height().finiteValue(), h, true);
-							temp.addToss(b + curToss.height().finiteValue(), curToss.destHand(), newToss);
+							int destBeat = b + curToss.height().finiteValue();
+							int destHand = curToss.destHand();
+							Util.printf("new toss: " + newToss + ", going to b=" + destBeat + ",h=" + destHand, Util.DebugLevel.DEBUG);
+							this.removeToss(b, h, t);
+							this.addToss(destBeat, destHand, newToss);
 						}
-					} else {
-						temp.addToss(b, h, curToss.deepCopy());
 					}
 				}
 			}
 		}
-		this.sites = temp.sites;
 	}
 
 	public void unAntitossify() {
 	}
 
 	public void invert() {
-	}
-
-	public void antiNegate() {
 	}
 
 	public Siteswap subPattern(int startBeat, int endBeat) {
@@ -529,7 +531,9 @@ public class Siteswap {
 		}
 
 		void exchangeToss(int tossIndex, Toss newToss) {
-			if(!this.isEmpty()) {
+			if(this.isEmpty()) {
+				Util.printf("ERROR: cannot exchange toss in empty site", Util.DebugLevel.ERROR);
+			} else {
 				this.outDegree += newToss.charge() - this.tosses.get(tossIndex).charge();
 				this.tosses.set(tossIndex, newToss);
 			}
