@@ -2,9 +2,9 @@ package siteswapsuite;
 
 import java.util.regex.Pattern;
 
-public enum SiteswapNotation { 
+public enum SiteswapNotation {
 
-	EMPTY(0), ASYNCHRONOUS(1), SYNCHRONOUS(2), MIXED(2), PASSING(4);
+	EMPTY(0), ONEHANDED(1), TWOHANDED(2);
 
 	private int defaultNumHands;
 
@@ -21,11 +21,9 @@ public enum SiteswapNotation {
 			case 0:
 				return EMPTY;
 			case 1:
-				return ASYNCHRONOUS;
+				return ONEHANDED;
 			case 2:
-				return SYNCHRONOUS;
-			case 4:
-				return PASSING;
+				return TWOHANDED;
 			default:
 				return null;
 		}
@@ -73,23 +71,6 @@ public enum SiteswapNotation {
 
 	// passing (two two-handed jugglers)
 	static final String validPassingNotation = ""; //later...
-
-	// put them all together!
-	public static SiteswapNotation analyze(String s) throws InvalidSiteswapNotationException {
-		if(Pattern.matches(emptyNotation, s))
-			return SiteswapNotation.EMPTY;
-		if(Pattern.matches(validAsyncNotation, s))
-			return SiteswapNotation.ASYNCHRONOUS;
-		else if(Pattern.matches(validSyncNotation, s))
-			return SiteswapNotation.SYNCHRONOUS;
-		else if(Pattern.matches(validMixedNotation, s))
-			return SiteswapNotation.MIXED;
-		else if(Pattern.matches(validPassingNotation, s))
-			return SiteswapNotation.PASSING;
-		else {
-			throw new InvalidSiteswapNotationException(s);
-		}
-	}
 
 	// for deparsing
 	protected static String reverseThrowHeight(Toss t) {
