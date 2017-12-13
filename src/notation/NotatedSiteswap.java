@@ -28,6 +28,197 @@ public class NotatedSiteswap {
 		this.notationType = notationType;
 	}
 
+	private static Siteswap parseOneHanded(List<SiteswapNotationToken> tokens) throws InvalidSiteswapNotationException {
+		Siteswap ret = new Siteswap(1);
+		int b = 0;
+		boolean inMulti = false;
+		boolean bang = false;
+		for(int i=0; i<tokens.size(); i++) {
+			SiteswapNotationToken curToken = tokens.get(i);
+			Util.printf("curToken: " + curToken);
+			switch(curToken.type) {
+				case BANG:
+					if(bang || inMulti) {
+						throw new InvalidSiteswapNotationException();
+					}
+					bang = true;
+					break;
+				case MULTI_OPEN:
+					if(inMulti) {
+						throw new InvalidSiteswapNotationException();
+					}
+					inMulti = true;
+					break;
+				case MULTI_CLOSE:
+					if(!inMulti) {
+						throw new InvalidSiteswapNotationException();
+					}
+					inMulti = false;
+					break;
+				case TOSS:
+					// get Toss object from TossToken
+					Toss newToss;
+					if(curToken.toss.isInfinite) {
+						InfinityType infiniteHeight;
+						if(curToken.toss.isNegative) {
+							infiniteHeight = InfinityType.NEGATIVE_INFINITY;
+						} else {
+							infiniteHeight = InfinityType.POSITIVE_INFINITY;
+						}
+						newToss = new Toss(infiniteHeight, curToken.toss.isAntitoss);
+					} else {
+						int finiteHeight = curToken.toss.finiteAbsoluteHeight;
+						if(curToken.toss.isNegative) {
+							finiteHeight *= -1;
+						}
+						newToss = new Toss(finiteHeight, 0, curToken.toss.isAntitoss);
+					}
+					if(!inMulti && !bang) {
+						ret.appendEmptyBeat();
+					}
+					ret.addToss(ret.period()-1, 0, newToss);
+					if(bang) {
+						bang = false;
+					}
+					break;
+			}
+			Util.printf("siteswap: " + ret);
+		}
+		return ret;
+	}
+
+	private static Siteswap parseAsync(List<SiteswapNotationToken> tokens, int startHand) throws InvalidSiteswapNotationException {
+		Siteswap ret = new Siteswap(2);
+		int b = 0;
+		int h = (startHand + 1) % 2; // because it gets flipped before each toss
+		boolean inMulti = false;
+		boolean inSync = false;
+		boolean bang = false;
+		boolean star = false;
+		int lastStarIndex = -1;
+		for(int i=0; i<tokens.size(); i++) {
+			SiteswapNotationToken curToken = tokens.get(i);
+			Util.printf("curToken: " + curToken);
+			switch(curToken.type) {
+				case BANG:
+					if(bang || inMulti) {
+						throw new InvalidSiteswapNotationException();
+					}
+					bang = true;
+					break;
+				case MULTI_OPEN:
+					if(inMulti) {
+						throw new InvalidSiteswapNotationException();
+					}
+					inMulti = true;
+					if(!bang && !inSync) {
+						Util.printf("adding new beat");
+						ret.appendEmptyBeat(); // append an empty beat for the multiplex, unless we shouldn't
+						if(!star) {
+							h = (h + 1) % 2;
+							Util.printf("swapping fromHand to " + h);
+						}
+					}
+					break;
+				case MULTI_CLOSE:
+					if(!inMulti || bang || star) {
+						throw new InvalidSiteswapNotationException();
+					}
+					inMulti = false;
+					break;
+				case STAR:
+					if(star || inMulti) {
+						throw new InvalidSiteswapNotationException();
+					}
+					star = true;
+					lastStarIndex = i;
+					break;
+				case SYNC_OPEN:
+					if(inSync || inMulti) {
+						throw new InvalidSiteswapNotationException();
+					}
+					inSync = true;
+					if(!bang) {
+						Util.printf("adding new beat");
+						ret.appendEmptyBeat(); // append an empty beat for the sync beat, unless we shouldn't
+						// don't swap hand, cuz it'll happen when we add the first toss
+					}
+					break;
+				case COMMA:
+					if(!inSync || inMulti) {
+						throw new InvalidSiteswapNotationException();
+					}
+					break;
+				case SYNC_CLOSE:
+					if(!inSync || inMulti) {
+						throw new InvalidSiteswapNotationException();
+					}
+					inSync = false;
+					ret.appendEmptyBeat(); // append an empty beat after each sync beat
+					break;
+				case TOSS:
+					// make new beat, if necessary
+					if(!bang && !inSync && !inMulti) {
+						Util.printf("adding new beat");
+						ret.appendEmptyBeat();
+					}
+					// swap fromHand, if necessary
+					if(!star && !inMulti) {
+						h = (h + 1) % 2;
+						Util.printf("swapping fromHand to " + h);
+					}
+					// get Toss object from TossToken
+					Toss newToss;
+					if(curToken.toss.isInfinite) {
+						// get infiniteHeight
+						InfinityType infiniteHeight;
+						if(curToken.toss.isNegative) {
+							infiniteHeight = InfinityType.NEGATIVE_INFINITY;
+						} else {
+							infiniteHeight = InfinityType.POSITIVE_INFINITY;
+						}
+						newToss = new Toss(infiniteHeight, curToken.toss.isAntitoss);
+					} else {
+						// get finiteHeight
+						int finiteHeight = curToken.toss.finiteAbsoluteHeight;
+						if(curToken.toss.isNegative) {
+							finiteHeight *= -1;
+						}
+						// get destHand
+						int destHand = (h + curToken.toss.finiteAbsoluteHeight) % 2;
+						if(curToken.toss.isFlippedHand) {
+							destHand = (destHand + 1) % 2;
+						}
+						newToss = new Toss(finiteHeight, destHand, curToken.toss.isAntitoss);
+					}
+					// add it
+					Util.printf("adding toss: " + newToss);
+					ret.addToss(ret.period()-1, h, newToss);
+					// unset flags
+					bang = false;
+					star = false;
+					break;
+			}
+			Util.printf("siteswap: " + ret);
+		}
+		// see about trailing special tokens
+		if((bang || star) && ret.period() == 0) {
+			throw new InvalidSiteswapNotationException();
+		}
+		if(bang) {
+			if(ret.beatIsEmpty(ret.period()-1)) {
+				ret.removeBeat(ret.period()-1);
+			} else {
+				throw new InvalidSiteswapNotationException();
+			}
+		}
+		if(star) {
+			tokens.remove(lastStarIndex);
+			ret.appendSiteswap(parseAsync(tokens, h));
+		}
+		return ret;
+	}
+
 	// tokenization
 	static enum TossHeightState {
 		READY, // when there is no pending toss, and we can parse a new token
@@ -136,6 +327,10 @@ public class NotatedSiteswap {
 				case 'x':
 					switch(tossHeightState) {
 						case AFTER_HEIGHT:
+							// make sure it's not an infinite toss
+							if(curToken.toss.isInfinite) {
+								throw new InvalidSiteswapNotationException();
+							}
 							curToken.toss.isFlippedHand = true;
 							tokens.add(curToken);
 							tossHeightState = TossHeightState.READY;
@@ -181,8 +376,10 @@ public class NotatedSiteswap {
 
 	public static void main(String[] args) {
 		try {
-		List<SiteswapNotationToken> tokens = tokenize(args[0]);
-		System.out.println(tokens);
+			List<SiteswapNotationToken> tokens = tokenize(args[0]);
+			System.out.println(tokens);
+			Siteswap siteswap = parseAsync(tokens, 0);
+			System.out.println(siteswap);
 		} catch(InvalidSiteswapNotationException e) {
 			e.printStackTrace();
 		}
