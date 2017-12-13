@@ -300,12 +300,30 @@ public class Siteswap {
 		this.getSite(atBeat, fromHand).addToss(toss);
 	}
 
+	public void addFiniteToss(int atBeat, int fromHand, int height, int toHand) {
+		this.getSite(atBeat, fromHand).addToss(new Toss(height, toHand, false));
+	}
+
+	public void addFiniteAntitoss(int atBeat, int fromHand, int height, int toHand) {
+		this.getSite(atBeat, fromHand).addToss(new Toss(height, toHand, true));
+	}
+
+	public void addInfiniteToss(int atBeat, int fromHand, InfinityType height) {
+		this.getSite(atBeat, fromHand).addToss(new Toss(height, false));
+	}
+
+	public void addInfiniteAntitoss(int atBeat, int fromHand, InfinityType height) {
+		this.getSite(atBeat, fromHand).addToss(new Toss(height, true));
+	}
+
 	// editing tosses
+
 	public void exchangeToss(int atBeat, int fromHand, int tossIndex, Toss newToss) {
 		this.getSite(atBeat, fromHand).exchangeToss(tossIndex, newToss);
 	}
 
 	// removing tosses
+
 	public Toss removeToss(int beatIndex, int handIndex, int tossIndex) {
 		return this.getSite(beatIndex, handIndex).removeToss(tossIndex);
 	}
