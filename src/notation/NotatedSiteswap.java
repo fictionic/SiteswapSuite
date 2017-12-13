@@ -2,30 +2,90 @@ package siteswapsuite;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.regex.Pattern;;
 
 public class NotatedSiteswap {
 
-	SiteswapNotation notationType;
+	static enum Type {
+
+		EMPTY(0), ONEHANDED(1), TWOHANDED(2);
+
+		private int defaultNumHands;
+
+		private Type(int numHands) {
+			this.defaultNumHands = numHands;
+		}
+
+		public int defaultNumHands() {
+			return this.defaultNumHands;
+		}
+
+	}
+
+	Type type;
 	Siteswap siteswap;
 
-	// querying basic info
-	public SiteswapNotation notationType() { return this.notationType; }
-	public Siteswap siteswap() { return this.siteswap; }
+	// strings
+	private static String emptyNotationDisplay = ".";
+	// // regexes
+	private static String oneHandedNotationPattern = "[-_0-9a-wyz&{}!\\[\\]]*";
+	private static String twoHandedNotationPattern = "[-_0-9a-z&{}!\\[\\]*(,)]*";
 
-	// printing notation
-	public String display() {
-		return null;
-	}
+	// querying basic info
+	public Type notationType() { return this.type; }
+	public Siteswap siteswap() { return this.siteswap; }
 
 	// deep copy
 	public NotatedSiteswap deepCopy() {
 		return null;
 	}
 
-	// constructor
-	private NotatedSiteswap(Siteswap ss, SiteswapNotation notationType) {
-		this.siteswap = ss;
-		this.notationType = notationType;
+	// parsing
+	private static Type getNotationType(String notation) throws	InvalidSiteswapNotationException {
+		if(notation.equals(emptyNotationDisplay)) {
+			return Type.EMPTY;
+		}
+		if(Pattern.matches(oneHandedNotationPattern, notation)) {
+			return Type.ONEHANDED;
+		}
+		if(Pattern.matches(twoHandedNotationPattern, notation)) {
+			return Type.TWOHANDED;
+		}
+		throw new InvalidSiteswapNotationException();
+	}
+
+	public static NotatedSiteswap parseAutomatic(String notation, int startHand) throws InvalidSiteswapNotationException {
+		Type type = getNotationType(notation);
+		NotatedSiteswap ret = new NotatedSiteswap();
+		ret.type = type;
+		List<SiteswapNotationToken> tokens;
+		switch(type) {
+			case EMPTY:
+				ret.siteswap = new Siteswap(0);
+				break;
+			case ONEHANDED:
+				tokens = tokenize(notation);
+				ret.siteswap = parseOneHanded(tokens);
+				break;
+			case TWOHANDED:
+				tokens = tokenize(notation);
+				ret.siteswap = parseTwoHanded(tokens, startHand);
+				break;
+		}
+		return ret;
+	}
+
+	public static Type defaultType(int numHands) {
+		switch(numHands) {
+			case 0:
+				return Type.EMPTY;
+			case 1:
+				return Type.ONEHANDED;
+			case 2:
+				return Type.TWOHANDED;
+			default:
+				return null;
+		}
 	}
 
 	private static Siteswap parseOneHanded(List<SiteswapNotationToken> tokens) throws InvalidSiteswapNotationException {
@@ -87,7 +147,7 @@ public class NotatedSiteswap {
 		return ret;
 	}
 
-	private static Siteswap parseAsync(List<SiteswapNotationToken> tokens, int startHand) throws InvalidSiteswapNotationException {
+	private static Siteswap parseTwoHanded(List<SiteswapNotationToken> tokens, int startHand) throws InvalidSiteswapNotationException {
 		Siteswap ret = new Siteswap(2);
 		int b = 0;
 		int h = (startHand + 1) % 2; // because it gets flipped before each toss
@@ -214,7 +274,7 @@ public class NotatedSiteswap {
 		}
 		if(star) {
 			tokens.remove(lastStarIndex);
-			ret.appendSiteswap(parseAsync(tokens, h));
+			ret.appendSiteswap(parseTwoHanded(tokens, h));
 		}
 		return ret;
 	}
@@ -374,12 +434,42 @@ public class NotatedSiteswap {
 		return tokens;
 	}
 
+	// printing notation
+	public String display() {
+		return null;
+	}
+
+	static String displayToss(Toss toss) {
+		StringBuilder builder = new StringBuilder();
+		ExtendedInteger height = toss.height();
+		if(height.sign() < 0) {
+			builder.append('-');
+			height.negate();
+		}
+		if(toss.charge() < 0) {
+			builder.append('_');
+		}
+		if(height.isInfinite()) {
+			builder.append('&');
+			return builder.toString();
+		}
+		int finiteHeight = height.finiteValue();
+		if(finiteHeight <= 9) {
+			builder.append(finiteHeight);
+		} else if((10 <= finiteHeight) && (finiteHeight <= 36) && (finiteHeight != 33)) {
+			builder.append(finiteHeight - 10 + 97);
+		} else {
+			builder.append('{');
+			builder.append(finiteHeight);
+			builder.append('}');
+		}
+		return builder.toString();
+	}
+
 	public static void main(String[] args) {
 		try {
-			List<SiteswapNotationToken> tokens = tokenize(args[0]);
-			System.out.println(tokens);
-			Siteswap siteswap = parseAsync(tokens, 0);
-			System.out.println(siteswap);
+			NotatedSiteswap nss = parseAutomatic(args[0], 0);
+			System.out.println(nss.siteswap);
 		} catch(InvalidSiteswapNotationException e) {
 			e.printStackTrace();
 		}
