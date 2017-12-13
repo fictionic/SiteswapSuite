@@ -98,7 +98,7 @@ public class NotatedSiteswap {
 			Util.printf("curToken: " + curToken);
 			switch(curToken.type) {
 				case BANG:
-					if(bang || inMulti) {
+					if(bang || inMulti || ret.period() == 0) {
 						throw new InvalidSiteswapNotationException();
 					}
 					bang = true;
@@ -165,7 +165,7 @@ public class NotatedSiteswap {
 			Util.printf("curToken: " + curToken);
 			switch(curToken.type) {
 				case BANG:
-					if(bang || inMulti) {
+					if(bang || inMulti || ret.period() == 0) {
 						throw new InvalidSiteswapNotationException();
 					}
 					bang = true;
@@ -191,7 +191,7 @@ public class NotatedSiteswap {
 					inMulti = false;
 					break;
 				case STAR:
-					if(star || inMulti) {
+					if(star || inMulti || ret.period() == 0) {
 						throw new InvalidSiteswapNotationException();
 					}
 					star = true;
