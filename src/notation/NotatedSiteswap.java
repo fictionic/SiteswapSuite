@@ -144,6 +144,10 @@ public class NotatedSiteswap {
 			}
 			Util.printf("siteswap: " + ret);
 		}
+		// see about trailing special tokens
+		if(bang) {
+			throw new InvalidSiteswapNotationException();
+		}
 		return ret;
 	}
 
