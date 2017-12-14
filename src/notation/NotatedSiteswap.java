@@ -469,6 +469,9 @@ public class NotatedSiteswap {
 	// -------------------------------- DISPLAYING --------------------------------
 
 	public String display() {
+		if(this.siteswap.period() == 0) {
+			return emptyNotationDisplay;
+		}
 		switch(this.type) {
 			case EMPTY:
 				return emptyNotationDisplay;
