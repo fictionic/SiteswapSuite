@@ -172,7 +172,8 @@ class Command {
 						} else if(this.prefix.equals("st")) {
 							this.isState = true;
 						} else {
-							Util.ErrorOut(new InvalidNotationException("unrecognized input prefix: " + this.prefix));
+							// Util.ErrorOut(new InvalidNotationException("unrecognized input prefix: " + this.prefix));
+							Util.ErrorOut(new InvalidNotationException());
 						}
 					}
 					// parse input options
@@ -242,8 +243,11 @@ class Command {
 						}
 						this.generalizedTransition = tr.getGeneralizedTransition();
 						this.transitions = tr.getTransitions();
-						// save one as output
-						this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedSiteswap.assembleAutomatic(tr.getSelectedTransition()));
+						// save one as output, notated
+						// first get notation info from input of left input chain
+						NotatedSiteswapOrState inputObject = getChain(this.fromIndex).input.notatedSiteswapOrState;
+						NotatedSiteswap outputNotatedSiteswap = NotatedSiteswap.assemble(tr.getSelectedTransition(), inputObject.notationType(), inputObject.startHand());
+						this.notatedSiteswapOrState = new NotatedSiteswapOrState(outputNotatedSiteswap);
 					} catch(ImpossibleTransitionException e) {
 						Util.ErrorOut(e);
 					}
@@ -254,27 +258,28 @@ class Command {
 							if(this.isState) {
 								this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedState.parse(this.inputNotation, this.numHands, this.startHand));
 							} else {
-								this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand, this.keepZeroes));
+								this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand));
 							}
 						} else {
 							// otherwise try both
 							try {
-								this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand, this.keepZeroes));
+								this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedSiteswap.parse(this.inputNotation, this.numHands, this.startHand));
 							} catch(InvalidSiteswapNotationException e) {
 								try {
 									this.notatedSiteswapOrState = new NotatedSiteswapOrState(NotatedState.parse(this.inputNotation, this.numHands, this.startHand));
 								} catch(InvalidStateNotationException e2) {
-									throw new InvalidNotationException("could not interpret input '" + this.inputNotation + "' as valid siteswap or state notation");
+									// throw new InvalidNotationException("could not interpret input '" + this.inputNotation + "' as valid siteswap or state notation");
+									throw new InvalidNotationException();
 								}
 							}
 						}
-					} catch(InvalidNotationException | IncompatibleNumberOfHandsException e) {
+					} catch(InvalidNotationException e) {
 						Util.ErrorOut(e);
 					}
 				}
 			}
 
-			public String print() {
+			public String display() {
 				StringBuilder ret = new StringBuilder("INPUT "); ret.append(index); ret.append(":\n");
 				if(this.isTransition) {
 					ret.append(" type: transition\n");
@@ -282,11 +287,12 @@ class Command {
 					ret.append(" to: output "); ret.append(this.toIndex); ret.append("\n");
 					if(this.displayGeneralizedTransition) {
 						ret.append(" generalized transition: ");
-						NotatedSiteswap throwsPortion = NotatedSiteswap.assembleAutomatic(this.generalizedTransition.getThrowsPortion());
-						ret.append(throwsPortion.print());
-						NotatedSiteswap catchesPortion = NotatedSiteswap.assembleAutomatic(this.generalizedTransition.getCatchesPortion());
+						NotatedSiteswapOrState inputObject = getChain(this.fromIndex).input.notatedSiteswapOrState;
+						NotatedSiteswap throwsPortion = NotatedSiteswap.assemble(this.generalizedTransition.getThrowsPortion(), inputObject.notationType(), inputObject.startHand());
+						ret.append(throwsPortion.display());
+						NotatedSiteswap catchesPortion = NotatedSiteswap.assemble(this.generalizedTransition.getCatchesPortion(), inputObject.notationType(), inputObject.startHand());
 						ret.append("{");
-						ret.append(catchesPortion.print());
+						ret.append(catchesPortion.display());
 						ret.append("}\n");
 					}
 					ret.append(" results:\n");
@@ -340,7 +346,7 @@ class Command {
 				this.infos = argLink.infoArgs;
 			}
 
-			String print() {
+			String display() {
 				StringBuilder ret = new StringBuilder();
 				if(this.operation != null) {
 					ret.append("---> " + this.operation.toString() + " ");
@@ -430,15 +436,6 @@ class Command {
 			NotatedSiteswap notatedSiteswap;
 			NotatedState notatedState;
 
-			NotatedSiteswapOrState(SiteswapOrState siteswapOrState) {
-				this.isState = siteswapOrState.isState;
-				if(this.isState) {
-					this.notatedState = NotatedState.assembleAutomatic(siteswapOrState.state);
-				} else {
-					this.notatedSiteswap = NotatedSiteswap.assembleAutomatic(siteswapOrState.siteswap);
-				}
-			}
-
 			NotatedSiteswapOrState(NotatedSiteswap notatedSiteswap) {
 				this.isState = false;
 				this.notatedSiteswap = notatedSiteswap;
@@ -457,6 +454,22 @@ class Command {
 				}
 			}
 
+			NotationType notationType() {
+				if(this.isState) {
+					return this.notatedState.type;
+				} else {
+					return this.notatedSiteswap.type;
+				}
+			}
+
+			int startHand() {
+				if(this.isState) {
+					return this.notatedState.startHand;
+				} else {
+					return this.notatedSiteswap.startHand;
+				}
+			}
+
 		}
 
 		void execute() {
@@ -464,12 +477,12 @@ class Command {
 			// process input
 			this.input.process();
 			// print input info
-			Util.printf(this.input.print(), Util.DebugLevel.INFO, false);
+			Util.printf(this.input.display(), Util.DebugLevel.INFO, false);
 			// compute all links
 			// first link
 			SiteswapOrState inputSiteswapOrState = this.input.notatedSiteswapOrState.deNotate();
 			this.links.get(0).siteswapOrState = inputSiteswapOrState;
-			Util.printf(this.links.get(0).print(), Util.DebugLevel.INFO, false);
+			Util.printf(this.links.get(0).display(), Util.DebugLevel.INFO, false);
 			for(int i=1; i<this.links.size(); i++) {
 				Link prevLink = this.links.get(i-1);
 				Link curLink = this.links.get(i);
@@ -534,19 +547,27 @@ class Command {
 					}
 				}
 				// print link
-				Util.printf(curLink.print(), Util.DebugLevel.INFO, false);
+				Util.printf(curLink.display(), Util.DebugLevel.INFO, false);
 			}
 			// get output
 			StringBuilder ret = new StringBuilder();
 			ret.append("OUTPUT: \n");
 			Link lastLink = this.getLastLink();
-			// for now just use assembleAutomatic
+			// get reference for notation output
+			NotatedSiteswapOrState inputObject;
+			if(this.input.isTransition) {
+				inputObject = getChain(this.input.fromIndex).input.notatedSiteswapOrState;
+			} else {
+				inputObject = this.input.notatedSiteswapOrState;
+			}
 			if(lastLink.siteswapOrState.isState) {
 				ret.append(" state: " );
-				ret.append(NotatedState.assembleAutomatic(lastLink.siteswapOrState.state).print());
+				NotatedState notatedState = NotatedState.assemble(lastLink.siteswapOrState.state, inputObject.notationType(), inputObject.startHand());
+				ret.append(notatedState.display());
 			} else {
 				ret.append(" siteswap: " );
-				ret.append(NotatedSiteswap.assembleAutomatic(lastLink.siteswapOrState.siteswap).print());
+				NotatedSiteswap notatedSiteswap = NotatedSiteswap.assemble(lastLink.siteswapOrState.siteswap, inputObject.notationType(), inputObject.startHand());
+				ret.append(notatedSiteswap.display());
 			}
 			// print output
 			Util.printf(ret.toString(), Util.DebugLevel.INFO);
