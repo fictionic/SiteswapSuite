@@ -6,7 +6,7 @@ import java.util.regex.Pattern;;
 
 public class NotatedSiteswap {
 
-	static enum Type {
+	static enum Type implements NotationType {
 
 		EMPTY(0), ONEHANDED(1), TWOHANDED(2);
 
@@ -43,9 +43,12 @@ public class NotatedSiteswap {
 
 	// -------------------------------- ASSEMBLING --------------------------------
 
-	public static NotatedSiteswap assemble(Siteswap siteswap, Type targetType, int startHand) {
+	public static NotatedSiteswap assemble(Siteswap siteswap, NotationType targetType, int startHand) {
 		NotatedSiteswap ret = new NotatedSiteswap();
 		ret.siteswap = siteswap;
+		if(startHand == -1) {
+			startHand = 0;
+		}
 		switch(siteswap.numHands()) {
 			case 0:
 				ret.type = Type.EMPTY;
@@ -54,10 +57,10 @@ public class NotatedSiteswap {
 				ret.type = Type.ONEHANDED;
 				break;
 			case 2:
-				switch(targetType) {
-					case ONEHANDED:
+				switch(targetType.defaultNumHands()) {
+					case 1:
 						ret.startHand = startHand;
-					case EMPTY:
+					case 0:
 						ret.type = Type.ONEHANDED;
 						break;
 					default:
@@ -104,6 +107,9 @@ public class NotatedSiteswap {
 		NotatedSiteswap ret = new NotatedSiteswap();
 		ret.type = type;
 		List<SiteswapNotationToken> tokens;
+		if(startHand == -1) {
+			startHand = 0;
+		}
 		switch(type) {
 			case EMPTY:
 				if(numHands == -1) {
@@ -132,7 +138,7 @@ public class NotatedSiteswap {
 				break;
 			case TWOHANDED:
 				tokens = tokenize(notation);
-				if(numHands == 2) {
+				if(numHands == -1 || numHands == 2) {
 					ret.siteswap = parseTwoHanded(tokens, startHand);
 				} else {
 					Util.ErrorOut(new IncompatibleNumberOfHandsException());
@@ -538,6 +544,9 @@ public class NotatedSiteswap {
 	}
 
 	private String displayAsync() {
+		// NOTE: need to print 'x's here because async patterns
+		// can be the result of transitions, even though a string
+		// with an 'x' will never get parsed as ONEHANDED
 		StringBuilder builder = new StringBuilder();
 		int curHand = this.startHand;
 		for(int b=0; b<this.siteswap.period(); b++) {
@@ -545,11 +554,19 @@ public class NotatedSiteswap {
 			if(numTossesAtSite == 0) {
 				builder.append('0');
 			} else if(numTossesAtSite == 1) {
-				builder.append(displayToss(this.siteswap.getToss(b,curHand,0)));
+				Toss toss = this.siteswap.getToss(b,curHand,0);
+				builder.append(displayToss(toss));
+				if(tossIsFlipped(toss, curHand)) {
+					builder.append('x');
+				}
 			} else {
 				builder.append('[');
 				for(int t=0; t<numTossesAtSite; t++) {
-					builder.append(displayToss(this.siteswap.getToss(b,curHand,t)));
+					Toss toss = this.siteswap.getToss(b,curHand,t);
+					builder.append(displayToss(toss));
+					if(tossIsFlipped(toss, curHand)) {
+						builder.append('x');
+					}
 				}
 				builder.append(']');
 			}

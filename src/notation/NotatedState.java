@@ -6,7 +6,7 @@ import java.util.regex.Pattern;;
 
 public class NotatedState {
 
-	static enum Type {
+	static enum Type implements NotationType {
 
 		ONEHANDED(1), MULTIHANDED(2);
 
@@ -36,24 +36,37 @@ public class NotatedState {
 
 	// -------------------------------- ASSEMBLING --------------------------------
 
-	public static NotatedState assemble(State state, Type targetType, int startHand) {
+	public static NotatedState assemble(State state, NotationType targetType, int startHand) {
 		NotatedState ret = new NotatedState();
 		ret.state = state;
+		if(startHand == -1) {
+			startHand = 0;
+		}
 		switch(state.numHands()) {
 			case 1:
 				ret.type = Type.ONEHANDED;
 				break;
 			case 2:
-				if(targetType == Type.ONEHANDED) {
+				if(targetType.defaultNumHands() == 1) {
 					ret.startHand = startHand;
 				}
-				ret.type = targetType;
+				ret.type = defaultType(targetType.defaultNumHands());
 				break;
 			default:
 				ret.type = Type.MULTIHANDED;
 				break;
 		}
 		return ret;
+	}
+
+	static Type defaultType(int numHands) {
+		if(numHands == 1) {
+			return Type.ONEHANDED;
+		}
+		if(numHands > 1) {
+			return Type.MULTIHANDED;
+		}
+		return null;
 	}
 
 	// ---------------------------------- PARSING ---------------------------------
@@ -72,6 +85,9 @@ public class NotatedState {
 		Type type = getNotationType(notation);
 		NotatedState ret = new NotatedState();
 		ret.type = type;
+		if(startHand == -1) {
+			startHand = 0;
+		}
 		List<StateNotationToken> tokens = tokenize(notation);
 		switch(type) {
 			case ONEHANDED:
