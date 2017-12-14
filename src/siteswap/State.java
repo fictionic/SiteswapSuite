@@ -187,6 +187,23 @@ public class State {
 		}
 		return curNode;
 	}
+	
+	public int getAsyncStartHand() {
+		Node curNode = this.nowNode;
+		int curHand = 0;
+		while(curNode != null) {
+			if(!curNode.isEmpty()) {
+				if(curNode.getChargeAtHand(curHand) != 0) {
+					return 0;
+				} else {
+					return 1;
+				}
+			}
+			curHand = (curHand + 1) % 2; // because we want the START hand
+			curNode = curNode.prev;
+		}
+		return 0;
+	}
 
 	void incChargeOfNodeAtHand(int b, int h) {
 		this.getFiniteNode(b).incChargeAtHand(h);

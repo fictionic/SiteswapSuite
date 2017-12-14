@@ -291,6 +291,21 @@ public class Siteswap {
 		return this.getSite(beatIndex, handIndex).isEmpty();
 	}
 
+	public int getAsyncStartHand() {
+		int curHand = 0;
+		for(int b=0; b<this.sites.size(); b++) {
+			if(!this.beatIsEmpty(b)) {
+				if(!this.siteIsEmpty(b, curHand)) {
+					return 0;
+				} else {
+					return 1;
+				}
+			}
+			curHand = (curHand + 1) % 2; // because we want the START hand
+		}
+		return 0;
+	}
+
 	public Toss getToss(int atBeat, int fromHand, int tossIndex) {
 		return this.getSite(atBeat, fromHand).getToss(tossIndex);
 	}
