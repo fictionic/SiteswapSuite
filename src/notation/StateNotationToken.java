@@ -2,7 +2,7 @@ package siteswapsuite;
 
 import java.util.regex.Pattern;
 
-class NodeToken {
+class ValueToken {
 	int absoluteHeight;
 	boolean isNegative;
 	public String toString() {
@@ -22,30 +22,30 @@ class StateNotationToken {
 		BEAT_CLOSE,
 		COMMA,
 		COLON,
-		NODE;
+		VALUE;
 	}
 
 	Type type;
-	NodeToken node;
+	ValueToken value;
 
 	StateNotationToken(Type type) {
 		this.type = type;
-		if(this.type == Type.NODE) {
-			this.node = new NodeToken();
+		if(this.type == Type.VALUE) {
+			this.value = new ValueToken();
 		} else {
-			this.node = null;
+			this.value = null;
 		}
 	}
 
-	static NodeToken parseNodeChar(char c) {
-		NodeToken token = null;
+	static ValueToken parseNodeChar(char c) {
+		ValueToken token = null;
 		char[] tmp = {c};
 		String h = new String(tmp);
 		if(Pattern.matches("\\d", h)) {
-			token = new NodeToken();
+			token = new ValueToken();
 			token.absoluteHeight = Integer.parseInt(h);
 		} else if(Pattern.matches("[a-z]", h)) {
-			token = new NodeToken();
+			token = new ValueToken();
 			token.absoluteHeight = (int)(c) - 87;
 		}
 		return token;
@@ -53,12 +53,10 @@ class StateNotationToken {
 
 	static Type parseNonNodeChar(char c) {
 		switch(c) {
-			case '[':
+			case '(':
 				return Type.BEAT_OPEN;
-			case ']':
+			case ')':
 				return Type.BEAT_CLOSE;
-			case ',':
-				return Type.COMMA;
 			case ':':
 				return Type.COLON;
 			default:
@@ -67,8 +65,8 @@ class StateNotationToken {
 	}
 
 	public String toString() {
-		if(this.type == Type.NODE) {
-			return this.node.toString();
+		if(this.type == Type.VALUE) {
+			return this.value.toString();
 		} else {
 			return this.type.toString();
 		}
