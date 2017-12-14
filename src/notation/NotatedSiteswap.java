@@ -43,7 +43,7 @@ public class NotatedSiteswap {
 	// ---------------------------------- PARSING ---------------------------------
 
 	private static Type getNotationType(String notation) throws	InvalidSiteswapNotationException {
-		if(notation.equals(emptyNotationDisplay)) {
+		if(notation.length() == 0 || notation.equals(emptyNotationDisplay)) {
 			return Type.EMPTY;
 		}
 		if(Pattern.matches(oneHandedNotationPattern, notation)) {
