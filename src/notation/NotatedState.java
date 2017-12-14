@@ -45,7 +45,7 @@ public class NotatedState {
 		throw new InvalidStateNotationException();
 	}
 
-	public static NotatedState parseAutomatic(String notation, int startHand) throws InvalidStateNotationException {
+	public static NotatedState parseAutomatic(String notation) throws InvalidStateNotationException {
 		Type type = getNotationType(notation);
 		NotatedState ret = new NotatedState();
 		ret.type = type;
@@ -137,9 +137,9 @@ public class NotatedState {
 					if(inBeat) {
 						throw new InvalidStateNotationException();
 					}
-					// create new value
+					// create new node
 					State.Node newNode = ret.new Node();
-					// add value to right place
+					// add node to right place
 					if(inRepeatedPortion) {
 						ret.repeatedLength++;
 						if(ret.firstRepeatedNode == null) {
@@ -273,6 +273,17 @@ public class NotatedState {
 	// -------------------------------- DISPLAYING --------------------------------
 
 	public String display() {
+		switch(this.type) {
+			case ONEHANDED:
+				return this.displayOneHanded();
+			case MULTIHANDED:
+				return this.displayMultiHanded();
+			default:
+				return null; //FIXME
+		}
+	}
+
+	private String displayOneHanded() {
 		StringBuilder ret = new StringBuilder();
 		State.Node curNode = this.state.nowNode;
 		for(int i=0; i<this.state.finiteLength; i++) {
@@ -289,11 +300,38 @@ public class NotatedState {
 		return ret.toString();
 	}
 
+	private String displayMultiHanded() {
+		StringBuilder ret = new StringBuilder();
+		State.Node curNode = this.state.nowNode;
+		for(int i=0; i<this.state.finiteLength; i++) {
+			ret.append('(');
+			for(int h=0; h<this.state.numHands(); h++) {
+				ret.append(curNode.getChargeAtHand(h));
+			}
+			curNode = curNode.prev;
+			ret.append(')');
+		}
+		if(this.state.repeatedLength > 0) {
+			ret.append(":");
+			for(int i=0; i<this.state.repeatedLength; i++) {
+				ret.append('(');
+				for(int h=0; h<this.state.numHands(); h++) {
+					ret.append(curNode.getChargeAtHand(h));
+				}
+				curNode = curNode.prev;
+				ret.append(')');
+			}
+		}
+		return ret.toString();
+	}
+
 	public static void main(String[] args) {
 		try {
 			List<StateNotationToken> tokens = tokenize(args[0]);
 			System.out.println(tokens);
-			System.out.println(parseMultiHanded(tokens));
+			NotatedState nss = parseAutomatic(args[0]);
+			System.out.println(nss.state);
+			System.out.println(nss.display());
 		} catch(InvalidStateNotationException e) {
 			e.printStackTrace();
 		}
