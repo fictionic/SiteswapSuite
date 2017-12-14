@@ -24,10 +24,11 @@ public class NotatedState {
 
 	Type type;
 	State state;
+	int startHand;
 
 	// regexes
-	private static String oneHandedNotationPattern = "[-0-9az{}:]+";
-	private static String multiHandedNotationPattern = "[-0-9az:()]+";
+	private static String oneHandedNotationPattern = "[-0-9a-z{}:]+";
+	private static String multiHandedNotationPattern = "[-0-9a-z{}:()]+";
 
 	// querying basic info
 	public Type notationType() { return this.type; }
@@ -45,17 +46,28 @@ public class NotatedState {
 		throw new InvalidStateNotationException();
 	}
 
-	public static NotatedState parseAutomatic(String notation) throws InvalidStateNotationException {
+	public static NotatedState parse(String notation, int numHands, int startHand) throws InvalidStateNotationException {
 		Type type = getNotationType(notation);
 		NotatedState ret = new NotatedState();
 		ret.type = type;
 		List<StateNotationToken> tokens = tokenize(notation);
 		switch(type) {
 			case ONEHANDED:
-				ret.state = parseOneHanded(tokens);
+				switch(numHands) {
+					case -1:
+					case 1:
+						ret.state = parseOneHanded(tokens);
+						break;
+					case 2:
+						ret.state = parseAsync(tokens, startHand);
+						ret.startHand = startHand;
+						break;
+					default:
+						Util.ErrorOut(new IncompatibleNumberOfHandsException());
+				}
 				break;
 			case MULTIHANDED:
-				ret.state = parseMultiHanded(tokens);
+				ret.state = parseMultiHanded(tokens, numHands);
 				break;
 		}
 		return ret;
@@ -111,13 +123,82 @@ public class NotatedState {
 		return ret;
 	}
 
-	private static State parseMultiHanded(List<StateNotationToken> tokens) throws InvalidStateNotationException {
+	private static State parseAsync(List<StateNotationToken> tokens, int startHand) throws InvalidStateNotationException {
+		State ret = new State(2);
+		State.Node curNode = ret.nowNode;
+		ret.repeatedLength = 0;
+		int curHand = startHand;
+		boolean inRepeatedPortion = false;
+		for(int i=0; i<tokens.size(); i++) {
+			StateNotationToken curToken = tokens.get(i);
+			Util.printf("curToken: " + curToken, Util.DebugLevel.DEBUG);
+			switch(curToken.type) {
+				case VALUE:
+					// create new node
+					State.Node newNode = ret.new Node();
+					// get the value
+					int nodeHeight = curToken.value.absoluteHeight;
+					if(curToken.value.isNegative) {
+						nodeHeight *= -1;
+					}
+					newNode.setChargeAtHand(curHand, nodeHeight);
+					curHand = (curHand + 1) % 2;
+					// add node to right place
+					if(inRepeatedPortion) {
+						ret.repeatedLength++;
+						if(ret.firstRepeatedNode == null) {
+							ret.firstRepeatedNode = newNode;
+						}
+						if(curNode == null) {
+							curNode = newNode;
+							ret.nowNode = newNode;
+						} else {
+							curNode.prev = newNode;
+						}
+					} else {
+						ret.finiteLength++;
+						if(curNode == null) {
+							ret.nowNode = newNode;
+						} else {
+							curNode.prev = newNode;
+						}
+					}
+					curNode = newNode;
+					break;
+				case COLON:
+					if(inRepeatedPortion) {
+						throw new InvalidStateNotationException();
+					}
+					inRepeatedPortion = true;
+					break;
+			}
+		}
+		// see if the repeated portion has odd length
+		if(ret.repeatedLength % 2 == 1) {
+			State.Node lastNode = curNode;
+			curNode = ret.firstRepeatedNode;
+			int originalRepeatedLength = ret.repeatedLength;
+			for(int i=0; i<originalRepeatedLength; i++) {
+				ret.repeatedLength++;
+				State.Node newNode = ret.new Node();
+				newNode.setChargeAtHand(curHand, curNode.getChargeAtHand((curHand+1)%2));
+				lastNode.prev = newNode;
+				curHand = (curHand + 1) % 2;
+				lastNode = newNode;
+				curNode = curNode.prev;
+			}
+		}
+		return ret;
+	}
+
+	private static State parseMultiHanded(List<StateNotationToken> tokens, int numHands) throws InvalidStateNotationException {
 		State ret = new State(2);
 		State.Node curNode = ret.nowNode;
 		ret.repeatedLength = 0;
 		int curHand = 0;
 		boolean inRepeatedPortion = false;
 		boolean inBeat = false;
+		// TODO: do pre-pass through tokens to see if there's a consistent numHands, and test if it's actually == to numHands
 		for(int i=0; i<tokens.size(); i++) {
 			StateNotationToken curToken = tokens.get(i);
 			Util.printf("curToken: " + curToken, Util.DebugLevel.DEBUG);
@@ -275,7 +356,11 @@ public class NotatedState {
 	public String display() {
 		switch(this.type) {
 			case ONEHANDED:
-				return this.displayOneHanded();
+				if(this.state.numHands() == 1) {
+					return this.displayOneHanded();
+				} else {
+					return this.displayAsync();
+				}
 			case MULTIHANDED:
 				return this.displayMultiHanded();
 			default:
@@ -295,6 +380,26 @@ public class NotatedState {
 			for(int i=0; i<this.state.repeatedLength; i++) {
 				ret.append(curNode.getChargeAtHand(0));
 				curNode = curNode.prev;
+			}
+		}
+		return ret.toString();
+	}
+
+	private String displayAsync() {
+		StringBuilder ret = new StringBuilder();
+		State.Node curNode = this.state.nowNode;
+		int curHand = this.startHand;
+		for(int i=0; i<this.state.finiteLength; i++) {
+			ret.append(curNode.getChargeAtHand(curHand));
+			curNode = curNode.prev;
+			curHand = (curHand + 1) % 2;
+		}
+		if(this.state.repeatedLength > 0) {
+			ret.append(":");
+			for(int i=0; i<this.state.repeatedLength; i++) {
+				ret.append(curNode.getChargeAtHand(curHand));
+				curNode = curNode.prev;
+				curHand = (curHand + 1) % 2;
 			}
 		}
 		return ret.toString();
@@ -327,9 +432,7 @@ public class NotatedState {
 
 	public static void main(String[] args) {
 		try {
-			List<StateNotationToken> tokens = tokenize(args[0]);
-			System.out.println(tokens);
-			NotatedState nss = parseAutomatic(args[0]);
+			NotatedState nss = parse(args[0], Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 			System.out.println(nss.state);
 			System.out.println(nss.display());
 		} catch(InvalidStateNotationException e) {

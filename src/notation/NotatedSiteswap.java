@@ -24,6 +24,7 @@ public class NotatedSiteswap {
 
 	Type type;
 	Siteswap siteswap;
+	int startHand;
 
 	// strings
 	private static String emptyNotationDisplay = ".";
@@ -55,22 +56,44 @@ public class NotatedSiteswap {
 		throw new InvalidSiteswapNotationException();
 	}
 
-	public static NotatedSiteswap parseAutomatic(String notation, int startHand) throws InvalidSiteswapNotationException {
+	public static NotatedSiteswap parse(String notation, int numHands, int startHand) throws InvalidSiteswapNotationException {
 		Type type = getNotationType(notation);
 		NotatedSiteswap ret = new NotatedSiteswap();
 		ret.type = type;
 		List<SiteswapNotationToken> tokens;
 		switch(type) {
 			case EMPTY:
-				ret.siteswap = new Siteswap(0);
+				if(numHands == -1) {
+					numHands = type.defaultNumHands;
+				}
+				ret.siteswap = new Siteswap(numHands);
 				break;
 			case ONEHANDED:
 				tokens = tokenize(notation);
-				ret.siteswap = parseOneHanded(tokens);
+				switch(numHands) {
+					case -1:
+					case 1:
+						ret.siteswap = parseOneHanded(tokens);
+						break;
+					case 2:
+						ret.siteswap = parseTwoHanded(tokens, startHand);
+						// check for odd period
+						if(ret.siteswap.period() % 2 == 1) {
+							ret.siteswap.appendSiteswap(parseTwoHanded(tokens, (startHand+1)%2));
+						}
+						ret.startHand = startHand;
+						break;
+					default:
+						Util.ErrorOut(new IncompatibleNumberOfHandsException());
+				}
 				break;
 			case TWOHANDED:
 				tokens = tokenize(notation);
-				ret.siteswap = parseTwoHanded(tokens, startHand);
+				if(numHands == 2) {
+					ret.siteswap = parseTwoHanded(tokens, startHand);
+				} else {
+					Util.ErrorOut(new IncompatibleNumberOfHandsException());
+				}
 				break;
 		}
 		return ret;
@@ -483,6 +506,22 @@ public class NotatedSiteswap {
 
 	private String displayAsync() {
 		StringBuilder builder = new StringBuilder();
+		int curHand = this.startHand;
+		for(int b=0; b<this.siteswap.period(); b++) {
+			int numTossesAtSite = this.siteswap.numTossesAtSite(b,curHand);
+			if(numTossesAtSite == 0) {
+				builder.append('0');
+			} else if(numTossesAtSite == 1) {
+				builder.append(displayToss(this.siteswap.getToss(b,curHand,0)));
+			} else {
+				builder.append('[');
+				for(int t=0; t<numTossesAtSite; t++) {
+					builder.append(displayToss(this.siteswap.getToss(b,curHand,t)));
+				}
+				builder.append(']');
+			}
+			curHand = (curHand + 1) % 2;
+		}
 		return builder.toString();
 	}
 
@@ -562,7 +601,7 @@ public class NotatedSiteswap {
 
 	public static void main(String[] args) {
 		try {
-			NotatedSiteswap nss = parseAutomatic(args[0], 0);
+			NotatedSiteswap nss = parse(args[0], Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 			System.out.println(nss.siteswap);
 			System.out.println(nss.display());
 		} catch(InvalidSiteswapNotationException e) {
