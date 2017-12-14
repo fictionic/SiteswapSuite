@@ -34,6 +34,28 @@ public class NotatedState {
 	public Type notationType() { return this.type; }
 	public State state() { return this.state; }
 
+	// -------------------------------- ASSEMBLING --------------------------------
+
+	public static NotatedState assemble(State state, Type targetType, int startHand) {
+		NotatedState ret = new NotatedState();
+		ret.state = state;
+		switch(state.numHands()) {
+			case 1:
+				ret.type = Type.ONEHANDED;
+				break;
+			case 2:
+				if(targetType == Type.ONEHANDED) {
+					ret.startHand = startHand;
+				}
+				ret.type = targetType;
+				break;
+			default:
+				ret.type = Type.MULTIHANDED;
+				break;
+		}
+		return ret;
+	}
+
 	// ---------------------------------- PARSING ---------------------------------
 
 	private static Type getNotationType(String notation) throws	InvalidStateNotationException {
@@ -435,6 +457,8 @@ public class NotatedState {
 			NotatedState nss = parse(args[0], Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 			System.out.println(nss.state);
 			System.out.println(nss.display());
+			NotatedState nss2 = assemble(nss.state, nss.type, nss.startHand);
+			System.out.println(nss2.display());
 		} catch(InvalidStateNotationException e) {
 			e.printStackTrace();
 		}

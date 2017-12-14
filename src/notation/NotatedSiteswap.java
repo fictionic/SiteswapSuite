@@ -41,6 +41,49 @@ public class NotatedSiteswap {
 		return null;
 	}
 
+	// -------------------------------- ASSEMBLING --------------------------------
+
+	public static NotatedSiteswap assemble(Siteswap siteswap, Type targetType, int startHand) {
+		NotatedSiteswap ret = new NotatedSiteswap();
+		ret.siteswap = siteswap;
+		switch(siteswap.numHands()) {
+			case 0:
+				ret.type = Type.EMPTY;
+				break;
+			case 1:
+				ret.type = Type.ONEHANDED;
+				break;
+			case 2:
+				switch(targetType) {
+					case ONEHANDED:
+						ret.startHand = startHand;
+					case EMPTY:
+						ret.type = Type.ONEHANDED;
+						break;
+					default:
+						ret.type = Type.TWOHANDED;
+				}
+				break;
+			default:
+				Util.ErrorOut(new IncompatibleNumberOfHandsException());
+				break;
+		}
+		return ret;
+	}
+
+	static Type defaultType(int numHands) {
+		switch(numHands) {
+			case 0:
+				return Type.EMPTY;
+			case 1:
+				return Type.ONEHANDED;
+			case 2:
+				return Type.TWOHANDED;
+			default:
+				return null;
+		}
+	}
+
 	// ---------------------------------- PARSING ---------------------------------
 
 	private static Type getNotationType(String notation) throws	InvalidSiteswapNotationException {
@@ -97,19 +140,6 @@ public class NotatedSiteswap {
 				break;
 		}
 		return ret;
-	}
-
-	static Type defaultType(int numHands) {
-		switch(numHands) {
-			case 0:
-				return Type.EMPTY;
-			case 1:
-				return Type.ONEHANDED;
-			case 2:
-				return Type.TWOHANDED;
-			default:
-				return null;
-		}
 	}
 
 	private static Siteswap parseOneHanded(List<SiteswapNotationToken> tokens) throws InvalidSiteswapNotationException {
@@ -607,6 +637,8 @@ public class NotatedSiteswap {
 			NotatedSiteswap nss = parse(args[0], Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 			System.out.println(nss.siteswap);
 			System.out.println(nss.display());
+			NotatedSiteswap nss2 = assemble(nss.siteswap, nss.type, nss.startHand);
+			System.out.println(nss2.display());
 		} catch(InvalidSiteswapNotationException e) {
 			e.printStackTrace();
 		}
