@@ -40,7 +40,8 @@ public class NotatedSiteswap {
 		return null;
 	}
 
-	// parsing
+	// ---------------------------------- PARSING ---------------------------------
+
 	private static Type getNotationType(String notation) throws	InvalidSiteswapNotationException {
 		if(notation.equals(emptyNotationDisplay)) {
 			return Type.EMPTY;
@@ -75,7 +76,7 @@ public class NotatedSiteswap {
 		return ret;
 	}
 
-	public static Type defaultType(int numHands) {
+	static Type defaultType(int numHands) {
 		switch(numHands) {
 			case 0:
 				return Type.EMPTY;
@@ -95,7 +96,7 @@ public class NotatedSiteswap {
 		boolean bang = false;
 		for(int i=0; i<tokens.size(); i++) {
 			SiteswapNotationToken curToken = tokens.get(i);
-			Util.printf("curToken: " + curToken);
+			Util.printf("curToken: " + curToken, Util.DebugLevel.DEBUG);
 			switch(curToken.type) {
 				case BANG:
 					if(bang || inMulti || ret.period() == 0) {
@@ -142,7 +143,7 @@ public class NotatedSiteswap {
 					}
 					break;
 			}
-			Util.printf("siteswap: " + ret);
+			Util.printf("siteswap: " + ret, Util.DebugLevel.DEBUG);
 		}
 		// see about trailing special tokens
 		if(bang) {
@@ -162,7 +163,7 @@ public class NotatedSiteswap {
 		int lastStarIndex = -1;
 		for(int i=0; i<tokens.size(); i++) {
 			SiteswapNotationToken curToken = tokens.get(i);
-			Util.printf("curToken: " + curToken);
+			Util.printf("curToken: " + curToken, Util.DebugLevel.DEBUG);
 			switch(curToken.type) {
 				case BANG:
 					if(bang || inMulti || ret.period() == 0) {
@@ -176,11 +177,11 @@ public class NotatedSiteswap {
 					}
 					inMulti = true;
 					if(!bang && !inSync) {
-						Util.printf("adding new beat");
+						Util.printf("adding new beat", Util.DebugLevel.DEBUG);
 						ret.appendEmptyBeat(); // append an empty beat for the multiplex, unless we shouldn't
 						if(!star) {
 							h = (h + 1) % 2;
-							Util.printf("swapping fromHand to " + h);
+							Util.printf("swapping fromHand to " + h, Util.DebugLevel.DEBUG);
 						}
 					}
 					break;
@@ -203,7 +204,7 @@ public class NotatedSiteswap {
 					}
 					inSync = true;
 					if(!bang) {
-						Util.printf("adding new beat");
+						Util.printf("adding new beat", Util.DebugLevel.DEBUG);
 						ret.appendEmptyBeat(); // append an empty beat for the sync beat, unless we shouldn't
 						// don't swap hand, cuz it'll happen when we add the first toss
 					}
@@ -223,13 +224,13 @@ public class NotatedSiteswap {
 				case TOSS:
 					// make new beat, if necessary
 					if(!bang && !inSync && !inMulti) {
-						Util.printf("adding new beat");
+						Util.printf("adding new beat", Util.DebugLevel.DEBUG);
 						ret.appendEmptyBeat();
 					}
 					// swap fromHand, if necessary
 					if(!star && !inMulti) {
 						h = (h + 1) % 2;
-						Util.printf("swapping fromHand to " + h);
+						Util.printf("swapping fromHand to " + h, Util.DebugLevel.DEBUG);
 					}
 					// get Toss object from TossToken
 					Toss newToss;
@@ -256,14 +257,14 @@ public class NotatedSiteswap {
 						newToss = new Toss(finiteHeight, destHand, curToken.toss.isAntitoss);
 					}
 					// add it
-					Util.printf("adding toss: " + newToss);
+					Util.printf("adding toss: " + newToss, Util.DebugLevel.DEBUG);
 					ret.addToss(ret.period()-1, h, newToss);
 					// unset flags
 					bang = false;
 					star = false;
 					break;
 			}
-			Util.printf("siteswap: " + ret);
+			Util.printf("siteswap: " + ret, Util.DebugLevel.DEBUG);
 		}
 		// see about trailing special tokens
 		if((bang || star) && ret.period() == 0) {
@@ -278,13 +279,16 @@ public class NotatedSiteswap {
 		}
 		if(star) {
 			tokens.remove(lastStarIndex);
-			ret.appendSiteswap(parseTwoHanded(tokens, h));
+			if(ret.period() % 2 == 0) {
+				ret.appendSiteswap(parseTwoHanded(tokens, h));
+			}
 		}
 		return ret;
 	}
 
-	// tokenization
-	static enum TossHeightState {
+	// ------------------------------- TOKENIZATION -------------------------------
+
+	private static enum TossHeightState {
 		READY, // when there is no pending toss, and we can parse a new token
 		SEEN_MINUS, // when we've seen a minus
 		SEEN_ANTI, // when we've seen an underscore
@@ -292,6 +296,7 @@ public class NotatedSiteswap {
 		INSIDE_CURLY, // when we're reading a {literal height}
 		AFTER_HEIGHT; // when we're awaiting a possible landing modifier
 	}
+
 	private static List<SiteswapNotationToken> tokenize(String notation) throws InvalidSiteswapNotationException {
 		TossHeightState tossHeightState = TossHeightState.READY;
 		StringBuilder curlyHeight = null; // height string parsed from {literal height} indication
@@ -438,9 +443,87 @@ public class NotatedSiteswap {
 		return tokens;
 	}
 
-	// printing notation
+	// -------------------------------- DISPLAYING --------------------------------
+
 	public String display() {
-		return null;
+		switch(this.type) {
+			case EMPTY:
+				return emptyNotationDisplay;
+			case ONEHANDED:
+				if(this.siteswap.numHands() == 1) {
+					return this.displayOneHanded();
+				} else {
+					return this.displayAsync();
+				}
+			case TWOHANDED:
+				return this.displayTwoHanded();
+			default:
+				return null; //FIXME
+		}
+	}
+
+	private String displayOneHanded() {
+		StringBuilder builder = new StringBuilder();
+		for(int b=0; b<this.siteswap.period(); b++) {
+			int numTossesAtSite = this.siteswap.numTossesAtSite(b,0);
+			if(numTossesAtSite == 0) {
+				builder.append('0');
+			} else if(numTossesAtSite == 1) {
+				builder.append(displayToss(this.siteswap.getToss(b,0,0)));
+			} else {
+				builder.append('[');
+				for(int t=0; t<numTossesAtSite; t++) {
+					builder.append(displayToss(this.siteswap.getToss(b,0,t)));
+				}
+				builder.append(']');
+			}
+		}
+		return builder.toString();
+	}
+
+	private String displayAsync() {
+		StringBuilder builder = new StringBuilder();
+		return builder.toString();
+	}
+
+	private String displayTwoHanded() {
+		StringBuilder builder = new StringBuilder();
+		for(int b=0; b<this.siteswap.period(); b++) {
+			builder.append('(');
+			for(int h=0; h<2; h++) {
+				int numTossesAtSite = this.siteswap.numTossesAtSite(b,h);
+				if(numTossesAtSite == 0) {
+					builder.append('0');
+				} else if(numTossesAtSite == 1) {
+					Toss toss = this.siteswap.getToss(b,h,0);
+					builder.append(displayToss(toss));
+					if(tossIsFlipped(toss, h)) {
+						builder.append('x');
+					}
+				} else {
+					builder.append('[');
+					for(int t=0; t<numTossesAtSite; t++) {
+						Toss toss = this.siteswap.getToss(b,h,t);
+						builder.append(displayToss(toss));
+						if(tossIsFlipped(toss, h)) {
+							builder.append('x');
+						}
+					}
+					builder.append(']');
+				}
+				if(h == 0) {
+					builder.append(',');
+				}
+			}
+			builder.append(')');
+			// see about a bang
+			if(b == this.siteswap.period()-1 || !this.siteswap.beatIsEmpty(b+1)) {
+				builder.append('!');
+			} else {
+				b++;
+			}
+		}
+		return builder.toString();
 	}
 
 	static String displayToss(Toss toss) {
@@ -470,10 +553,18 @@ public class NotatedSiteswap {
 		return builder.toString();
 	}
 
+	static boolean tossIsFlipped(Toss toss, int fromHand) {
+		if(!toss.height().isInfinite()) {
+			return (fromHand + toss.destHand()) % 2 != toss.height().finiteValue() % 2;
+		}
+		return false;
+	}
+
 	public static void main(String[] args) {
 		try {
 			NotatedSiteswap nss = parseAutomatic(args[0], 0);
 			System.out.println(nss.siteswap);
+			System.out.println(nss.display());
 		} catch(InvalidSiteswapNotationException e) {
 			e.printStackTrace();
 		}
