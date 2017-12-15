@@ -617,7 +617,13 @@ public class NotatedSiteswap {
 
 	static String displayToss(Toss toss) {
 		StringBuilder builder = new StringBuilder();
-		ExtendedInteger height = toss.height();
+		// make copy so we don't alter the input toss (with negate())
+		ExtendedInteger height;
+		if(toss.height().isInfinite()) {
+			height = new ExtendedInteger(toss.height().infiniteValue());
+		} else {
+			height = new ExtendedInteger(toss.height().finiteValue());
+		}
 		if(height.sign() < 0) {
 			builder.append('-');
 			height.negate();
