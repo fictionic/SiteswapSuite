@@ -296,24 +296,9 @@ public class Siteswap {
 	}
 
 	// adding tosses
+
 	public void addToss(int atBeat, int fromHand, Toss toss) {
 		this.getSite(atBeat, fromHand).addToss(toss);
-	}
-
-	public void addFiniteToss(int atBeat, int fromHand, int height, int toHand) {
-		this.getSite(atBeat, fromHand).addToss(new Toss(height, toHand, false));
-	}
-
-	public void addFiniteAntitoss(int atBeat, int fromHand, int height, int toHand) {
-		this.getSite(atBeat, fromHand).addToss(new Toss(height, toHand, true));
-	}
-
-	public void addInfiniteToss(int atBeat, int fromHand, InfinityType height) {
-		this.getSite(atBeat, fromHand).addToss(new Toss(height, false));
-	}
-
-	public void addInfiniteAntitoss(int atBeat, int fromHand, InfinityType height) {
-		this.getSite(atBeat, fromHand).addToss(new Toss(height, true));
 	}
 
 	// editing tosses

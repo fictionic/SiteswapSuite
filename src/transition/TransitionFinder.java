@@ -77,12 +77,12 @@ public class TransitionFinder {
 					Util.printf(this.to.getChargeAtBeatAtHand(0,h), Util.DebugLevel.DEBUG);
 					if(ballNumDiffNegative < 0 && this.to.getChargeAtBeatAtHand(0,h) < 0) {
 						Util.printf("catching new antiball at beat " + b, Util.DebugLevel.DEBUG);
-						transition.addInfiniteAntitoss(b, h, InfinityType.NEGATIVE_INFINITY);
+						transition.addToss(b, h, new Toss(InfinityType.NEGATIVE_INFINITY, true));
 						this.from.decChargeOfNowNodeAtHand(h);
 						ballNumDiffNegative++;
 					} else if(ballNumDiffPositive > 0 && this.to.getChargeAtBeatAtHand(0,h) > 0) {
 						Util.printf("catching new ball at beat " + b, Util.DebugLevel.DEBUG);
-						transition.addInfiniteToss(b, h, InfinityType.NEGATIVE_INFINITY);
+						transition.addToss(b, h, new Toss(InfinityType.NEGATIVE_INFINITY, false));
 						this.from.incChargeOfNowNodeAtHand(h);
 						ballNumDiffPositive--;
 					}
@@ -100,7 +100,7 @@ public class TransitionFinder {
 				int chargeAtHand = this.from.getChargeAtBeatAtHand(0, h);
 				while(chargeAtHand > 0) {
 					Util.printf("performing toss at beat " + b, Util.DebugLevel.DEBUG);
-					transition.addInfiniteToss(b, h, InfinityType.POSITIVE_INFINITY);
+					transition.addToss(b, h, new Toss(InfinityType.POSITIVE_INFINITY, false));
 					chargeAtHand--;
 					if(ballNumDiffNegative < 0 && diffs.catches == 0)
 						ballNumDiffNegative++;
@@ -109,7 +109,7 @@ public class TransitionFinder {
 				}
 				while(chargeAtHand < 0) {
 					Util.printf("performing antitoss at beat " + b, Util.DebugLevel.DEBUG);
-					transition.addInfiniteAntitoss(b, h, InfinityType.POSITIVE_INFINITY);
+					transition.addToss(b, h, new Toss(InfinityType.POSITIVE_INFINITY, true));
 					chargeAtHand++;
 					if(ballNumDiffPositive > 0 && diffs.antiCatches == 0)
 						ballNumDiffPositive--;
@@ -150,10 +150,10 @@ public class TransitionFinder {
 				int diff = this.to.getChargeAtBeatAtHand(0, h) - this.from.getChargeAtBeatAtHand(0, h);
 				if(diff > 0) {
 					Util.printf("catching ball at beat " + b, Util.DebugLevel.DEBUG);
-					transition.addInfiniteToss(b, h, InfinityType.NEGATIVE_INFINITY);
+					transition.addToss(b, h, new Toss(InfinityType.NEGATIVE_INFINITY, false));
 				} else if(diff < 0) {
 					Util.printf("catching antiball at beat " + b, Util.DebugLevel.DEBUG);
-					transition.addInfiniteAntitoss(b, h, InfinityType.NEGATIVE_INFINITY);
+					transition.addToss(b, h, new Toss(InfinityType.NEGATIVE_INFINITY, true));
 				}
 			}
 			b++;
