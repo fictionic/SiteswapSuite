@@ -27,8 +27,10 @@ public class State {
 	// construct a state from a siteswap...
 	public State(Siteswap ss) {
 		this(ss.numHands());
+		Util.printf("input siteswap: " + ss, Util.DebugLevel.DEBUG);
 		ss = ss.deepCopy(); // don't change the object we're given
 		ss.antitossify(); // life is simpler without negative tosses
+		Util.printf("antitossified: " + ss, Util.DebugLevel.DEBUG);
 		// Util.printf(ss, Util.DebugLevel.DEBUG);
 		if(ss.period() > 0) {
 			// we construct a State that represents the state associated with the given siteswap.
