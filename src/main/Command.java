@@ -122,6 +122,14 @@ class Command {
 		return ret.toString();
 	}
 
+	private NotatedSiteswap getNotatedSiteswap(Siteswap siteswap, Chain reference) {
+		return NotatedSiteswap.assemble(siteswap, reference.input.notatedSiteswapOrState.notationType(), reference.input.notatedSiteswapOrState.startHand());
+	}
+
+	private NotatedState getNotatedState(State state, Chain reference) {
+		return NotatedState.assemble(state, reference.input.notatedSiteswapOrState.notationType(), reference.input.notatedSiteswapOrState.startHand());
+	}
+
 	class Chain {
 		int index;
 		ChainInput input;
@@ -245,8 +253,8 @@ class Command {
 						this.transitions = tr.getTransitions();
 						// save one as output, notated
 						// first get notation info from input of left input chain
-						NotatedSiteswapOrState inputObject = getChain(this.fromIndex).input.notatedSiteswapOrState;
-						NotatedSiteswap outputNotatedSiteswap = NotatedSiteswap.assemble(tr.getSelectedTransition(), inputObject.notationType(), inputObject.startHand());
+						Chain referenceChain = getChain(this.fromIndex);
+						NotatedSiteswap outputNotatedSiteswap = getNotatedSiteswap(tr.getSelectedTransition(), referenceChain);
 						this.notatedSiteswapOrState = new NotatedSiteswapOrState(outputNotatedSiteswap);
 					} catch(ImpossibleTransitionException e) {
 						Util.ErrorOut(e);
@@ -287,10 +295,10 @@ class Command {
 					ret.append(" to: output "); ret.append(this.toIndex); ret.append("\n");
 					if(this.displayGeneralizedTransition) {
 						ret.append(" generalized transition: ");
-						NotatedSiteswapOrState inputObject = getChain(this.fromIndex).input.notatedSiteswapOrState;
-						NotatedSiteswap throwsPortion = NotatedSiteswap.assemble(this.generalizedTransition.getThrowsPortion(), inputObject.notationType(), inputObject.startHand());
+						Chain referenceChain = getChain(this.fromIndex);
+						NotatedSiteswap throwsPortion = getNotatedSiteswap(this.generalizedTransition.getThrowsPortion(), referenceChain);
+						NotatedSiteswap catchesPortion = getNotatedSiteswap(this.generalizedTransition.getCatchesPortion(), referenceChain);
 						ret.append(throwsPortion.display());
-						NotatedSiteswap catchesPortion = NotatedSiteswap.assemble(this.generalizedTransition.getCatchesPortion(), inputObject.notationType(), inputObject.startHand());
 						ret.append("{");
 						ret.append(catchesPortion.display());
 						ret.append("}\n");
@@ -554,19 +562,19 @@ class Command {
 			ret.append("OUTPUT: \n");
 			Link lastLink = this.getLastLink();
 			// get reference for notation output
-			NotatedSiteswapOrState inputObject;
+			Chain referenceChain;
 			if(this.input.isTransition) {
-				inputObject = getChain(this.input.fromIndex).input.notatedSiteswapOrState;
+				referenceChain = getChain(this.input.fromIndex);
 			} else {
-				inputObject = this.input.notatedSiteswapOrState;
+				referenceChain = this;
 			}
 			if(lastLink.siteswapOrState.isState) {
 				ret.append(" state: " );
-				NotatedState notatedState = NotatedState.assemble(lastLink.siteswapOrState.state, inputObject.notationType(), inputObject.startHand());
+				NotatedState notatedState = getNotatedState(lastLink.siteswapOrState.state, referenceChain);
 				ret.append(notatedState.display());
 			} else {
 				ret.append(" siteswap: " );
-				NotatedSiteswap notatedSiteswap = NotatedSiteswap.assemble(lastLink.siteswapOrState.siteswap, inputObject.notationType(), inputObject.startHand());
+				NotatedSiteswap notatedSiteswap = getNotatedSiteswap(lastLink.siteswapOrState.siteswap, referenceChain);
 				ret.append(notatedSiteswap.display());
 			}
 			// print output

@@ -19,6 +19,7 @@ public enum Argument {
 	VALIDITY('v', "validity", Role.INFO, FollowUp.NONE),
 	PRIMALITY('P', "primality", Role.INFO, FollowUp.NONE),
 	DIFFICULTY('d', "difficulty", Role.INFO, FollowUp.NONE),
+	ORBITS('O', "orbits", Role.INFO, FollowUp.NONE),
 	// operations
 	OPS('\0', "ops", Role.CHAIN, Role.OPERATION, FollowUp.NONE),
 	INVERT('V', "invert", Role.OPERATION, FollowUp.NONE),
