@@ -247,14 +247,20 @@ public class Siteswap {
 			for(int h=0; h<this.numHands(); h++) {
 				Site curSite = copy.getSite(b,h);
 				for(int t=0; t<curSite.numTosses();) {
+					// cycles must have capacity 1
+					if(curSite.getToss(0).isZero()) {
+						curSite.removeToss(0);
+						break;
+					}
 					Util.printf("new cycle", Util.DebugLevel.DEBUG);
 					Util.printf("b: " + b + ", h: " + h + ", t: " + t, Util.DebugLevel.DEBUG);
 					// create new cycle
 					Siteswap curCycle = new Siteswap(this.numHands());
 					Util.printf("cycle: " + curCycle, Util.DebugLevel.DEBUG);
 					Util.printf("this: " + copy, Util.DebugLevel.DEBUG);
-					int b2 = b, h2 = h, t2=t;
-					while(true) { // the loop has to be this way to prevent code duplication
+					int b2 = b, h2 = h, t2 = t;
+					do {
+						Util.printf("not done; appending empty tosses up to b=" + (b2+1), Util.DebugLevel.DEBUG);
 						curCycle.extendToBeatIndex(b2+1);
 						// add next toss to cycle
 						Toss curToss = copy.getToss(b2, h2, t2);
@@ -277,18 +283,11 @@ public class Siteswap {
 						}
 						Util.printf("updating b2,h2,t2", Util.DebugLevel.DEBUG);
 						Util.printf("b2=" + b2 + ", h2=" + h2 + ", t2=" + t2, Util.DebugLevel.DEBUG);
-						// deal with adding empty beats after toss
-						if(b2 % this.period() == b && h2 == h) {
-							int newLength = b2 - b;
-							Util.printf("done; adding final " + (newLength - curCycle.period()) + " empty tosses", Util.DebugLevel.DEBUG);
-							curCycle.extendToBeatIndex(newLength);
-							Util.printf("cycle: " + curCycle, Util.DebugLevel.DEBUG);
-							break;
-						}
-						Util.printf("not done; appending empty tosses up to b=" + b2, Util.DebugLevel.DEBUG);
-						curCycle.extendToBeatIndex(b2);
-						Util.printf("cycle: " + curCycle, Util.DebugLevel.DEBUG);
-					}
+					} while(b2 % this.period() != b || h2 != h);
+					int newLength = b2 - b;
+					Util.printf("done; adding final " + (newLength - curCycle.period()) + " empty tosses", Util.DebugLevel.DEBUG);
+					curCycle.extendToBeatIndex(newLength);
+					Util.printf("cycle: " + curCycle, Util.DebugLevel.DEBUG);
 					Util.printf("", Util.DebugLevel.DEBUG);
 					// add cycle to list
 					cycles.add(curCycle);
