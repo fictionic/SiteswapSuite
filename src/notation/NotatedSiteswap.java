@@ -640,7 +640,7 @@ public class NotatedSiteswap {
 		if(finiteHeight <= 9) {
 			builder.append(finiteHeight);
 		} else if((10 <= finiteHeight) && (finiteHeight <= 36) && (finiteHeight != 33)) {
-			builder.append(finiteHeight - 10 + 97);
+			builder.append((char)(finiteHeight - 10 + 97));
 		} else {
 			builder.append('{');
 			builder.append(finiteHeight);
