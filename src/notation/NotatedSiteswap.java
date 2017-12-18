@@ -168,6 +168,7 @@ public class NotatedSiteswap {
 						throw new InvalidSiteswapNotationException();
 					}
 					inMulti = true;
+					ret.appendEmptyBeat(); // append an empty beat for the multiplex, unless we shouldn't
 					break;
 				case MULTI_CLOSE:
 					if(!inMulti) {
