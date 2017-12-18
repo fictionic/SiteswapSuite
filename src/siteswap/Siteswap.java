@@ -110,10 +110,7 @@ public class Siteswap {
 							toRunOn.getSite(destBeat, destHand).inDegree += curToss.charge();
 						}
 					} else {
-						destBeat = (b + curToss.height().finiteValue()) % toRunOn.period();
-						if(destBeat < 0) {
-							destBeat += toRunOn.period();
-						}
+						destBeat = b + curToss.height().finiteValue();
 						destHand = curToss.destHand();
 						// check for zero-tosses
 						if(destBeat != b || destHand != h) {
