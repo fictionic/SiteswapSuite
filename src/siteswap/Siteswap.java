@@ -2,6 +2,8 @@ package siteswapsuite;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 public class Siteswap {
 
@@ -183,70 +185,151 @@ public class Siteswap {
 		return true;
 	}
 
-	public List<Siteswap> getOrbits() {
-		if(this.numBalls().numerator().isInfinite()) {
-			return null;
-		}
-		List<Siteswap> orbits = new ArrayList<Siteswap>();
-		Siteswap copy = this.deepCopy();
-		boolean allZero;
-		Toss toss;
-		while(true) {
-			allZero = true;
-			// find next orbit
-			for(int b=0; b<copy.period(); b++) {
-				for(int h=0; h<copy.numHands(); h++) {
-					for(int t=0; t<copy.numTossesAtSite(b,h); t++) {
-						Util.printf("b: " + b + ", h: " + h + ", t: " + t, Util.DebugLevel.DEBUG);
-						toss = copy.getToss(b,h,t);
-						if(toss.charge() != 0) {
-							allZero = false;
-						} else {
-							continue;
+	public int maxFiniteHeight() {
+		int maxFiniteHeight = 0;
+		for(int b=0; b<this.period(); b++) {
+			for(int h=0; h<this.numHands(); h++) {
+				for(int t=0; t<this.numTossesAtSite(b,h); t++) {
+					Toss curToss = this.getToss(b,h,t);
+					if(!curToss.height().isInfinite()) {
+						int curHeight = curToss.height().finiteValue();
+						if(curHeight > maxFiniteHeight) {
+							maxFiniteHeight = curHeight;
 						}
-						// create new orbit
-						Siteswap curOrbit = new Siteswap(this.numHands());
-						for(int i=0; i<this.period(); i++) {
-							curOrbit.appendEmptyBeat();
-						}
-						// set up adding of first toss
-						Toss curToss = toss;
-						int b2 = 0, h2 = 0, t2 = 0;
-						do {
-							// TODO: fix this algorithm
-							Util.printf("b2: " + b2 + ", h2: " + h2 + ", t2: " + t2, Util.DebugLevel.DEBUG);
-							Util.printf(copy, Util.DebugLevel.DEBUG);
-							Util.printf(curOrbit, Util.DebugLevel.DEBUG);
-							Util.printf("", Util.DebugLevel.DEBUG);
-							// add next toss to orbit
-							curToss = copy.getToss(b2, h2, t2);
-							curOrbit.addToss(b, h, curToss);
-							if(curToss.height().isInfinite()) {
-								Util.printf("DON'T KNOW WHAT TO DO WITH INFINITE TOSS WHEN FINDING ORBITS", Util.DebugLevel.DEBUG);
-								continue;
-							}
-							// remove toss from copy
-							copy.removeToss(b2,h2,t2);
-							// advance through siteswap
-							b2 = (b2 + toss.height().finiteValue()) % this.period();
-							if(b2 < 0) b2 += this.period();
-							h2 = curToss.destHand();
-							if(b2 == b && h2 == h) t2 = t; else t2 = 0;
-						} while(b2 != b || h2 != h || t2 != t);
-						// add orbit to list
-						orbits.add(curOrbit);
 					}
 				}
 			}
-			if(allZero) {
-				break;
+		}
+		return maxFiniteHeight;
+	}
+
+	public List<Siteswap> getCycles() {
+		if(!this.isValid()) {
+			return null;
+		}
+		if(this.numBalls().numerator().isInfinite()) {
+			Util.printf("ERROR: cannot get cycles of siteswap with infinitely many balls", Util.DebugLevel.ERROR);
+			return null;
+		}
+		Siteswap copy = this.deepCopy();
+		copy.antitossify(); // TODO: remember which tosses should be antitossified
+		// step 1: get max distance away that a toss could be from a destination multiplex site
+		int maxDist = this.maxFiniteHeight() + 1;
+		// step 2: find multiplex orderings
+		Map<Site,List<Toss>> multiplexOrderingMap = new HashMap<>();
+		for(int b=0; b<this.period(); b++) {
+			for(int h=0; h<this.numHands(); h++) {
+				Site curSite = copy.getSite(b,h);
+				if(curSite.numTosses() > 1) {
+					// we've found a multiplex site
+					multiplexOrderingMap.put(curSite, new ArrayList<>());
+					for(int targetHeight=0; targetHeight<maxDist; targetHeight++) {
+						int b2 = b - targetHeight;
+						for(int h2=0; h2<this.numHands(); h2++) {
+							for(int t2=0; t2<this.numTossesAtSite(b2,h2); t2++) {
+								Toss curToss = copy.getToss(b2,h2,t2);
+								if(!curToss.height().isInfinite()) {
+									int curHeight = curToss.height().finiteValue();
+									if(curHeight == targetHeight) {
+										multiplexOrderingMap.get(curSite).add(0, curToss);
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
-		return orbits;
+		Util.printf(multiplexOrderingMap, Util.DebugLevel.DEBUG);
+		// step 3: find cycles
+		List<Siteswap> cycles = new ArrayList<Siteswap>();
+		for(int b=0; b<this.period(); b++) {
+			for(int h=0; h<this.numHands(); h++) {
+				Site curSite = copy.getSite(b,h);
+				for(int t=0; t<curSite.numTosses();) {
+					Util.printf("new cycle", Util.DebugLevel.DEBUG);
+					Util.printf("b: " + b + ", h: " + h + ", t: " + t, Util.DebugLevel.DEBUG);
+					// create new cycle
+					Siteswap curCycle = new Siteswap(this.numHands());
+					Util.printf("cycle: " + curCycle, Util.DebugLevel.DEBUG);
+					Util.printf("this: " + copy, Util.DebugLevel.DEBUG);
+					int b2 = b, h2 = h, t2=t;
+					while(true) { // the loop has to be this way to prevent code duplication
+						curCycle.extendToBeatIndex(b2+1);
+						// add next toss to cycle
+						Toss curToss = copy.getToss(b2, h2, t2);
+						Util.printf("adding toss " + curToss + " to cycle at b=" + b2 + ",h=" + h2, Util.DebugLevel.DEBUG);
+						curCycle.addToss(b2, h2, curToss);
+						Util.printf("cycle: " + curCycle, Util.DebugLevel.DEBUG);
+						Util.printf("removing toss from copy", Util.DebugLevel.DEBUG);
+						copy.removeToss(b2, h2, t2);
+						Util.printf("this: " + copy, Util.DebugLevel.DEBUG);
+						// advance through siteswap
+						b2 = b2 + curToss.height().finiteValue();
+						h2 = curToss.destHand();
+						// ensure correct ordering of multiplex tosses
+						Site destSite = copy.getSite(b2,h2);
+						if(destSite.numTosses() > 1) {
+							t2 = multiplexOrderingMap.get(destSite).indexOf(curToss);
+							Util.printf("using proper multiplex ordering: t2=" + t2, Util.DebugLevel.DEBUG);
+						} else {
+							t2 = 0;
+						}
+						Util.printf("updating b2,h2,t2", Util.DebugLevel.DEBUG);
+						Util.printf("b2=" + b2 + ", h2=" + h2 + ", t2=" + t2, Util.DebugLevel.DEBUG);
+						// deal with adding empty beats after toss
+						if(b2 % this.period() == b && h2 == h) {
+							int newLength = b2 - b;
+							Util.printf("done; adding final " + (newLength - curCycle.period()) + " empty tosses", Util.DebugLevel.DEBUG);
+							curCycle.extendToBeatIndex(newLength);
+							Util.printf("cycle: " + curCycle, Util.DebugLevel.DEBUG);
+							break;
+						}
+						Util.printf("not done; appending empty tosses up to b=" + b2, Util.DebugLevel.DEBUG);
+						curCycle.extendToBeatIndex(b2);
+						Util.printf("cycle: " + curCycle, Util.DebugLevel.DEBUG);
+					}
+					Util.printf("", Util.DebugLevel.DEBUG);
+					// add cycle to list
+					cycles.add(curCycle);
+				}
+			}
+		}
+		return cycles;
+	}
+
+	public int truePeriod() {
+		if(!this.isValid()) {
+			return -1;
+		}
+		List<Siteswap> cycles = this.getCycles();
+		int ret = 1;
+		for(Siteswap cycle : cycles) {
+			ret = Util.lcm(ret, cycle.period());
+		}
+		return ret;
+	}
+
+	public List<Siteswap> getOrbits() {
+		if(this.period() == 0) {
+			return new ArrayList<>();
+		}
+		if(!this.isValid()) {
+			return null;
+		}
+		Siteswap copy = this.deepCopy();
+		int truePeriod = this.truePeriod();
+		int multiple = truePeriod / this.period();
+		for(int i=0; i<multiple-1; i++) {
+			copy.appendSiteswap(this.deepCopy());
+		}
+		return copy.getCycles();
 	}
 
 	public ExtendedFraction difficulty() {
 		Util.printf("WARNING: difficulty calculation not yet implemented", Util.DebugLevel.ERROR);
+		// b/(h+h/b)
+		// maybe implement arithetic in the Util classes and then just use them here?
 		ExtendedFraction b = this.numBalls();
 		int h = this.numHands;
 		int bottom;
@@ -326,20 +409,21 @@ public class Siteswap {
 	}
 
 	public int extendToBeatIndex(int beatIndex) { //returns index of beat that was previously "at" given index (either 0, period(), or beatIndex)
+		int ret = beatIndex;
 		if(beatIndex < 0) {
 			Siteswap toAnnex = new Siteswap(this.numHands);
-			while(beatIndex < 0) {
+			while(ret < 0) {
 				toAnnex.appendEmptyBeat();
-				beatIndex++;
+				ret++;
 			}
 			toAnnex.appendSiteswap(this);
 			this.sites = toAnnex.sites;
 		}
 		while(beatIndex > this.period()) {
 			this.appendEmptyBeat();
-			beatIndex--;
+			ret--;
 		}
-		return beatIndex;
+		return ret;
 	}
 
 	public void appendSiteswap(Siteswap toAppend) {

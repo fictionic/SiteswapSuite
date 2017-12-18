@@ -16,9 +16,11 @@ public enum Argument {
 	// info items
 	INFO('\0', "info", Role.CHAIN, Role.INFO, FollowUp.NONE),
 	CAPACITY('c', "capacity", Role.INFO, FollowUp.NONE),
+	TRUE_PERIOD('L', "true-period", Role.INFO, FollowUp.NONE),
 	VALIDITY('v', "validity", Role.INFO, FollowUp.NONE),
 	PRIMALITY('P', "primality", Role.INFO, FollowUp.NONE),
 	DIFFICULTY('d', "difficulty", Role.INFO, FollowUp.NONE),
+	CYCLES('C', "cycles", Role.INFO, FollowUp.NONE),
 	ORBITS('O', "orbits", Role.INFO, FollowUp.NONE),
 	// operations
 	OPS('\0', "ops", Role.CHAIN, Role.OPERATION, FollowUp.NONE),

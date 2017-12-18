@@ -9,6 +9,28 @@ import java.util.Arrays;
 
 public class Util {
 
+	// math stuff
+
+	public static int lcm(int x, int y) {
+		return x * y / gcd(x,y);
+	}
+
+	public static int gcd(int x, int y) {
+        int r=0, a, b;
+        a = (x > y) ? x : y; // a is greater number
+        b = (x < y) ? x : y; // b is smaller number
+        r = b;
+        while(a % b != 0)
+        {
+            r = a % b;
+            a = b;
+            b = r;
+        }
+        return r;
+	}
+
+	// java stuff
+
 	public static void ErrorOut(SiteswapException e) {
 		System.err.println(e.getMessage());
 		System.exit(1);

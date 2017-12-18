@@ -394,6 +394,54 @@ class Command {
 								ret.append(" primality: " + this.siteswapOrState.siteswap.isPrime() + "\n");
 							}
 							break;
+						case TRUE_PERIOD:
+							if(this.siteswapOrState.isState) {
+								ret.append(" true period: n/a\n");
+							} else {
+								ret.append(" true period: ");
+								int truePeriod = this.siteswapOrState.siteswap.truePeriod();
+								if(truePeriod == -1) {
+									ret.append("n/a");
+								} else {
+									ret.append(truePeriod);
+								}
+								ret.append('\n');
+							}
+							break;
+						case CYCLES:
+							if(this.siteswapOrState.isState) {
+								ret.append(" cycles: n/a\n");
+							} else {
+								ret.append(" cycles: ");
+								List<Siteswap> cycles = this.siteswapOrState.siteswap.getCycles();
+								if(cycles == null) {
+									ret.append("n/a\n");
+								} else {
+									ret.append('\n');
+									for(Siteswap cycle : cycles) {
+										NotatedSiteswap notatedCycle = getNotatedSiteswap(cycle, getChain(index));
+										ret.append("  " + notatedCycle.display() + "\n");
+									}
+								}
+							}
+							break;
+						case ORBITS:
+							if(this.siteswapOrState.isState) {
+								ret.append(" orbits: n/a\n");
+							} else {
+								ret.append(" orbits: ");
+								List<Siteswap> orbits = this.siteswapOrState.siteswap.getOrbits();
+								if(orbits == null) {
+									ret.append("n/a\n");
+								} else {
+									ret.append('\n');
+									for(Siteswap orbit : orbits) {
+										NotatedSiteswap notatedOrbit = getNotatedSiteswap(orbit, getChain(index));
+										ret.append("  " + notatedOrbit.display() + "\n");
+									}
+								}
+							}
+							break;
 						case DIFFICULTY:
 							ExtendedFraction difficulty;
 							if(this.siteswapOrState.isState) {
