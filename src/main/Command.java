@@ -362,9 +362,16 @@ class Command {
 				if(this.siteswapOrState.isState) {
 					ret.append("---> state:\n");
 					ret.append(" parsed: " + this.siteswapOrState.state.toString() + "\n");
+					ret.append(" dimension: " + this.siteswapOrState.state.numHands() + "h x ");
+					if(this.siteswapOrState.state.repeatedLength() > 0) {
+						ret.append("&b\n");
+					} else {
+						ret.append(this.siteswapOrState.state.finiteLength() + "b\n");
+					}
 				} else {
 					ret.append("---> siteswap:\n");
 					ret.append(" parsed: " + this.siteswapOrState.siteswap.toString() + "\n");
+					ret.append(" dimension: " + this.siteswapOrState.siteswap.numHands() + "h x " + this.siteswapOrState.siteswap.period() + "b\n");
 				}
 				for(ArgWithFollowUp infoArg : this.infos) {
 					switch(infoArg.arg) {

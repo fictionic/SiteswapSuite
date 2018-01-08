@@ -13,6 +13,7 @@ public class State {
 
 	public int numHands() { return this.numHands; }
 	public int finiteLength() { return this.finiteLength; }
+	public int repeatedLength() { return this.repeatedLength; }
 	public boolean isFinite() { return this.repeatedLength == 0; }
 
 	// initialize an empty state
