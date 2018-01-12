@@ -1,27 +1,59 @@
-SiteswapSuite
-================
+# SiteswapSuite
 
-### DESCRIPTION
 SiteswapSuite computes information about juggling patterns as abstracted into [siteswap](http://en.wikipedia.org/wiki/Siteswap) notation, with an emphasis on maximizing the generality of the underlying theory.
 
-### SYNOPSIS
-Display requested information about a siteswap or state:
+## Usage
 
-`sss [INPUT]`
+SiteswapSuite takes input, prints things about its inputs, and manipulates its inputs. Because there are many ways to combine these functions, the commandline syntax is very general.
 
-Compute a transition between two inputs:
+A valid command is of the form `siteswapsuite CHAIN [CHAIN ...]`,  
+where `CHAIN` is `INPUT [INFOS] [LINK ...]`,  
+where `LINK` is `OPERATION [INFOS]`,  
+where `INFOS` is `INFO [INFO ...]`; 
+the atoms are `INPUT`, `INFO`, and `OPERATION`.
 
-`sss [TRANSITION_OPTIONS] [INPUT] [INPUT]`
+Each of these will be explained in turn.
 
-An `[INPUT]` is of the form
+### Input
 
-`-i <siteswap_notation> [INPUT_OPTIONS]`.
+Inputs can either be literal—that is, parsed from a cmdline argument—or generated from some previously computed siteswap-object(s).
 
-### OPTIONS
+#### Literal Input
 
-#### Input Options
+`-i[:OPTIONS] NOTATION`  
+`--input[:OPTIONS] NOTATION`
 
-**Info specification**
+Takes one argument, a string of notation. Can be either a siteswap or a state. If the notation can only be interpreted as a state, a state is parsed; otherwise a siteswap is parsed. To explicitly specify state parsing, prefix the notation with `st:`.
+
+*LITERAL INPUT OPTIONS:*
+| long name     | short name | argument | effect                                                                  |
+|:--------------|:-----------|:---------|:------------------------------------------------------------------------|
+| `num-hands`   | `h`        | int N    | Force parsing the input notation as having N hands.                     |
+| `start-hand`  | `H`        | int N    | Force parsing the input notation as starting with hand N.               |
+| `keep-zeroes` | `z`        | none     | Don't strip out tosses of height 0 from parsed pattern (siteswap only). |
+
+#### Transition Input
+
+`-T`/`--transition`
+
+*TRANSITION INPUT OPTIONS:* 
+| long name          | short name | argument | effect |
+|:-------------------|:-----------|:---------|:-------|
+|`from`              | (none)     | int N    | Compute transitions *from* the output of chain #N. |
+|`to`                | (none)     | int N    | Compute transitions *to* the output of chain #N.   |
+|`min-length`        |`l`         | int N    | Compute transitions no shorter than N.             |
+|`max-transitions`   |`m`         | int N    | Compute no more than N transitions.                |
+|`select-transition` |`o`         | int N    | Select the Nth transition as the resulting object. |
+
+*TRANSITION OPTIONS:*
+|long name                         |short name  |argument  |effect  |
+|:---------------------------------|:-----------|:---------|:-------|
+|`allow-extra-squeeze-catches`     |`q`         |(none)    | |
+|`generate-ball-antiball-pairs`    |`g`         |(none)    | |
+|`un-antitossify-transitions`      |`A`         |(none)    | |
+|`display-generalized-transition`  |`G`         |(none)    | |
+
+### Info
 
 When an input siteswap is given, the following information is always printed:
 - a notation-independent string representation of the siteswap as a list of (beats) lists of (hands) lists of tosses
@@ -38,15 +70,9 @@ Beyond this, options must be given to indicate what information about the input 
 | `--validity` |`-v`| Validity of pattern.|
 | `--primality` |`-P`|  Primality of pattern. That is, whether or not a state is visited more than once during one period of the pattern.|
 | `--difficulty` |`-d`| 'Difficulty' of pattern, as given by Dancey's formula b/(h+h/b). Thus it does not take into account the details of the siteswap at all.|
+### Operation
 
-**Hand specification**
-
-These only apply when the input notation is in vanilla siteswap notation.
-
-|long name|short name|effect|
-|:--:|:-:|:---|
-| `--numHands N|`-h N ` | Force parsing the input notation as having N hands. This is only useful when giving single inputs to the program, because an appropriate number of hands is inferred for each input pattern given the other pattern. For example, if given the single input `-i 3`, the program will take '3' to represent a one-handed pattern; but `-i 3 -h2` will produce the pattern '(3,0)!(0,3)!'.|
-| `--startHand N|`-H N ` | Force parsing the input notation as starting with hand N. Default is 0. For example: `-i 3 -h2 -H0` produces '(3,0)!(0,3)!', whereas `-i 3 -h2 -H1` produces '(0,3)!(3,0)!'.|
+### OPTIONS
 
 **Modification sequence specification**
 
@@ -63,7 +89,7 @@ After parsing the input into a siteswap pattern, a sequence of modifications may
 | `--antiNegate` |`-N` | "anti-negated" pattern. |
 
 (Note: none of these are implemented yet.)
- 
+
 #### Transition Options
 
 |long name|short name|effect|
@@ -80,13 +106,13 @@ After parsing the input into a siteswap pattern, a sequence of modifications may
 
 ### SETUP
 
-`$ git clone https://github.com/seeegma/SiteswapSuite`  
+`$ git clone https://github.com/fictionic/SiteswapSuite`
 `$ make`
 
 ### BASIC EXAMPLES
 - Find a transition between the siteswaps `5` and `91`:
 
-`$ sss -i 5 -i 91`  
+`$ sss -i 5 -i 91`
 This displays:
 ```
 INPUT 0:   '5'
@@ -112,10 +138,10 @@ a56
 a74
 ```
 
-- Display information about the 3-ball box (note that short options can be combined into a single argument):  
+- Display information about the 3-ball box (note that short options can be combined into a single argument):
 `$ sss -ivs '(4,2x)*'`
 
-This displays:  
+This displays:
 ```
 INPUT 0:   '(4,2x)*'
 ---------
@@ -137,7 +163,7 @@ When one first learns siteswap, typically one learns the "vanilla" flavor, in wh
 - all tosses have a "charge" of 1 or 0 (i.e. no "antitosses")
 - all tosses have finite height (self-explanatory)
 - only valid siteswaps have an associated juggling state (i.e. no infinite states)
-Some are common extensions to siteswap, with their own standard notation (multiplex, sync), while others are not.  
+Some are common extensions to siteswap, with their own standard notation (multiplex, sync), while others are not.
 SiteswapSuite casts out each of these. As such, some explanation is needed.
 
 \<explanation!\>
@@ -145,4 +171,4 @@ SiteswapSuite casts out each of these. As such, some explanation is needed.
 With these generalizations, the world of possibilities gets much bigger:
 
 **COMPLEX EXAPLES**
-- 
+-
