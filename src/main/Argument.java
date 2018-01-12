@@ -18,6 +18,7 @@ public enum Argument {
 	CAPACITY('c', "capacity", Role.INFO, FollowUp.NONE),
 	TRUE_PERIOD('L', "true-period", Role.INFO, FollowUp.NONE),
 	VALIDITY('v', "validity", Role.INFO, FollowUp.NONE),
+	STATE('s', "state", Role.INFO, FollowUp.NONE),
 	PRIMALITY('P', "primality", Role.INFO, FollowUp.NONE),
 	DIFFICULTY('d', "difficulty", Role.INFO, FollowUp.NONE),
 	CYCLES('C', "cycles", Role.INFO, FollowUp.NONE),
@@ -30,7 +31,7 @@ public enum Argument {
 	UNINFINITIZE('F', "un-infinitize", Role.OPERATION, FollowUp.NONE),
 	ANTITOSSIFY('a', "antitossify", Role.OPERATION, FollowUp.NONE),
 	UNANTITOSSIFY('A', "un-antitossify", Role.OPERATION, FollowUp.NONE),
-	TO_STATE('s', "to-state", Role.OPERATION, FollowUp.NONE),
+	TO_STATE('\0', "to-state", Role.OPERATION, FollowUp.NONE),
 	TO_SITESWAP('S', "to-siteswap", Role.OPERATION, Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),
 	// operations that take multiple inputs
 	TRANSITION('T', "transition", Role.INPUT, Role.INPUT_OPTION_TRANSITION, FollowUp.NONE),

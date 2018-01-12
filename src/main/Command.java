@@ -393,6 +393,15 @@ class Command {
 							}
 							ret.append(" validity: " + validity + "\n");
 							break;
+						case STATE:
+							State state;
+							if(this.siteswapOrState.isState) {
+								state = this.siteswapOrState.state;
+							} else {
+								state = new State(this.siteswapOrState.siteswap);
+							}
+							ret.append(" state: " + getNotatedState(state, getChain(index)).display() + "\n");
+							break;
 						case PRIMALITY:
 							boolean primality;
 							if(this.siteswapOrState.isState) {
