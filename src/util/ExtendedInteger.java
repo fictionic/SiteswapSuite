@@ -57,6 +57,12 @@ public class ExtendedInteger {
 		}
 	}
 
+	public void multiplyBy(int n) {
+		if(!this.isInfinite) {
+			this.finiteValue *= n;
+		}
+	}
+
 	public String toString() {
 		if(this.isInfinite) {
 			if(this.infiniteValue == InfinityType.POSITIVE_INFINITY)

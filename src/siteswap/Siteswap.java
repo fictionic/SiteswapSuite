@@ -448,6 +448,44 @@ public class Siteswap {
 		}
 	}
 
+	public void spring(int startHand) {
+		if(this.numHands() != 1) {
+			return; // for now
+		}
+		Siteswap ret = new Siteswap(2);
+		int curHand = startHand;
+		// double height of each toss
+		for(int b=0; b<this.period(); b++) {
+			ret.appendEmptyBeat();
+			int otherHand = (curHand + 1) % 2;
+			for(int h=0; h<ret.numHands(); h++) {
+				if(h == curHand) {
+					Site curSite = this.getSite(b,0);
+					for(int t=0; t<curSite.numTosses(); t++) {
+						Toss curToss = this.getToss(b,0,t);
+						if(!curToss.height().isInfinite()) {
+							int height = curToss.height().finiteValue();
+							int destHand = h;
+							if(height % 2 == 1) {
+								destHand = (destHand + 1) % 2;
+							}
+							height *= 2;
+							Toss newToss = new Toss(height, destHand, false);
+							ret.addToss(b, h, newToss);
+						} else {
+							ret.addToss(b, h, curToss.deepCopy());
+						}
+					}
+				} else {
+					ret.addToss(b, otherHand, new Toss(2, curHand, false));
+				}
+			}
+			curHand = otherHand;
+		}
+		this.sites = ret.sites;
+		this.numHands = ret.numHands;
+	}
+
 	public void infinitize() {
 	}
 

@@ -236,7 +236,7 @@ class Command {
 					if(this.fromIndex >= index || this.toIndex >= index) {
 						Util.ErrorOut(new ParseError("transition to/from indeces must refer to previous inputs"));
 					}
-					Link l1 = getChain(this.fromIndex).getLastLink(), l2 = getChain(this.toIndex).getLastLink();
+					Link l1 = Command.this.getChain(this.fromIndex).getLastLink(), l2 = Command.this.getChain(this.toIndex).getLastLink();
 					State from = l1.siteswapOrState.getState();
 					State to = l2.siteswapOrState.getState();
 					if(from.numHands() != to.numHands()) {
@@ -253,8 +253,8 @@ class Command {
 						this.transitions = tr.getTransitions();
 						// save one as output, notated
 						// first get notation info from input of left input chain
-						Chain referenceChain = getChain(this.fromIndex);
-						NotatedSiteswap outputNotatedSiteswap = getNotatedSiteswap(tr.getSelectedTransition(), referenceChain);
+						Chain referenceChain = Command.this.getChain(this.fromIndex);
+						NotatedSiteswap outputNotatedSiteswap = Command.this.getNotatedSiteswap(tr.getSelectedTransition(), referenceChain);
 						this.notatedSiteswapOrState = new NotatedSiteswapOrState(outputNotatedSiteswap);
 					} catch(ImpossibleTransitionException e) {
 						Util.ErrorOut(e);
@@ -295,9 +295,9 @@ class Command {
 					ret.append(" to: output "); ret.append(this.toIndex); ret.append("\n");
 					if(this.displayGeneralizedTransition) {
 						ret.append(" generalized transition: ");
-						Chain referenceChain = getChain(this.fromIndex);
-						NotatedSiteswap throwsPortion = getNotatedSiteswap(this.generalizedTransition.getThrowsPortion(), referenceChain);
-						NotatedSiteswap catchesPortion = getNotatedSiteswap(this.generalizedTransition.getCatchesPortion(), referenceChain);
+						Chain referenceChain = Command.this.getChain(this.fromIndex);
+						NotatedSiteswap throwsPortion = Command.this.getNotatedSiteswap(this.generalizedTransition.getThrowsPortion(), referenceChain);
+						NotatedSiteswap catchesPortion = Command.this.getNotatedSiteswap(this.generalizedTransition.getCatchesPortion(), referenceChain);
 						ret.append(throwsPortion.display());
 						ret.append("{");
 						ret.append(catchesPortion.display());
@@ -362,7 +362,7 @@ class Command {
 				if(this.siteswapOrState.isState) {
 					ret.append("---> state:\n");
 					ret.append(" parsed: " + this.siteswapOrState.state.toString() + "\n");
-					ret.append(" notated: " + getNotatedState(this.siteswapOrState.state, getChain(index)).display() + "\n");
+					ret.append(" notated: " + Command.this.getNotatedState(this.siteswapOrState.state, Chain.this).display() + "\n");
 					ret.append(" dimension: " + this.siteswapOrState.state.numHands() + "h x ");
 					if(this.siteswapOrState.state.repeatedLength() > 0) {
 						ret.append("&b\n");
@@ -372,7 +372,7 @@ class Command {
 				} else {
 					ret.append("---> siteswap:\n");
 					ret.append(" parsed: " + this.siteswapOrState.siteswap.toString() + "\n");
-					ret.append(" notated: " + getNotatedSiteswap(this.siteswapOrState.siteswap, getChain(index)).display() + "\n");
+					ret.append(" notated: " + Command.this.getNotatedSiteswap(this.siteswapOrState.siteswap, Chain.this).display() + "\n");
 					ret.append(" dimension: " + this.siteswapOrState.siteswap.numHands() + "h x " + this.siteswapOrState.siteswap.period() + "b\n");
 				}
 				for(ArgWithFollowUp infoArg : this.infos) {
@@ -402,7 +402,7 @@ class Command {
 							} else {
 								state = new State(this.siteswapOrState.siteswap);
 							}
-							ret.append(" state: " + getNotatedState(state, getChain(index)).display() + "\n");
+							ret.append(" state: " + Command.this.getNotatedState(state, Chain.this).display() + "\n");
 							break;
 						case PRIMALITY:
 							boolean primality;
@@ -437,7 +437,7 @@ class Command {
 								} else {
 									ret.append('\n');
 									for(Siteswap cycle : cycles) {
-										NotatedSiteswap notatedCycle = getNotatedSiteswap(cycle, getChain(index));
+										NotatedSiteswap notatedCycle = Command.this.getNotatedSiteswap(cycle, Chain.this);
 										ret.append("  " + notatedCycle.display() + "\n");
 									}
 								}
@@ -454,7 +454,7 @@ class Command {
 								} else {
 									ret.append('\n');
 									for(Siteswap orbit : orbits) {
-										NotatedSiteswap notatedOrbit = getNotatedSiteswap(orbit, getChain(index));
+										NotatedSiteswap notatedOrbit = Command.this.getNotatedSiteswap(orbit, Chain.this);
 										ret.append("  " + notatedOrbit.display() + "\n");
 									}
 								}
@@ -600,7 +600,7 @@ class Command {
 							curLink.siteswapOrState.siteswap.invert();
 							break;
 						case SPRING:
-							Util.printf("WARNING: sprung not yet implemented", Util.DebugLevel.ERROR);
+							curLink.siteswapOrState.siteswap.spring(0);
 							break;
 						case INFINITIZE:
 							curLink.siteswapOrState.siteswap.infinitize();
@@ -630,18 +630,22 @@ class Command {
 			// get reference for notation output
 			Chain referenceChain;
 			if(this.input.isTransition) {
-				referenceChain = getChain(this.input.fromIndex);
+				referenceChain = Command.this.getChain(this.input.fromIndex);
 			} else {
 				referenceChain = this;
 			}
 			if(lastLink.siteswapOrState.isState) {
 				ret.append(" state: " );
-				NotatedState notatedState = getNotatedState(lastLink.siteswapOrState.state, referenceChain);
+				NotatedState notatedState = Command.this.getNotatedState(lastLink.siteswapOrState.state, referenceChain);
 				ret.append(notatedState.display());
 			} else {
 				ret.append(" siteswap: " );
-				NotatedSiteswap notatedSiteswap = getNotatedSiteswap(lastLink.siteswapOrState.siteswap, referenceChain);
+				NotatedSiteswap notatedSiteswap = Command.this.getNotatedSiteswap(lastLink.siteswapOrState.siteswap, referenceChain);
 				ret.append(notatedSiteswap.display());
+			}
+			// separate chains
+			if(this.index < Command.this.chains.size()-1) {
+				ret.append('\n');
 			}
 			// print output
 			Util.printf(ret.toString(), Util.DebugLevel.INFO);
