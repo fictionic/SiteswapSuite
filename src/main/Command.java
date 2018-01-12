@@ -362,6 +362,7 @@ class Command {
 				if(this.siteswapOrState.isState) {
 					ret.append("---> state:\n");
 					ret.append(" parsed: " + this.siteswapOrState.state.toString() + "\n");
+					ret.append(" notated: " + getNotatedState(this.siteswapOrState.state, getChain(index)).display() + "\n");
 					ret.append(" dimension: " + this.siteswapOrState.state.numHands() + "h x ");
 					if(this.siteswapOrState.state.repeatedLength() > 0) {
 						ret.append("&b\n");
@@ -371,6 +372,7 @@ class Command {
 				} else {
 					ret.append("---> siteswap:\n");
 					ret.append(" parsed: " + this.siteswapOrState.siteswap.toString() + "\n");
+					ret.append(" notated: " + getNotatedSiteswap(this.siteswapOrState.siteswap, getChain(index)).display() + "\n");
 					ret.append(" dimension: " + this.siteswapOrState.siteswap.numHands() + "h x " + this.siteswapOrState.siteswap.period() + "b\n");
 				}
 				for(ArgWithFollowUp infoArg : this.infos) {
